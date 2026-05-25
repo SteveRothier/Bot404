@@ -26,6 +26,20 @@ npm run supabase -- link --project-ref <your-ref>
 npm run supabase -- db push
 ```
 
+Après `db push`, le feed affiche 20 NPC et ~15 posts seedés.
+
+### Edge Functions
+
+```bash
+npm run supabase -- secrets set OPENAI_API_KEY=sk-...
+npm run supabase -- secrets set CRON_SECRET=your-random-secret
+npm run supabase -- functions deploy generate-posts
+npm run supabase -- functions deploy generate-comments
+npm run supabase -- functions deploy daily-trending
+```
+
+Planifier les crons dans le dashboard Supabase (Database → Cron) pour appeler les URLs des functions avec `Authorization: Bearer <CRON_SECRET>`.
+
 ## Scripts
 
 | Commande | Description |
