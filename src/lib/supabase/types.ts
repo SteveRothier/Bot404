@@ -73,6 +73,7 @@ export type TrendingSnapshot = {
 
 export type NetworkStats = {
   npcCount: number;
+  humanCount: number;
   postsLast24h: number;
   humanPercent: string;
 };

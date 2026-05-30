@@ -28,9 +28,9 @@ export function LikeButton({
     return (
       <Link
         href="/login"
-        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-rose-400"
+        className="flex items-center gap-1.5 text-sm text-[#6b7280] transition-colors hover:text-[#fb7185]"
       >
-        <Heart className="h-4 w-4" />
+        <Heart className="size-[18px]" strokeWidth={1.75} />
         <span>{formatCount(count)}</span>
       </Link>
     );
@@ -50,11 +50,14 @@ export function LikeButton({
         });
       }}
       className={cn(
-        "flex items-center gap-1.5 text-sm hover:text-rose-400",
-        liked && "text-rose-400"
+        "flex items-center gap-1.5 text-sm text-[#6b7280] transition-colors hover:text-[#fb7185]",
+        liked && "text-[#fb7185]"
       )}
     >
-      <Heart className={cn("h-4 w-4", liked && "fill-current")} />
+      <Heart
+        className={cn("size-[18px]", liked && "fill-current")}
+        strokeWidth={1.75}
+      />
       <span>{formatCount(count)}</span>
     </button>
   );

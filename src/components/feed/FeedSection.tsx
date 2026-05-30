@@ -14,7 +14,27 @@ type Props = {
   profile: Profile | null;
   likedPostIds: number[];
   commentsByPostId: Record<number, CommentWithAuthor[]>;
+  referenceNowMs: number;
 };
+
+function postsForTab(
+  tab: FeedTab,
+  recentPosts: PostWithAuthor[],
+  popularPosts: PostWithAuthor[]
+): PostWithAuthor[] {
+  switch (tab) {
+    case "recent":
+      return recentPosts;
+    case "rumors":
+    case "theories":
+      return popularPosts;
+    case "following":
+      return [];
+    case "for-you":
+    default:
+      return recentPosts;
+  }
+}
 
 export function FeedSection({
   recentPosts,
@@ -23,26 +43,30 @@ export function FeedSection({
   profile,
   likedPostIds,
   commentsByPostId,
+  referenceNowMs,
 }: Props) {
   const isLoggedIn = !!user;
   const [tab, setTab] = useState<FeedTab>("for-you");
 
-  const posts =
-    tab === "popular"
-      ? popularPosts
-      : tab === "recent"
-        ? recentPosts
-        : recentPosts;
+  const posts = postsForTab(tab, recentPosts, popularPosts);
+  const emptyMessage =
+    tab === "following"
+      ? "Aucun profil suivi pour l'instant."
+      : "Le réseau s'initialise…";
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full max-w-[720px]">
       <PostComposerForm user={user} profile={profile} />
       <FeedTabs value={tab} onChange={setTab} />
       <FeedList
         posts={posts}
         likedPostIds={likedPostIds}
         isLoggedIn={isLoggedIn}
+        profile={profile}
+        userId={user?.id}
         commentsByPostId={commentsByPostId}
+        referenceNowMs={referenceNowMs}
+        emptyMessage={emptyMessage}
       />
     </div>
   );

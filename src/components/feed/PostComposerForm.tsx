@@ -1,9 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Image, Code, Smile } from "lucide-react";
+import {
+  BarChart3,
+  Calendar,
+  ChevronDown,
+  Globe,
+  Image,
+  Smile,
+  TriangleAlert,
+  Film,
+} from "lucide-react";
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,31 +23,29 @@ type Props = {
   profile: Profile | null;
 };
 
+const toolbarIcons = [
+  { Icon: Image, label: "Image" },
+  { Icon: Film, label: "GIF" },
+  { Icon: BarChart3, label: "Sondage" },
+  { Icon: Smile, label: "Emoji" },
+  { Icon: TriangleAlert, label: "Alerte" },
+  { Icon: Calendar, label: "Calendrier" },
+] as const;
+
 export function PostComposerForm({ user, profile }: Props) {
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  if (!user) {
-    return (
-      <Card className="border-border bg-card">
-        <CardContent className="p-4 text-center text-sm text-muted-foreground">
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            Connectez-vous
-          </Link>{" "}
-          pour poster sur le réseau (humains uniquement — les NPC ne vous
-          imitent pas… encore).
-        </CardContent>
-      </Card>
-    );
-  }
-
   const avatar =
     profile?.avatar_url ??
-    `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${user.id}`;
+    (user
+      ? `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${user.id}`
+      : "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=guest");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!user) return;
     setError(null);
     const fd = new FormData();
     fd.set("content", content);
@@ -51,45 +57,88 @@ export function PostComposerForm({ user, profile }: Props) {
   }
 
   return (
-    <Card className="border-border bg-card">
-      <CardContent className="p-4">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Que pensez-vous du réseau ?
-        </p>
-        <form onSubmit={handleSubmit} className="flex gap-3">
-          <Avatar className="h-10 w-10 shrink-0">
-            <AvatarImage src={avatar} />
-            <AvatarFallback>
-              {profile?.username?.slice(0, 2) ?? "HU"}
+    <section className="pb-4">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-xl border border-[#24101a] bg-[#0c0e16] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)] transition-colors hover:border-[#34121b] hover:bg-[#11141f]"
+      >
+        <div className="flex gap-3">
+          <Avatar className="size-12 shrink-0 rounded-lg after:rounded-lg">
+            <AvatarImage
+              src={avatar}
+              className="rounded-lg object-cover"
+            />
+            <AvatarFallback className="rounded-lg bg-[#1a0c16] text-xs text-[#fda4af]">
+              {profile?.username?.slice(0, 2) ?? "??"}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 space-y-3">
-            <Textarea
-              placeholder="Postez quelque chose… (max 500 car.)"
-              className="min-h-[80px] resize-none border-border bg-background"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              maxLength={500}
-              disabled={pending}
-            />
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2 text-muted-foreground opacity-50">
-                <Image className="h-5 w-5" />
-                <Smile className="h-5 w-5" />
-                <Code className="h-5 w-5" />
+
+          <div className="min-w-0 flex-1">
+            <div className="relative">
+              <Textarea
+                placeholder="Quoi de neuf dans ce monde qui s'effondre ?"
+                className="min-h-[88px] resize-none border-0 bg-transparent px-3 py-3 pr-10 text-[15px] text-foreground shadow-none placeholder:text-[#6b7280] focus-visible:border-0 focus-visible:ring-0"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                maxLength={500}
+                disabled={pending || !user}
+              />
+              <span className="pointer-events-none absolute bottom-3 right-3 text-[11px] text-[#4b5563]">
+                {content.length}
+              </span>
+            </div>
+
+            {error && (
+              <p className="mt-1 text-sm text-destructive">{error}</p>
+            )}
+
+            <div className="mt-3 flex items-center justify-between border-t border-[#24101a] pt-3">
+              <div className="flex items-center gap-3 text-[#6b7280]">
+                {toolbarIcons.map(({ Icon, label }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled
+                    className="transition-colors hover:text-[#9ca3af] disabled:cursor-default disabled:opacity-70"
+                    aria-label={label}
+                  >
+                    <Icon className="size-[18px]" strokeWidth={1.75} />
+                  </button>
+                ))}
               </div>
-              <Button
-                type="submit"
-                className="bg-primary hover:bg-primary/90"
-                disabled={pending || !content.trim()}
-              >
-                {pending ? "..." : "Poster"}
-              </Button>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled
+                  className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#9ca3af] disabled:opacity-70"
+                >
+                  <Globe className="size-3.5" />
+                  Public
+                  <ChevronDown className="size-3.5" />
+                </button>
+
+                {user ? (
+                  <Button
+                    type="submit"
+                    disabled={pending || !content.trim()}
+                    className="h-9 rounded-lg bg-[#e11d48] px-5 text-xs font-bold uppercase tracking-wide text-white hover:bg-[#be123c]"
+                  >
+                    {pending ? "..." : "Poster"}
+                  </Button>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="inline-flex h-9 items-center justify-center rounded-lg bg-[#e11d48] px-5 text-xs font-bold uppercase tracking-wide text-white hover:bg-[#be123c]"
+                  >
+                    Poster
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </form>
+    </section>
   );
 }

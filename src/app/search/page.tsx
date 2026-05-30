@@ -8,7 +8,6 @@ import {
   deriveHashtagsFromPosts,
   getFeedPosts,
   getNetworkStats,
-  getOnlineNpcs,
   getTrendingSnapshot,
 } from "@/lib/queries/feed";
 import { searchNetwork } from "@/lib/queries/search";
@@ -23,10 +22,9 @@ export default async function SearchPage({ searchParams }: Props) {
   const { q = "" } = await searchParams;
   const query = q.trim();
 
-  const [results, stats, onlineNpcs, snapshot, feedSample] = await Promise.all([
+  const [results, stats, snapshot, feedSample] = await Promise.all([
     searchNetwork(query),
     getNetworkStats(),
-    getOnlineNpcs(5),
     getTrendingSnapshot(),
     getFeedPosts(5),
   ]);
@@ -41,7 +39,6 @@ export default async function SearchPage({ searchParams }: Props) {
     <AppShell
       stats={stats}
       tags={hashtags ?? []}
-      onlineNpcs={onlineNpcs}
       trendingHashtags={hashtags ?? []}
       event={trendingData?.event}
     >

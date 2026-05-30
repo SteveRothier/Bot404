@@ -8,7 +8,6 @@ import {
   getCurrentUserProfile,
   getFeedPosts,
   getNetworkStats,
-  getOnlineNpcs,
   getPopularPosts,
   getTrendingSnapshot,
   getUserLikedPostIds,
@@ -17,17 +16,17 @@ import {
 export const revalidate = 60;
 
 export default async function HomePage() {
+  const referenceNowMs = Date.now();
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [recentPosts, popularPosts, stats, onlineNpcs, snapshot, profile, likedPostIds] =
+  const [recentPosts, popularPosts, stats, snapshot, profile, likedPostIds] =
     await Promise.all([
       getFeedPosts(),
       getPopularPosts(),
       getNetworkStats(),
-      getOnlineNpcs(5),
       getTrendingSnapshot(),
       getCurrentUserProfile(),
       getUserLikedPostIds(),
@@ -51,7 +50,6 @@ export default async function HomePage() {
     <AppShell
       stats={stats}
       tags={hashtags ?? []}
-      onlineNpcs={onlineNpcs}
       trendingHashtags={hashtags ?? []}
       event={trendingData?.event}
     >
@@ -63,6 +61,7 @@ export default async function HomePage() {
           profile={profile}
           likedPostIds={[...likedPostIds]}
           commentsByPostId={commentsByPostId}
+        referenceNowMs={referenceNowMs}
         />
       </FeedRealtime>
     </AppShell>

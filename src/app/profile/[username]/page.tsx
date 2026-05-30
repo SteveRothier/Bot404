@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   getNetworkStats,
-  getOnlineNpcs,
   getTrendingSnapshot,
   deriveHashtagsFromPosts,
   getFeedPosts,
@@ -30,10 +29,9 @@ export default async function ProfilePage({ params }: Props) {
 
   if (!profile) notFound();
 
-  const [posts, stats, onlineNpcs, snapshot, feedSample] = await Promise.all([
+  const [posts, stats, snapshot, feedSample] = await Promise.all([
     getPostsByUsername(username),
     getNetworkStats(),
-    getOnlineNpcs(5),
     getTrendingSnapshot(),
     getFeedPosts(5),
   ]);
@@ -50,7 +48,6 @@ export default async function ProfilePage({ params }: Props) {
     <AppShell
       stats={stats}
       tags={hashtags ?? []}
-      onlineNpcs={onlineNpcs}
       trendingHashtags={hashtags ?? []}
       event={trendingData?.event}
     >

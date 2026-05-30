@@ -13,9 +13,9 @@ export function TrendingList({
   title = "Tendances du réseau",
 }: Props) {
   return (
-    <Card className="border-border bg-card">
+    <Card className="border-[#2b1117] bg-[#0b0a13]">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9ca3af]">
           {title}
         </CardTitle>
       </CardHeader>
@@ -27,12 +27,12 @@ export function TrendingList({
             <Link
               key={item.tag}
               href="/trending"
-              className="block rounded-lg p-2 transition-colors hover:bg-secondary"
+              className="block rounded-md border border-transparent p-2 transition-colors hover:border-[#34121b] hover:bg-[#171424]"
             >
               <p className="text-xs text-muted-foreground">
                 {i + 1} · Tendance
               </p>
-              <p className="font-semibold text-primary">{item.tag}</p>
+              <p className="font-semibold text-[#fb7185]">{item.tag}</p>
               <p className="text-xs text-muted-foreground">
                 {formatCount(item.count)} posts
               </p>

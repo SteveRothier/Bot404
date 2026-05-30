@@ -1,22 +1,22 @@
-import { NpcOnlineList } from "@/components/widgets/NpcOnlineList";
+import { NetworkSummary } from "@/components/widgets/NetworkSummary";
 import { TrendingList } from "@/components/widgets/TrendingList";
 import { EventCard } from "@/components/widgets/EventCard";
 import type {
-  Profile,
+  NetworkStats,
   TrendingEvent,
   TrendingHashtag,
 } from "@/lib/supabase/types";
 
 type Props = {
-  onlineNpcs: Profile[];
+  stats: NetworkStats;
   hashtags: TrendingHashtag[];
   event?: TrendingEvent | null;
 };
 
-export function RightSidebar({ onlineNpcs, hashtags, event }: Props) {
+export function RightSidebar({ stats, hashtags, event }: Props) {
   return (
     <aside className="hidden w-80 shrink-0 flex-col gap-4 xl:flex">
-      <NpcOnlineList npcs={onlineNpcs} />
+      <NetworkSummary stats={stats} />
       <TrendingList hashtags={hashtags} />
       <EventCard event={event} />
     </aside>

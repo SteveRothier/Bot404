@@ -7,17 +7,15 @@ import {
   deriveHashtagsFromPosts,
   getFeedPosts,
   getNetworkStats,
-  getOnlineNpcs,
   getTrendingSnapshot,
 } from "@/lib/queries/feed";
 
 export const revalidate = 60;
 
 export default async function TrendingPage() {
-  const [posts, stats, onlineNpcs, snapshot] = await Promise.all([
+  const [posts, stats, snapshot] = await Promise.all([
     getFeedPosts(30),
     getNetworkStats(),
-    getOnlineNpcs(5),
     getTrendingSnapshot(),
   ]);
 
@@ -30,7 +28,6 @@ export default async function TrendingPage() {
     <AppShell
       stats={stats}
       tags={hashtags ?? []}
-      onlineNpcs={onlineNpcs}
       trendingHashtags={hashtags ?? []}
       event={data?.event}
     >

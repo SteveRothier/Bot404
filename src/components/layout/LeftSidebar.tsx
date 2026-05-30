@@ -12,9 +12,8 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NetworkStatus } from "@/components/widgets/NetworkStatus";
 import { PopularTags } from "@/components/widgets/PopularTags";
-import type { NetworkStats, TrendingHashtag } from "@/lib/supabase/types";
+import type { TrendingHashtag } from "@/lib/supabase/types";
 
 const navItems = [
   { href: "/", label: "Feed", icon: Home },
@@ -27,24 +26,23 @@ const navItems = [
 ];
 
 type Props = {
-  stats: NetworkStats;
   tags: TrendingHashtag[];
 };
 
-export function LeftSidebar({ stats, tags }: Props) {
+export function LeftSidebar({ tags }: Props) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col gap-4 lg:flex">
-      <nav className="space-y-1">
+    <aside className="hidden w-64 shrink-0 self-start lg:sticky lg:top-[4.5rem] lg:flex lg:flex-col lg:gap-5">
+      <nav className="rounded-xl border border-[#2b1117] bg-[#0b0a13] p-2.5">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = item.href === pathname;
           const className = cn(
-            "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+            "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-xs font-medium uppercase tracking-wide transition-colors",
             active
-              ? "bg-primary/20 text-primary"
-              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+              ? "border border-[#3f101c] bg-[#1a0c16] text-[#fb7185]"
+              : "text-[#9ca3af] hover:bg-[#171424] hover:text-[#f9a8d4]",
             item.disabled && "pointer-events-none opacity-50"
           );
 
@@ -72,7 +70,6 @@ export function LeftSidebar({ stats, tags }: Props) {
         })}
       </nav>
 
-      <NetworkStatus stats={stats} />
       <PopularTags tags={tags} />
     </aside>
   );

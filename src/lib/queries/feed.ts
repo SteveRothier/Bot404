@@ -143,6 +143,7 @@ export async function getNetworkStats(): Promise<NetworkStats> {
 
   return {
     npcCount: npcCount ?? 0,
+    humanCount: humanCount ?? 0,
     postsLast24h: postsCount ?? 0,
     humanPercent,
   };

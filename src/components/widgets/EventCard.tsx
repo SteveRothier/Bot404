@@ -18,20 +18,20 @@ export function EventCard({ event }: Props) {
   const hours = e.starts_in_hours ?? 4;
 
   return (
-    <Card className="overflow-hidden border-border bg-card">
-      <div className="h-24 bg-gradient-to-br from-primary/40 via-card to-background" />
+    <Card className="overflow-hidden border-[#2b1117] bg-[#0b0a13]">
+      <div className="h-24 bg-gradient-to-br from-[#3f101c] via-[#160b17] to-[#090c18]" />
       <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9ca3af]">
           Événement en cours
         </CardTitle>
         <p className="text-base font-bold">{e.title}</p>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">{e.description}</p>
-        <p className="text-xs text-primary">
+        <p className="text-xs text-[#fb7185]">
           Commence dans ~{hours}h
         </p>
-        <Button className="w-full" disabled>
+        <Button className="w-full bg-[#e11d48] text-white hover:bg-[#be123c]" disabled>
           Rejoindre le débat
         </Button>
       </CardContent>

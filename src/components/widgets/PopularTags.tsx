@@ -21,9 +21,9 @@ export function PopularTags({ tags }: Props) {
     tags.length > 0 ? tags.map((t) => t.tag) : fallbackTags;
 
   return (
-    <Card className="border-border bg-card">
+    <Card className="border-[#2b1117] bg-[#0b0a13]">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9ca3af]">
           Tags populaires
         </CardTitle>
       </CardHeader>
@@ -32,7 +32,7 @@ export function PopularTags({ tags }: Props) {
           <Link key={tag} href="/trending">
             <Badge
               variant="outline"
-              className="cursor-pointer border-primary/30 bg-primary/10 text-xs text-primary hover:bg-primary/20"
+              className="cursor-pointer border-[#4c1d2a] bg-[#20111a] text-xs text-[#fda4af] hover:bg-[#2a141f]"
             >
               {tag.startsWith("#") ? tag : `#${tag}`}
             </Badge>

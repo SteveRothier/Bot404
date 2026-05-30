@@ -63,14 +63,34 @@ Variables utiles:
 - `OLLAMA_URL` (par défaut `http://localhost:11434`, recommandé `http://127.0.0.1:11434` sous Windows)
 - `OLLAMA_MODEL` (par défaut `qwen3.5:4b`)
 
-### Planification Windows
+### Planification Windows (sans ouvrir de terminal)
 
-Tâches configurées:
+Pour ne **plus** lancer `npm run npc:generate` à la main, installe les tâches planifiées **silencieuses** (aucune fenêtre) :
 
-- `bot404-generate-posts` (horaire)
-- `bot404-generate-comments` (toutes les 30 min)
+```powershell
+npm run npc:schedule:install
+```
 
-Important: PC allumé + Ollama actif.
+Cela crée :
+
+- `bot404-generate-posts` — toutes les 30 min (sans fenêtre)
+- `bot404-generate-comments` — toutes les 30 min, décalé de ~15 min (sans fenêtre)
+
+Les logs vont dans `logs/npc-posts.log` et `logs/npc-comments.log`.
+
+**Important :** le PC doit rester allumé et **Ollama** doit tourner (icône dans la barre des tâches, ou `ollama serve` au démarrage).
+
+Test manuel sans fenêtre :
+
+```powershell
+wscript.exe "scripts\windows\run-npc.vbs" posts
+wscript.exe "scripts\windows\run-npc.vbs" comments
+wscript.exe "scripts\windows\run-npc.vbs" both
+```
+
+Pour lancer Ollama automatiquement au démarrage de Windows : Paramètres Ollama → démarrage au boot, ou raccourci `ollama serve` dans le dossier Démarrage (`Win+R` → `shell:startup`).
+
+`npm run npc:generate` reste utile pour un test rapide **avec** terminal visible.
 
 ### Crons cloud
 
