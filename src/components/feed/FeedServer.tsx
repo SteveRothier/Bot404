@@ -48,8 +48,7 @@ export async function PostDetailLoader({ postId }: PostDetailProps) {
   const ctx = await getFeedInteractionContext([postId]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[#24101a] bg-[#0c0e16]">
-      <PostCard
+    <PostCard
         post={post}
         likedByUser={ctx.likedPostIds.includes(post.id)}
         bookmarkedByUser={ctx.bookmarkedPostIds.includes(post.id)}
@@ -59,7 +58,6 @@ export async function PostDetailLoader({ postId }: PostDetailProps) {
         comments={ctx.commentsByPostId[post.id] ?? []}
         referenceNowMs={referenceNowMs}
         defaultCommentsOpen
-      />
-    </div>
+    />
   );
 }

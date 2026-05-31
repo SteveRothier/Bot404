@@ -11,7 +11,7 @@ export async function LeftSidebar({ stats }: Props) {
   const profile = await getCurrentUserProfile();
 
   return (
-    <aside className="sidebar-sticky hidden w-64 shrink-0 lg:flex lg:flex-col lg:gap-4">
+    <aside className="sidebar-sticky hidden w-[275px] shrink-0 lg:flex lg:flex-col lg:gap-4">
       <LeftSidebarNav profileUsername={profile?.username ?? null} />
       <NetworkSummary stats={stats} />
     </aside>

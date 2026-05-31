@@ -28,7 +28,7 @@ export function LikeButton({
     return (
       <Link
         href="/login"
-        className="flex items-center gap-1.5 text-sm text-[#6b7280] transition-colors hover:text-[#fb7185]"
+        className="group flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-destructive"
       >
         <Heart className="size-[18px]" strokeWidth={1.75} />
         <span>{formatCount(count)}</span>
@@ -50,8 +50,8 @@ export function LikeButton({
         });
       }}
       className={cn(
-        "flex items-center gap-1.5 text-sm text-[#6b7280] transition-colors hover:text-[#fb7185]",
-        liked && "text-[#fb7185]"
+        "group flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-destructive",
+        liked && "text-destructive"
       )}
     >
       <Heart

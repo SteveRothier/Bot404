@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FeedListLoader } from "@/components/feed/FeedServer";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
@@ -25,10 +24,10 @@ export default async function SavedPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[720px] space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Sauvegardés</h1>
-        <p className="mt-1 text-sm text-[#6b7280]">
+    <div className="w-full">
+      <div className="border-b border-border px-4 py-4">
+        <h1 className="text-xl font-bold">Sauvegardés</h1>
+        <p className="mt-1 text-[15px] text-muted-foreground">
           Les posts que vous avez mis de côté.
         </p>
       </div>
@@ -36,10 +35,6 @@ export default async function SavedPage() {
       <PostsSuspense count={3}>
         <SavedPosts />
       </PostsSuspense>
-
-      <Link href="/" className="text-sm text-[#fb7185] hover:underline">
-        ← Retour au feed
-      </Link>
     </div>
   );
 }

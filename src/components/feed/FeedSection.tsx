@@ -6,10 +6,6 @@ import { FeedList } from "@/components/feed/FeedList";
 import { FollowingEmptyState } from "@/components/feed/FollowingEmptyState";
 import { PostComposerForm } from "@/components/feed/PostComposerForm";
 import { FeedTabs, type FeedTab } from "@/components/feed/FeedTabs";
-import {
-  filterRumorPosts,
-  filterTheoryPosts,
-} from "@/lib/feed-filters";
 import type { CommentWithAuthor, PostWithAuthor, Profile } from "@/lib/supabase/types";
 
 const PAGE_SIZE = 20;
@@ -26,10 +22,10 @@ export function FeedSection({ user, profile, children }: ShellProps) {
 
   return (
     <FeedTabContext.Provider value={tab}>
-      <div className="mx-auto w-full max-w-[720px]">
+      <div className="w-full">
         <PostComposerForm user={user} profile={profile} />
         <FeedTabs value={tab} onChange={setTab} />
-        <div className="mt-4">{children}</div>
+        {children}
       </div>
     </FeedTabContext.Provider>
   );
@@ -51,21 +47,12 @@ type PostsProps = {
 function postsForTab(
   tab: FeedTab,
   recentPosts: PostWithAuthor[],
-  popularPosts: PostWithAuthor[],
   followingPosts: PostWithAuthor[]
 ) {
-  const rumorSource = [...recentPosts, ...popularPosts];
-  const uniqueRumorSource = [
-    ...new Map(rumorSource.map((post) => [post.id, post])).values(),
-  ];
-
   switch (tab) {
     case "recent":
+    case "for-you":
       return recentPosts;
-    case "rumors":
-      return filterRumorPosts(uniqueRumorSource);
-    case "theories":
-      return filterTheoryPosts(uniqueRumorSource);
     case "following":
       return followingPosts;
     default:
@@ -87,15 +74,11 @@ export function FeedPosts({
 }: PostsProps) {
   const tab = useContext(FeedTabContext);
   const isLoggedIn = !!user;
-  const posts = postsForTab(tab, recentPosts, popularPosts, followingPosts);
+  const posts = postsForTab(tab, recentPosts, followingPosts);
   const emptyMessage =
     tab === "following"
       ? "Aucun profil suivi pour l'instant."
-      : tab === "rumors"
-        ? "Aucune rumeur détectée pour l'instant."
-        : tab === "theories"
-          ? "Aucune théorie détectée pour l'instant."
-          : "Le réseau s'initialise…";
+      : "Aucun post pour l'instant.";
   const showLoadMore = tab === "for-you" || tab === "recent";
 
   if (tab === "following" && posts.length === 0) {

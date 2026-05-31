@@ -8,7 +8,6 @@ import { BookmarkButton } from "@/components/feed/BookmarkButton";
 import { LikeButton } from "@/components/feed/LikeButton";
 import { PostCardMenu } from "@/components/feed/PostCardMenu";
 import { PostContent } from "@/components/feed/PostContent";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PostComments } from "@/components/feed/PostComments";
 import { formatCount, formatRelativeTimeShort } from "@/lib/format";
@@ -53,20 +52,25 @@ export function PostCard({
   }
 
   return (
-    <article className="cursor-default p-4 transition-colors hover:bg-[#11141f]">
+    <article
+      className={cn(
+        "surface-hover cursor-default px-4 py-3",
+        !author.is_npc && "border-l-2 border-accent/30 pl-3"
+      )}
+    >
       <div className="flex items-start gap-3">
         <Link
           href={`/profile/${author.username}`}
-          className="shrink-0 cursor-pointer self-start"
+          className="shrink-0 self-start"
           onClick={(e) => e.stopPropagation()}
         >
-          <Avatar className="size-12 rounded-lg after:rounded-lg">
+          <Avatar className="size-10 rounded-lg">
             <AvatarImage
               src={author.avatar_url ?? undefined}
               alt={author.username}
               className="rounded-lg object-cover"
             />
-            <AvatarFallback className="rounded-lg bg-[#1a0c16] text-xs text-[#fda4af]">
+            <AvatarFallback className="rounded-lg bg-secondary text-xs text-muted-foreground">
               {author.username.slice(0, 2)}
             </AvatarFallback>
           </Avatar>
@@ -74,28 +78,25 @@ export function PostCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-1 text-[15px] leading-5">
               <Link
                 href={`/profile/${author.username}`}
-                className="cursor-pointer truncate font-bold text-foreground hover:text-[#fda4af]"
+                className="truncate font-bold text-foreground hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
                 {author.username}
               </Link>
-              {author.is_npc ? (
-                <Badge className="h-5 rounded border-0 bg-[#5b21b6] px-1.5 text-[10px] font-bold uppercase text-white hover:bg-[#5b21b6]">
-                  NPC
-                </Badge>
-              ) : (
-                <Badge className="h-5 rounded border-0 bg-[#e11d48] px-1.5 text-[10px] font-bold uppercase text-white hover:bg-[#e11d48]">
-                  Humain
-                </Badge>
+              <span className="truncate text-muted-foreground">{handle}</span>
+              {author.is_npc && (
+                <>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-meta text-muted-foreground">npc</span>
+                </>
               )}
-              <span className="truncate text-sm text-[#6b7280]">{handle}</span>
-              <span className="text-sm text-[#6b7280]">·</span>
+              <span className="text-muted-foreground">·</span>
               <Link
                 href={`/post/${post.id}`}
-                className="text-sm text-[#6b7280] hover:text-[#fb7185]"
+                className="text-meta text-muted-foreground hover:underline"
               >
                 {formatRelativeTimeShort(post.created_at, referenceNowMs)}
               </Link>
@@ -106,11 +107,11 @@ export function PostCard({
           {defaultCommentsOpen ? (
             <PostContent
               content={post.content}
-              className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
+              className="mt-1 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
             />
           ) : (
             <div
-              className="mt-2 block cursor-pointer"
+              className="mt-1 block cursor-pointer"
               role="link"
               tabIndex={0}
               onClick={() => router.push(`/post/${post.id}`)}
@@ -128,15 +129,15 @@ export function PostCard({
             </div>
           )}
 
-          <div className="mt-3 flex max-w-md justify-between text-[#6b7280]">
+          <div className="mt-3 flex max-w-[425px] justify-between text-muted-foreground">
             <button
               type="button"
               onClick={handleCommentsClick}
               aria-expanded={commentsOpen}
               aria-label="Commentaires"
               className={cn(
-                "flex items-center gap-1.5 text-sm transition-colors hover:text-[#fb7185]",
-                commentsOpen && "text-[#fb7185]"
+                "group flex items-center gap-1.5 text-sm transition-colors hover:text-accent",
+                commentsOpen && "text-accent"
               )}
             >
               <MessageCircle className="size-[18px]" strokeWidth={1.75} />

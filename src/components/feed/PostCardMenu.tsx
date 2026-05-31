@@ -38,12 +38,12 @@ export function PostCardMenu({ postId, canDelete }: Props) {
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label="Options"
-        className="flex items-center p-0 text-[#6b7280] transition-colors hover:text-[#fda4af]"
+        className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
       >
         <MoreHorizontal className="size-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 min-w-36 overflow-hidden rounded-lg border border-[#34121b] bg-[#0c0e16] shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-36 overflow-hidden rounded-xl border border-border bg-background shadow-lg">
           <button
             type="button"
             disabled={pending}
@@ -57,7 +57,7 @@ export function PostCardMenu({ postId, canDelete }: Props) {
               });
             }}
             className={cn(
-              "block w-full px-3 py-2 text-left text-sm text-[#fda4af] transition-colors hover:bg-[#11141f]",
+              "block w-full px-3 py-2 text-left text-[15px] text-destructive transition-colors hover:bg-secondary",
               pending && "opacity-60"
             )}
           >

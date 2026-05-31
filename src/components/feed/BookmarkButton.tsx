@@ -35,8 +35,8 @@ export function BookmarkButton({
       }}
       aria-label={bookmarked ? "Retirer des sauvegardés" : "Sauvegarder"}
       className={cn(
-        "flex items-center gap-1.5 text-sm transition-colors hover:text-[#c4b5fd]",
-        bookmarked ? "text-[#c4b5fd]" : "text-[#6b7280]"
+        "flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-accent",
+        bookmarked && "text-accent"
       )}
     >
       <Bookmark

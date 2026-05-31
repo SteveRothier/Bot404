@@ -23,7 +23,7 @@ export function PostContent({ content, className }: Props) {
             <Link
               key={`${part}-${i}`}
               href={hashtagSearchHref(part)}
-              className="text-[#fb7185] hover:underline"
+              className="text-accent hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               {part}

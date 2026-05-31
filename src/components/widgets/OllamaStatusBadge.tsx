@@ -32,23 +32,23 @@ export function OllamaStatusBadge({ initialOnline, initialModel }: Props) {
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="min-w-0">
-        <span className="text-sm text-[#9ca3af]">IA locale (Ollama)</span>
-        <p className="truncate text-[11px] text-[#6b7280]">{model}</p>
+        <span className="text-[15px] text-muted-foreground">Ollama</span>
+        <p className="truncate text-[13px] text-muted-foreground">{model}</p>
       </div>
       <span
         className={cn(
-          "flex shrink-0 items-center gap-1.5 font-mono text-sm font-semibold",
-          online ? "text-emerald-400" : "text-[#fda4af]"
+          "flex shrink-0 items-center gap-1.5 text-[13px] font-medium",
+          online ? "text-emerald-500" : "text-muted-foreground"
         )}
       >
         <span
           aria-hidden
           className={cn(
             "size-2 rounded-full",
-            online ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" : "bg-[#fda4af]"
+            online ? "bg-emerald-500" : "bg-muted-foreground"
           )}
         />
-        {online ? "Allumée" : "Éteinte"}
+        {online ? "Actif" : "Inactif"}
       </span>
     </div>
   );

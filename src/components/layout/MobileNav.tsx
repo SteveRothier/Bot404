@@ -32,7 +32,7 @@ export function MobileNav({ profileUsername }: Props) {
     : "/login";
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#2b1117] bg-background/95 backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur-md lg:hidden">
       <div className="mx-auto flex max-w-lg items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] pt-2">
         {items.map(({ href, label, icon: Icon, match }) => {
           const active = match(pathname);
@@ -41,11 +41,15 @@ export function MobileNav({ profileUsername }: Props) {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium uppercase tracking-wide",
-                active ? "text-[#fb7185]" : "text-[#6b7280]"
+                "flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium",
+                active ? "text-foreground" : "text-muted-foreground"
               )}
             >
-              <Icon className="size-5" strokeWidth={1.75} />
+              <Icon
+                className="size-6"
+                strokeWidth={active ? 2.25 : 1.75}
+                fill={active ? "currentColor" : "none"}
+              />
               {label}
             </Link>
           );
@@ -53,13 +57,25 @@ export function MobileNav({ profileUsername }: Props) {
         <Link
           href={profileHref}
           className={cn(
-            "flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium uppercase tracking-wide",
-            pathname.startsWith("/profile")
-              ? "text-[#fb7185]"
-              : "text-[#6b7280]"
+            "flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium",
+            pathname.startsWith("/profile") && !pathname.startsWith("/profile/edit")
+              ? "text-foreground"
+              : "text-muted-foreground"
           )}
         >
-          <User className="size-5" strokeWidth={1.75} />
+          <User
+            className="size-6"
+            strokeWidth={
+              pathname.startsWith("/profile") && !pathname.startsWith("/profile/edit")
+                ? 2.25
+                : 1.75
+            }
+            fill={
+              pathname.startsWith("/profile") && !pathname.startsWith("/profile/edit")
+                ? "currentColor"
+                : "none"
+            }
+          />
           Profil
         </Link>
       </div>

@@ -1,17 +1,14 @@
 import { TrendingList } from "@/components/widgets/TrendingList";
-import { EventCard } from "@/components/widgets/EventCard";
-import type { TrendingEvent, TrendingHashtag } from "@/lib/supabase/types";
+import type { TrendingHashtag } from "@/lib/supabase/types";
 
 type Props = {
   hashtags: TrendingHashtag[];
-  event?: TrendingEvent | null;
 };
 
-export function RightSidebar({ hashtags, event }: Props) {
+export function RightSidebar({ hashtags }: Props) {
   return (
-    <aside className="sidebar-sticky hidden w-80 shrink-0 xl:flex xl:flex-col xl:gap-4">
+    <aside className="sidebar-sticky hidden w-80 shrink-0 xl:block">
       <TrendingList hashtags={hashtags} />
-      <EventCard event={event} />
     </aside>
   );
 }

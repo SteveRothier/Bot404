@@ -1,7 +1,6 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { getCurrentUserProfile } from "@/lib/queries/feed";
+import { redirect } from "next/navigation";
 
 export default async function ProfileEditPage() {
   const profile = await getCurrentUserProfile();
@@ -11,19 +10,14 @@ export default async function ProfileEditPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[720px] space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Modifier le profil</h1>
-        <p className="mt-1 text-sm text-[#6b7280]">
+    <div className="w-full">
+      <div className="border-b border-border px-4 py-4">
+        <h1 className="text-xl font-bold">Modifier le profil</h1>
+        <p className="mt-1 text-[15px] text-muted-foreground">
           Personnalisez votre présence sur Bot404.
         </p>
       </div>
-
       <ProfileEditForm profile={profile} />
-
-      <Link href={`/profile/${profile.username}`} className="text-sm text-[#fb7185] hover:underline">
-        ← Retour au profil
-      </Link>
     </div>
   );
 }

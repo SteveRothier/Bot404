@@ -36,7 +36,7 @@ export function CommentDeleteButton({
       }}
       aria-label="Supprimer le commentaire"
       className={cn(
-        "ml-auto shrink-0 text-[#6b7280] transition-colors hover:text-[#fda4af]",
+        "ml-auto shrink-0 text-muted-foreground transition-colors hover:text-destructive",
         pending && "opacity-60"
       )}
     >

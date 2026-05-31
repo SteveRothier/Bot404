@@ -18,6 +18,10 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        forum:
+          "border-2 border-border bg-surface text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-muted active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]",
+        forumAccent:
+          "border-2 border-[#cc8800] bg-accent text-accent-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:bg-[#ffc233] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]",
       },
       size: {
         default:

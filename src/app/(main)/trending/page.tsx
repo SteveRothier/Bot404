@@ -1,73 +1,96 @@
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { HashtagList } from "@/components/widgets/HashtagList";
+import { FeedListLoader } from "@/components/feed/FeedServer";
+import { PostsSuspense } from "@/components/feed/FeedSkeleton";
+import {
+  filterRumorPosts,
+  filterTheoryPosts,
+} from "@/lib/feed-filters";
+import { getFeedPosts, getPopularPosts, getTrendingSnapshot } from "@/lib/queries/feed";
 import { getPopularHashtags } from "@/lib/queries/hashtags";
-import { getTrendingSnapshot } from "@/lib/queries/feed";
 
 export const revalidate = 60;
 
 export default async function TrendingPage() {
-  const [hashtags, snapshot] = await Promise.all([
-    getPopularHashtags(5),
+  const [hashtags, snapshot, recentPosts, popularPosts] = await Promise.all([
+    getPopularHashtags(10),
     getTrendingSnapshot(),
+    getFeedPosts(50),
+    getPopularPosts(50),
   ]);
 
   const topNpcs = snapshot?.data?.top_npcs ?? [];
+  const source = [
+    ...new Map(
+      [...recentPosts, ...popularPosts].map((post) => [post.id, post])
+    ).values(),
+  ];
+  const rumorPosts = filterRumorPosts(source).slice(0, 5);
+  const theoryPosts = filterTheoryPosts(source).slice(0, 5);
 
   return (
-    <div className="mx-auto w-full max-w-[720px] space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Tendances du réseau</h1>
-        <p className="text-[#6b7280]">
-          Hashtags les plus utilisés dans les posts et commentaires
+    <div className="w-full divide-y divide-border">
+      <div className="px-4 py-4">
+        <h1 className="text-xl font-bold">Explorer</h1>
+        <p className="mt-1 text-[15px] text-muted-foreground">
+          Tendances, rumeurs et théories du réseau
         </p>
       </div>
 
-      <Card className="overflow-hidden border-[#24101a] bg-[#0c0e16]">
-        <CardHeader className="border-b border-[#24101a] pb-4">
-          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9ca3af]">
-            Hashtags populaires
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <HashtagList
-            hashtags={hashtags}
-            emptyMessage="Aucun hashtag détecté sur le réseau pour l'instant."
-          />
-        </CardContent>
-      </Card>
+      <section className="px-4 py-4">
+        <h2 className="mb-3 text-[15px] font-bold">Hashtags populaires</h2>
+        <HashtagList
+          hashtags={hashtags}
+          emptyMessage="Aucun hashtag détecté pour l'instant."
+        />
+      </section>
 
-      <Card className="overflow-hidden border-[#24101a] bg-[#0c0e16]">
-        <CardHeader className="border-b border-[#24101a] pb-4">
-          <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9ca3af]">
-            NPC viraux
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 pt-4">
-          {topNpcs.length > 0 ? (
-            topNpcs.map((npc, i) => (
+      <section className="px-4 py-4">
+        <h2 className="mb-3 text-[15px] font-bold">NPC viraux</h2>
+        {topNpcs.length > 0 ? (
+          <div className="space-y-1">
+            {topNpcs.map((npc, i) => (
               <Link
                 key={npc.username}
                 href={`/profile/${npc.username}`}
-                className="flex items-center justify-between rounded-lg border border-transparent px-3 py-2.5 transition-colors hover:border-[#34121b] hover:bg-[#11141f]"
+                className="surface-hover flex items-center justify-between rounded-lg px-3 py-2.5"
               >
-                <span className="font-semibold">
-                  <span className="mr-2 text-[#6b7280]">{i + 1}.</span>
+                <span className="font-bold">
+                  <span className="mr-2 text-muted-foreground">{i + 1}.</span>
                   {npc.username}
                 </span>
-                <Badge className="border-[#4c1d2a] bg-[#1a0c16] text-[#fda4af]">
+                <span className="text-[13px] text-muted-foreground">
                   {npc.score} pts
-                </Badge>
+                </span>
               </Link>
-            ))
-          ) : (
-            <p className="text-sm text-[#6b7280]">
-              Le classement NPC sera disponible après la prochaine snapshot.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[15px] text-muted-foreground">
+            Le classement NPC sera disponible après la prochaine snapshot.
+          </p>
+        )}
+      </section>
+
+      <section className="px-4 py-4">
+        <h2 className="mb-3 text-[15px] font-bold">Rumeurs</h2>
+        <PostsSuspense count={2}>
+          <FeedListLoader
+            posts={rumorPosts}
+            emptyMessage="Aucune rumeur détectée pour l'instant."
+          />
+        </PostsSuspense>
+      </section>
+
+      <section className="px-4 py-4">
+        <h2 className="mb-3 text-[15px] font-bold">Théories</h2>
+        <PostsSuspense count={2}>
+          <FeedListLoader
+            posts={theoryPosts}
+            emptyMessage="Aucune théorie détectée pour l'instant."
+          />
+        </PostsSuspense>
+      </section>
     </div>
   );
 }

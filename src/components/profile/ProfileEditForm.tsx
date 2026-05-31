@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { updateProfile } from "@/app/actions/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,7 @@ export function ProfileEditForm({ profile }: Props) {
 
   return (
     <form
-      className="space-y-4 rounded-xl border border-[#24101a] bg-[#0c0e16] p-4"
+      className="space-y-4 px-4 py-4"
       onSubmit={(event) => {
         event.preventDefault();
         setError(null);
@@ -37,10 +36,7 @@ export function ProfileEditForm({ profile }: Props) {
       }}
     >
       <div>
-        <label
-          htmlFor="bio"
-          className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#9ca3af]"
-        >
+        <label htmlFor="bio" className="mb-1 block text-[15px] font-bold">
           Bio
         </label>
         <Textarea
@@ -50,15 +46,12 @@ export function ProfileEditForm({ profile }: Props) {
           defaultValue={profile.bio ?? ""}
           rows={3}
           placeholder="Quelques mots sur vous…"
-          className="border-[#34121b] bg-[#11141f] text-foreground"
+          className="rounded-xl border-border bg-secondary"
         />
       </div>
 
       <div>
-        <label
-          htmlFor="avatar_url"
-          className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#9ca3af]"
-        >
+        <label htmlFor="avatar_url" className="mb-1 block text-[15px] font-bold">
           URL avatar
         </label>
         <Input
@@ -67,27 +60,19 @@ export function ProfileEditForm({ profile }: Props) {
           type="url"
           defaultValue={profile.avatar_url ?? ""}
           placeholder="https://…"
-          className="border-[#34121b] bg-[#11141f] text-foreground"
+          className="rounded-xl border-border bg-secondary"
         />
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="flex items-center gap-3">
-        <Button
-          type="submit"
-          disabled={pending}
-          className="bg-[#e11d48] text-white hover:bg-[#be123c]"
-        >
-          {pending ? "Enregistrement…" : "Enregistrer"}
-        </Button>
-        <Link
-          href={`/profile/${profile.username}`}
-          className="text-sm text-[#fb7185] hover:underline"
-        >
-          Annuler
-        </Link>
-      </div>
+      <Button
+        type="submit"
+        disabled={pending}
+        className="rounded-full bg-accent font-bold text-accent-foreground hover:bg-accent/90"
+      >
+        {pending ? "Enregistrement…" : "Enregistrer"}
+      </Button>
     </form>
   );
 }

@@ -2,17 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import {
-  BarChart3,
-  Calendar,
-  Film,
-  Image,
-  Smile,
-  TriangleAlert,
-} from "lucide-react";
 import { createComment } from "@/app/actions/posts";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentDeleteButton } from "@/components/feed/CommentDeleteButton";
 import { PostContent } from "@/components/feed/PostContent";
@@ -32,15 +23,6 @@ type Props = {
   referenceNowMs?: number;
 };
 
-const toolbarIcons = [
-  { Icon: Image, label: "Image" },
-  { Icon: Film, label: "GIF" },
-  { Icon: BarChart3, label: "Sondage" },
-  { Icon: Smile, label: "Emoji" },
-  { Icon: TriangleAlert, label: "Alerte" },
-  { Icon: Calendar, label: "Calendrier" },
-] as const;
-
 export function PostComments({
   postId,
   replyToUsername,
@@ -57,7 +39,6 @@ export function PostComments({
   const [expanded, setExpanded] = useState(false);
   const [content, setContent] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const composerRef = useRef<HTMLDivElement>(null);
 
   const replyAvatar =
     profile?.avatar_url ??
@@ -105,109 +86,81 @@ export function PostComments({
   if (!open) return null;
 
   return (
-    <div className="mt-3 border-t border-[#24101a]">
-      <div className="border-b border-[#24101a] py-3">
+    <div className="mt-3 border-t border-border">
+      <div className="border-b border-border py-3">
         {isLoggedIn ? (
           <form onSubmit={handleSubmit}>
-            <div ref={composerRef}>
-              {expanded && (
-                <p className="mb-2 text-sm text-[#6b7280]">
-                  Répondre à{" "}
-                  <span className="text-[#fb7185]">{replyHandle}</span>
-                </p>
-              )}
+            {expanded && (
+              <p className="mb-2 text-sm text-muted-foreground">
+                Répondre à{" "}
+                <span className="text-accent">{replyHandle}</span>
+              </p>
+            )}
 
-              <div className="flex items-start gap-3">
-                <Avatar className="size-10 shrink-0 rounded-lg after:rounded-lg">
-                  <AvatarImage
-                    src={replyAvatar}
-                    className="rounded-lg object-cover"
-                  />
-                  <AvatarFallback className="rounded-lg bg-[#1a0c16] text-xs text-[#fda4af]">
-                    {profile?.username?.slice(0, 2) ?? "??"}
-                  </AvatarFallback>
-                </Avatar>
+            <div className="flex items-start gap-3">
+              <Avatar className="size-10 shrink-0 rounded-full">
+                <AvatarImage
+                  src={replyAvatar}
+                  className="rounded-full object-cover"
+                />
+                <AvatarFallback className="rounded-full bg-secondary text-xs text-muted-foreground">
+                  {profile?.username?.slice(0, 2) ?? "??"}
+                </AvatarFallback>
+              </Avatar>
 
-                <div className="min-w-0 flex-1">
-                  {!expanded ? (
-                    <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                {!expanded ? (
+                  <button
+                    type="button"
+                    onClick={expandComposer}
+                    className="w-full py-2 text-left text-[15px] text-muted-foreground hover:text-foreground"
+                  >
+                    Émettre une réponse
+                  </button>
+                ) : (
+                  <>
+                    <Textarea
+                      ref={textareaRef}
+                      name="content"
+                      placeholder="Émettre une réponse"
+                      maxLength={300}
+                      disabled={pending}
+                      rows={3}
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      onBlur={() => {
+                        window.setTimeout(collapseIfEmpty, 120);
+                      }}
+                      className="min-h-[72px] resize-none border-0 bg-transparent px-0 py-1 text-[15px] text-foreground shadow-none placeholder:text-muted-foreground focus-visible:border-0 focus-visible:ring-0"
+                    />
+
+                    <div className="mt-2 flex justify-end">
                       <button
-                        type="button"
-                        onClick={expandComposer}
-                        className="flex-1 py-2 text-left text-[15px] text-[#6b7280] hover:text-[#9ca3af]"
+                        type="submit"
+                        disabled={!canSubmit}
+                        onMouseDown={(e) => e.preventDefault()}
+                        className={cn(
+                          "h-8 rounded-full px-4 text-sm font-bold transition-colors",
+                          canSubmit
+                            ? "bg-accent text-accent-foreground hover:bg-accent/90"
+                            : "cursor-not-allowed bg-secondary text-muted-foreground"
+                        )}
                       >
-                        Poster votre réponse
-                      </button>
-                      <button
-                        type="button"
-                        disabled
-                        className="h-8 shrink-0 rounded-full bg-[#1f2937] px-4 text-sm font-bold text-[#4b5563]"
-                      >
-                        Répondre
+                        {pending ? "..." : "Répondre"}
                       </button>
                     </div>
-                  ) : (
-                    <>
-                      <Textarea
-                        ref={textareaRef}
-                        name="content"
-                        placeholder="Poster votre réponse"
-                        maxLength={300}
-                        disabled={pending}
-                        rows={3}
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        onBlur={() => {
-                          window.setTimeout(collapseIfEmpty, 120);
-                        }}
-                        className="min-h-[72px] resize-none border-0 bg-transparent px-0 py-1 text-[15px] text-foreground shadow-none placeholder:text-[#6b7280] focus-visible:border-0 focus-visible:ring-0"
-                      />
+                  </>
+                )}
 
-                      <div className="mt-2 flex items-center justify-between border-t border-[#24101a] pt-2">
-                        <div className="flex items-center gap-3 text-[#6b7280]">
-                          {toolbarIcons.map(({ Icon, label }) => (
-                            <button
-                              key={label}
-                              type="button"
-                              disabled
-                              title="Bientôt"
-                              className="transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                              aria-label={label}
-                            >
-                              <Icon className="size-[18px]" strokeWidth={1.75} />
-                            </button>
-                          ))}
-                        </div>
-                        <button
-                          type="submit"
-                          disabled={!canSubmit}
-                          onMouseDown={(e) => e.preventDefault()}
-                          className={cn(
-                            "h-8 rounded-full px-4 text-sm font-bold transition-colors",
-                            canSubmit
-                              ? "bg-[#e11d48] text-white hover:bg-[#be123c]"
-                              : "cursor-not-allowed bg-[#1f2937] text-[#4b5563]"
-                          )}
-                        >
-                          {pending ? "..." : "Répondre"}
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {error && (
-                    <p className="mt-1 text-xs text-destructive">{error}</p>
-                  )}
-                </div>
+                {error && (
+                  <p className="mt-1 text-xs text-destructive">{error}</p>
+                )}
               </div>
             </div>
           </form>
         ) : (
-          <p className="text-sm text-[#6b7280]">
-            <Link
-              href="/login"
-              className="font-medium text-[#fb7185] hover:underline"
-            >
+          <p className="text-sm text-muted-foreground">
+            <Link href="/login" className="text-accent hover:underline">
               Connectez-vous
             </Link>{" "}
             pour répondre.
@@ -216,55 +169,46 @@ export function PostComments({
       </div>
 
       {comments.length === 0 ? (
-        <p className="py-3 text-sm text-[#6b7280]">
+        <p className="py-3 text-sm text-muted-foreground">
           Aucun commentaire pour l&apos;instant.
         </p>
       ) : (
-        <div className="divide-y divide-[#24101a]">
+        <div className="divide-y divide-border">
           {comments.map((c) => {
             const handle = `@${c.author.username.toLowerCase()}`;
             return (
               <article
                 key={c.id}
-                className="flex cursor-default items-start gap-3 py-3 transition-colors hover:bg-[#11141f]"
+                className="surface-hover flex items-start gap-3 py-3"
               >
                 <Link
                   href={`/profile/${c.author.username}`}
-                  className="shrink-0 cursor-pointer self-start"
+                  className="shrink-0 self-start"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Avatar className="size-10 rounded-lg after:rounded-lg">
+                  <Avatar className="size-10 rounded-full">
                     <AvatarImage
                       src={c.author.avatar_url ?? undefined}
                       alt={c.author.username}
-                      className="rounded-lg object-cover"
+                      className="rounded-full object-cover"
                     />
-                    <AvatarFallback className="rounded-lg bg-[#1a0c16] text-xs text-[#fda4af]">
+                    <AvatarFallback className="rounded-full bg-secondary text-xs text-muted-foreground">
                       {c.author.username.slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1 text-[15px]">
                     <Link
                       href={`/profile/${c.author.username}`}
-                      className="cursor-pointer font-bold text-foreground hover:text-[#fda4af]"
+                      className="font-bold text-foreground hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {c.author.username}
                     </Link>
-                    {c.author.is_npc ? (
-                      <Badge className="h-5 rounded border-0 bg-[#5b21b6] px-1.5 text-[10px] font-bold uppercase text-white hover:bg-[#5b21b6]">
-                        NPC
-                      </Badge>
-                    ) : (
-                      <Badge className="h-5 rounded border-0 bg-[#e11d48] px-1.5 text-[10px] font-bold uppercase text-white hover:bg-[#e11d48]">
-                        Humain
-                      </Badge>
-                    )}
-                    <span className="text-sm text-[#6b7280]">{handle}</span>
-                    <span className="text-sm text-[#6b7280]">·</span>
-                    <span className="text-sm text-[#6b7280]">
+                    <span className="text-muted-foreground">{handle}</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground">
                       {formatRelativeTimeShort(c.created_at, referenceNowMs)}
                     </span>
                     <CommentDeleteButton

@@ -21,10 +21,10 @@ export function SearchBar() {
       onSubmit={handleSubmit}
       className="relative mx-auto hidden max-w-md flex-1 md:block"
     >
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
-        placeholder="Rechercher un NPC, un sujet ou un #hashtag..."
-        className="h-10 border-border bg-card pl-10"
+        placeholder="Rechercher"
+        className="h-10 rounded-full border-0 bg-secondary pl-11 text-[15px] placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-accent"
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />

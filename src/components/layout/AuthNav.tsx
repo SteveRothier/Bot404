@@ -24,7 +24,10 @@ export function AuthNav({ user, profile }: Props) {
   if (!user) {
     return (
       <Link href="/login">
-        <Button size="sm" variant="outline" className="border-primary/40">
+        <Button
+          size="sm"
+          className="rounded-full bg-foreground px-4 font-bold text-background hover:bg-foreground/90"
+        >
           Connexion
         </Button>
       </Link>
@@ -34,21 +37,23 @@ export function AuthNav({ user, profile }: Props) {
   const avatar =
     profile?.avatar_url ??
     `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${user.id}`;
-  const name = profile?.username ?? "USER_404";
 
   return (
     <div className="flex items-center gap-2">
-      <Link href={profile ? `/profile/${profile.username}` : "/"} className="flex items-center gap-2">
-        <Avatar className="h-9 w-9 border border-primary/40">
+      <Link href={profile ? `/profile/${profile.username}` : "/"}>
+        <Avatar className="h-9 w-9">
           <AvatarImage src={avatar} />
-          <AvatarFallback>{name.slice(0, 2)}</AvatarFallback>
+          <AvatarFallback className="bg-secondary text-xs">
+            {(profile?.username ?? "U").slice(0, 2)}
+          </AvatarFallback>
         </Avatar>
-        <div className="hidden lg:block">
-          <p className="text-sm font-semibold">{name}</p>
-          <p className="text-xs text-muted-foreground">Humain confirmé</p>
-        </div>
       </Link>
-      <Button size="sm" variant="ghost" onClick={signOut} className="text-xs">
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={signOut}
+        className="hidden text-sm text-muted-foreground sm:inline-flex"
+      >
         Déco
       </Button>
     </div>

@@ -30,10 +30,10 @@ export function FollowButton({
       <Button
         size="sm"
         variant="outline"
-        className="border-[#34121b] text-[#fda4af]"
+        className="rounded-full border-border font-bold"
         onClick={() => router.push("/login")}
       >
-        Se connecter pour suivre
+        Se connecter
       </Button>
     );
   }
@@ -53,10 +53,10 @@ export function FollowButton({
         });
       }}
       className={cn(
-        "font-semibold",
+        "rounded-full px-4 font-bold",
         following
-          ? "border border-[#34121b] bg-transparent text-[#fda4af] hover:bg-[#11141f]"
-          : "border-0 bg-[#e11d48] text-white hover:bg-[#be123c]"
+          ? "border border-border bg-transparent text-foreground hover:bg-secondary"
+          : "bg-foreground text-background hover:bg-foreground/90"
       )}
     >
       {pending ? "..." : following ? "Abonné" : "Suivre"}

@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { NpcNextIn } from "@/components/widgets/NpcNextIn";
 import { OllamaStatusBadge } from "@/components/widgets/OllamaStatusBadge";
 import { checkOllamaStatus } from "@/lib/ollama";
@@ -19,20 +18,14 @@ type Props = {
 function StatRow({
   label,
   value,
-  valueClassName,
 }: {
   label: string;
   value: React.ReactNode;
-  valueClassName?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-sm text-[#9ca3af]">{label}</span>
-      <span
-        className={`font-mono text-sm font-semibold text-foreground ${valueClassName ?? ""}`}
-      >
-        {value}
-      </span>
+    <div className="flex items-center justify-between gap-2 py-1">
+      <span className="text-[15px] text-muted-foreground">{label}</span>
+      <span className="text-[15px] font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -45,29 +38,23 @@ export async function NetworkSummary({ stats }: Props) {
   ]);
 
   return (
-    <Card className="border-[#2b1117] bg-[#0b0a13]">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9ca3af]">
-          Réseau
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <section className="rounded-2xl bg-secondary/50 p-4">
+      <h2 className="mb-3 text-xl font-bold text-foreground">Réseau</h2>
+      <div className="space-y-0.5">
         <StatRow
           label="NPC"
           value={stats.npcCount.toLocaleString("fr-FR")}
-          valueClassName="text-[#c4b5fd]"
         />
         <StatRow
           label="Humains"
           value={stats.humanCount.toLocaleString("fr-FR")}
-          valueClassName="text-[#fb7185]"
         />
         <StatRow
           label="Posts / 24h"
           value={stats.postsLast24h.toLocaleString("fr-FR")}
         />
         <StatRow
-          label="Posts NPC"
+          label="Prochain post NPC"
           value={
             <NpcNextIn
               intervalMinutes={NPC_POST_INTERVAL_MINUTES}
@@ -76,7 +63,7 @@ export async function NetworkSummary({ stats }: Props) {
           }
         />
         <StatRow
-          label="Commentaires NPC"
+          label="Prochain commentaire"
           value={
             <NpcNextIn
               intervalMinutes={NPC_COMMENT_INTERVAL_MINUTES}
@@ -84,13 +71,13 @@ export async function NetworkSummary({ stats }: Props) {
             />
           }
         />
-        <div className="border-t border-[#24101a] pt-3">
-          <OllamaStatusBadge
-            initialModel={ollama.model}
-            initialOnline={ollama.online}
-          />
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="mt-4 border-t border-border pt-3">
+        <OllamaStatusBadge
+          initialModel={ollama.model}
+          initialOnline={ollama.online}
+        />
+      </div>
+    </section>
   );
 }

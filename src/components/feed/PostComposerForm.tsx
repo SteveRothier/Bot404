@@ -1,21 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  BarChart3,
-  Calendar,
-  ChevronDown,
-  Globe,
-  Image,
-  Smile,
-  TriangleAlert,
-  Film,
-} from "lucide-react";
 import Link from "next/link";
+import {
+  CalendarClock,
+  CircleSlash,
+  Flag,
+  Image,
+  List,
+  MapPin,
+  Smile,
+  type LucideIcon,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createPost } from "@/app/actions/posts";
+import { cn } from "@/lib/utils";
 import type { Profile } from "@/lib/supabase/types";
 
 type Props = {
@@ -23,14 +24,63 @@ type Props = {
   profile: Profile | null;
 };
 
-const toolbarIcons = [
-  { Icon: Image, label: "Image" },
-  { Icon: Film, label: "GIF" },
-  { Icon: BarChart3, label: "Sondage" },
-  { Icon: Smile, label: "Emoji" },
-  { Icon: TriangleAlert, label: "Alerte" },
-  { Icon: Calendar, label: "Calendrier" },
-] as const;
+const composerTools: { icon: LucideIcon; label: string }[] = [
+  { icon: Image, label: "Média" },
+  { icon: CircleSlash, label: "Sondage" },
+  { icon: List, label: "Liste" },
+  { icon: Smile, label: "Emoji" },
+  { icon: CalendarClock, label: "Programmer" },
+  { icon: MapPin, label: "Lieu" },
+  { icon: Flag, label: "Signaler" },
+];
+
+function ComposerToolbar() {
+  return (
+    <div className="-ml-1.5 flex flex-wrap items-center gap-0.5">
+      <ComposerToolButton icon={Image} label="Média" />
+      <ComposerGifButton />
+      {composerTools.slice(1).map((tool) => (
+        <ComposerToolButton key={tool.label} icon={tool.icon} label={tool.label} />
+      ))}
+    </div>
+  );
+}
+
+function ComposerToolButton({
+  icon: Icon,
+  label,
+}: {
+  icon: LucideIcon;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled
+      aria-label={label}
+      title={`${label} (bientôt)`}
+      className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-default disabled:opacity-100"
+    >
+      <Icon className="size-[18px]" strokeWidth={1.75} />
+    </button>
+  );
+}
+
+function ComposerGifButton() {
+  return (
+    <button
+      type="button"
+      disabled
+      aria-label="GIF"
+      title="GIF (bientôt)"
+      className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-default disabled:opacity-100"
+    >
+      <span className="flex size-[18px] items-center justify-center rounded border border-current text-[9px] font-bold leading-none">
+        GIF
+      </span>
+    </button>
+  );
+}
 
 export function PostComposerForm({ user, profile }: Props) {
   const [content, setContent] = useState("");
@@ -57,87 +107,53 @@ export function PostComposerForm({ user, profile }: Props) {
   }
 
   return (
-    <section className="pb-4">
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-xl border border-[#24101a] bg-[#0c0e16] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)] transition-colors hover:border-[#34121b] hover:bg-[#11141f]"
-      >
-        <div className="flex gap-3">
-          <Avatar className="size-12 shrink-0 rounded-lg after:rounded-lg">
-            <AvatarImage
-              src={avatar}
-              className="rounded-lg object-cover"
-            />
-            <AvatarFallback className="rounded-lg bg-[#1a0c16] text-xs text-[#fda4af]">
-              {profile?.username?.slice(0, 2) ?? "??"}
-            </AvatarFallback>
-          </Avatar>
+    <section className="border-b border-border px-4 py-4">
+      <form onSubmit={handleSubmit} className="flex items-start gap-3">
+        <Avatar className="size-10 shrink-0 rounded-lg">
+          <AvatarImage src={avatar} className="rounded-lg object-cover" />
+          <AvatarFallback className="rounded-lg bg-secondary text-xs text-muted-foreground">
+            {profile?.username?.slice(0, 2) ?? "??"}
+          </AvatarFallback>
+        </Avatar>
 
-          <div className="min-w-0 flex-1">
-            <div className="relative">
-              <Textarea
-                placeholder="Quoi de neuf dans ce monde qui s'effondre ?"
-                className="min-h-[88px] resize-none border-0 bg-transparent px-3 py-3 pr-10 text-[15px] text-foreground shadow-none placeholder:text-[#6b7280] focus-visible:border-0 focus-visible:ring-0"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                maxLength={500}
-                disabled={pending || !user}
-              />
-              <span className="pointer-events-none absolute bottom-3 right-3 text-[11px] text-[#4b5563]">
-                {content.length}
-              </span>
-            </div>
+        <div className="min-w-0 flex-1">
+          <Textarea
+            placeholder="Émettre un signal…"
+            className="min-h-[52px] resize-none border-0 bg-transparent px-1 pb-3 pt-2 text-[17px] leading-6 text-foreground shadow-none placeholder:text-muted-foreground focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            maxLength={500}
+            disabled={pending || !user}
+          />
 
-            {error && (
-              <p className="mt-1 text-sm text-destructive">{error}</p>
-            )}
+          {error && (
+            <p className="mt-1 px-1 text-sm text-destructive">{error}</p>
+          )}
 
-            <div className="mt-3 flex items-center justify-between border-t border-[#24101a] pt-3">
-              <div className="flex items-center gap-3 text-[#6b7280]">
-                {toolbarIcons.map(({ Icon, label }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    disabled
-                    title="Bientôt"
-                    className="transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label={label}
-                  >
-                    <Icon className="size-[18px]" strokeWidth={1.75} />
-                  </button>
-                ))}
-              </div>
+          <div className="mt-1 flex items-center justify-between gap-3 px-1 pb-0.5">
+            <ComposerToolbar />
 
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  disabled
-                  title="Bientôt"
-                  className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#9ca3af] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Globe className="size-3.5" />
-                  Public
-                  <ChevronDown className="size-3.5" />
-                </button>
-
-                {user ? (
-                  <Button
-                    type="submit"
-                    disabled={pending || !content.trim()}
-                    className="h-9 rounded-lg bg-[#e11d48] px-5 text-xs font-bold uppercase tracking-wide text-white hover:bg-[#be123c]"
-                  >
-                    {pending ? "..." : "Poster"}
-                  </Button>
-                ) : (
-                  <Link
-                    href="/login"
-                    className="inline-flex h-9 items-center justify-center rounded-lg bg-[#e11d48] px-5 text-xs font-bold uppercase tracking-wide text-white hover:bg-[#be123c]"
-                  >
-                    Poster
-                  </Link>
+            {user ? (
+              <Button
+                type="submit"
+                disabled={pending || !content.trim()}
+                className={cn(
+                  "h-9 shrink-0 rounded-full px-5 text-[15px] font-bold transition-colors",
+                  content.trim() && !pending
+                    ? "bg-accent text-accent-foreground hover:bg-accent/90"
+                    : "bg-accent/40 text-accent-foreground/70 hover:bg-accent/40"
                 )}
-              </div>
-            </div>
+              >
+                {pending ? "..." : "Émettre"}
+              </Button>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-accent px-5 text-[15px] font-bold text-accent-foreground hover:bg-accent/90"
+              >
+                Émettre
+              </Link>
+            )}
           </div>
         </div>
       </form>

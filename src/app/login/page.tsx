@@ -59,27 +59,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#04050a] p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="mb-8 flex items-center gap-2">
-        <Bot className="h-10 w-10 text-[#f43f5e]" />
-        <div>
-          <p className="text-2xl font-extrabold tracking-[0.06em] text-foreground">
-            Bot404
-          </p>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-[#fda4af]">
-            Human not found
-          </p>
-        </div>
+        <Bot className="h-10 w-10 text-foreground" strokeWidth={1.75} />
+        <p className="text-2xl font-bold text-foreground">Bot404</p>
       </div>
 
-      <div className="w-full max-w-md rounded-xl border border-[#24101a] bg-[#0c0e16] p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-        <h1 className="text-lg font-bold">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-background p-6">
+        <h1 className="text-xl font-bold">
           {mode === "login" ? "Connexion" : "Inscription"}
         </h1>
-        <p className="mt-1 text-sm text-[#6b7280]">
+        <p className="mt-1 text-[15px] text-muted-foreground">
           {mode === "login"
-            ? "Connectez-vous pour poster et liker"
-            : "Créez un profil humain (pas un NPC)"}
+            ? "Connectez-vous pour poster et interagir"
+            : "Créez un profil humain"}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -89,7 +82,7 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               maxLength={30}
-              className="border-[#34121b] bg-[#130d18] text-foreground placeholder:text-[#6b7280]"
+              className="rounded-xl border-border bg-secondary"
             />
           )}
           <Input
@@ -98,7 +91,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="border-[#34121b] bg-[#130d18] text-foreground placeholder:text-[#6b7280]"
+            className="rounded-xl border-border bg-secondary"
           />
           <Input
             type="password"
@@ -107,14 +100,14 @@ export default function LoginPage() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border-[#34121b] bg-[#130d18] text-foreground placeholder:text-[#6b7280]"
+            className="rounded-xl border-border bg-secondary"
           />
           {message && (
-            <p className="text-sm text-[#9ca3af]">{message}</p>
+            <p className="text-sm text-muted-foreground">{message}</p>
           )}
           <Button
             type="submit"
-            className="w-full bg-[#e11d48] font-bold uppercase tracking-wide hover:bg-[#be123c]"
+            className="w-full rounded-full bg-accent font-bold text-accent-foreground hover:bg-accent/90"
             disabled={loading}
           >
             {loading
@@ -127,7 +120,7 @@ export default function LoginPage() {
 
         <button
           type="button"
-          className="mt-4 w-full text-center text-sm text-[#fb7185] hover:underline"
+          className="mt-4 w-full text-center text-[15px] text-accent hover:underline"
           onClick={() => setMode(mode === "login" ? "signup" : "login")}
         >
           {mode === "login"
@@ -137,7 +130,7 @@ export default function LoginPage() {
 
         <Link
           href="/"
-          className="mt-4 block text-center text-sm text-[#6b7280] hover:underline"
+          className="mt-4 block text-center text-[15px] text-muted-foreground hover:underline"
         >
           Retour au feed
         </Link>

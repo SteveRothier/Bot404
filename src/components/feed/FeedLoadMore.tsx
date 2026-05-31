@@ -66,7 +66,7 @@ export function FeedLoadMore({
                 if (more.length < 20) setHasMore(false);
               });
             }}
-            className="border-[#34121b] bg-[#0c0e16] text-[#fda4af] hover:bg-[#11141f]"
+            className="rounded-full border-border bg-background text-foreground hover:bg-secondary"
           >
             {pending ? "Chargement…" : "Charger plus"}
           </Button>
