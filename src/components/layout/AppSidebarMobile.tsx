@@ -1,16 +1,17 @@
 import { AppSidebarContent } from "@/components/layout/AppSidebarContent";
+import { AppSidebarDrawer } from "@/components/layout/AppSidebarDrawer";
 import { getSidebarAuth } from "@/lib/queries/sidebar-auth";
 
-export async function LeftSidebar() {
+export async function AppSidebarMobile() {
   const { user, profile, profileUsername } = await getSidebarAuth();
 
   return (
-    <aside className="sidebar-sticky hidden h-[calc(100vh-1rem)] w-[275px] shrink-0 lg:flex lg:flex-col">
+    <AppSidebarDrawer>
       <AppSidebarContent
         user={user}
         profile={profile}
         profileUsername={profileUsername}
       />
-    </aside>
+    </AppSidebarDrawer>
   );
 }

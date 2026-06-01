@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FormEvent, useState } from "react";
+import { useNavDrawerClose } from "@/components/layout/NavDrawerContext";
 
 export function SearchBar() {
   const router = useRouter();
+  const closeDrawer = useNavDrawerClose();
   const [q, setQ] = useState("");
 
   function handleSubmit(e: FormEvent) {
@@ -14,13 +16,11 @@ export function SearchBar() {
     const trimmed = q.trim();
     if (trimmed.length < 2) return;
     router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    closeDrawer?.();
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="relative mx-auto hidden max-w-md flex-1 md:block"
-    >
+    <form onSubmit={handleSubmit} className="relative w-full">
       <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         placeholder="Rechercher"

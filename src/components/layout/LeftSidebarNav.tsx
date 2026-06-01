@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bookmark, Compass, Home, User } from "lucide-react";
+import { useNavDrawerClose } from "@/components/layout/NavDrawerContext";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -30,6 +31,7 @@ function buildNavItems(profileUsername?: string | null): NavItem[] {
 
 export function LeftSidebarNav({ profileUsername = null }: Props) {
   const pathname = usePathname();
+  const closeDrawer = useNavDrawerClose();
   const navItems = buildNavItems(profileUsername);
 
   return (
@@ -46,6 +48,7 @@ export function LeftSidebarNav({ profileUsername = null }: Props) {
           <Link
             key={item.label}
             href={item.href}
+            onClick={() => closeDrawer?.()}
             className={cn(
               "surface-hover flex items-center gap-4 rounded-lg px-3 py-3 text-[15px] text-foreground",
               active && "font-bold"

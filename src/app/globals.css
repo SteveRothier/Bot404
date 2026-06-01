@@ -118,7 +118,6 @@
   --sidebar-accent-foreground: #f0e8ec;
   --sidebar-border: #2a1824;
   --sidebar-ring: #f43f5e;
-  --header-height: 3.3125rem;
 }
 
 @layer base {
@@ -146,9 +145,8 @@
 @layer utilities {
   .sidebar-sticky {
     position: sticky;
-    top: var(--header-height);
+    top: 0.5rem;
     align-self: start;
-    padding-top: 0.5rem;
   }
 
   .divider {
