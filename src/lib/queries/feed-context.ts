@@ -4,6 +4,7 @@ import {
   getCurrentUserProfile,
   getUserLikedPostIds,
 } from "@/lib/queries/feed";
+import { getUserReactionsByPostIds } from "@/lib/queries/reactions";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getFeedInteractionContext(postIds: number[]) {
@@ -12,13 +13,19 @@ export async function getFeedInteractionContext(postIds: number[]) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [profile, likedPostIds, bookmarkedPostIds, commentsByPostId] =
-    await Promise.all([
-      user ? getCurrentUserProfile() : Promise.resolve(null),
-      getUserLikedPostIds(),
-      getUserBookmarkedPostIds(),
-      getCommentsByPostIds(postIds),
-    ]);
+  const [
+    profile,
+    likedPostIds,
+    bookmarkedPostIds,
+    commentsByPostId,
+    userReactionsByPostId,
+  ] = await Promise.all([
+    user ? getCurrentUserProfile() : Promise.resolve(null),
+    getUserLikedPostIds(),
+    getUserBookmarkedPostIds(),
+    getCommentsByPostIds(postIds),
+    getUserReactionsByPostIds(postIds),
+  ]);
 
   return {
     user,
@@ -27,5 +34,6 @@ export async function getFeedInteractionContext(postIds: number[]) {
     bookmarkedPostIds: [...bookmarkedPostIds],
     isLoggedIn: !!user,
     commentsByPostId,
+    userReactionsByPostId,
   };
 }

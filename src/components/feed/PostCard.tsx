@@ -5,19 +5,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { BookmarkButton } from "@/components/feed/BookmarkButton";
-import { LikeButton } from "@/components/feed/LikeButton";
+import { PostReactions } from "@/components/feed/PostReactions";
 import { PostCardMenu } from "@/components/feed/PostCardMenu";
 import { PostContent } from "@/components/feed/PostContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PostComments } from "@/components/feed/PostComments";
 import { formatCount, formatRelativeTimeShort } from "@/lib/format";
+import { POST_TYPE_LABELS } from "@/lib/post-types";
 import { cn } from "@/lib/utils";
-import type { CommentWithAuthor, PostWithAuthor, Profile } from "@/lib/supabase/types";
+import type {
+  CommentWithAuthor,
+  PostWithAuthor,
+  Profile,
+  ReactionKind,
+} from "@/lib/supabase/types";
 
 type Props = {
   post: PostWithAuthor;
   likedByUser?: boolean;
   bookmarkedByUser?: boolean;
+  userReaction?: ReactionKind | null;
   isLoggedIn?: boolean;
   profile?: Profile | null;
   userId?: string;
@@ -30,6 +37,7 @@ export function PostCard({
   post,
   likedByUser = false,
   bookmarkedByUser = false,
+  userReaction = null,
   isLoggedIn = false,
   profile = null,
   userId,
@@ -39,6 +47,7 @@ export function PostCard({
 }: Props) {
   const router = useRouter();
   const { author } = post;
+  const typeLabel = POST_TYPE_LABELS[post.post_type ?? "message"];
   const handle = `@${author.username.toLowerCase()}`;
   const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
   const canDelete = isLoggedIn && userId === post.author_id;
@@ -93,6 +102,33 @@ export function PostCard({
                   <span className="text-meta text-muted-foreground">npc</span>
                 </>
               )}
+              {author.faction && (
+                <>
+                  <span className="text-muted-foreground">·</span>
+                  <span
+                    className="text-meta"
+                    style={{ color: author.faction.color }}
+                  >
+                    {author.faction.name}
+                  </span>
+                </>
+              )}
+              {post.sector_code && (
+                <>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-meta text-muted-foreground">
+                    {post.sector_code}
+                  </span>
+                </>
+              )}
+              {typeLabel && (
+                <>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-meta text-muted-foreground">
+                    {typeLabel}
+                  </span>
+                </>
+              )}
               <span className="text-muted-foreground">·</span>
               <Link
                 href={`/post/${post.id}`}
@@ -107,6 +143,7 @@ export function PostCard({
           {defaultCommentsOpen ? (
             <PostContent
               content={post.content}
+              postType={post.post_type}
               className="mt-1 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
             />
           ) : (
@@ -124,6 +161,7 @@ export function PostCard({
             >
               <PostContent
                 content={post.content}
+                postType={post.post_type}
                 className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
               />
             </div>
@@ -143,10 +181,12 @@ export function PostCard({
               <MessageCircle className="size-[18px]" strokeWidth={1.75} />
               <span>{formatCount(post.comment_count ?? 0)}</span>
             </button>
-            <LikeButton
+            <PostReactions
               postId={post.id}
-              likesCount={post.likes_count}
-              likedByUser={likedByUser}
+              relayCount={post.relay_count ?? 0}
+              amplifyCount={post.amplify_count ?? 0}
+              flagCount={post.flag_count ?? 0}
+              userReaction={userReaction}
               isLoggedIn={isLoggedIn}
             />
             <BookmarkButton

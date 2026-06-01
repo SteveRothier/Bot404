@@ -2,22 +2,25 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ComposerToolbar } from "@/components/feed/ComposerToolbar";
 import {
-  composerSubmitClassName,
-  composerTextareaClassName,
-} from "@/components/feed/composer-styles";
+  composerPlaceholderForFeedTab,
+  postTypeForFeedTab,
+  type FeedTab,
+} from "@/components/feed/FeedTabs";
+import { ComposerTextarea } from "@/components/feed/ComposerTextarea";
+import { ComposerToolbar } from "@/components/feed/ComposerToolbar";
+import { composerSubmitClassName } from "@/components/feed/composer-styles";
 import { createPost } from "@/app/actions/posts";
 import type { Profile } from "@/lib/supabase/types";
 
 type Props = {
   user: { id: string; email?: string } | null;
   profile: Profile | null;
+  feedTab: FeedTab;
 };
 
-export function PostComposerForm({ user, profile }: Props) {
+export function PostComposerForm({ user, profile, feedTab }: Props) {
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -29,6 +32,8 @@ export function PostComposerForm({ user, profile }: Props) {
       : "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=guest");
 
   const canSubmit = !!user && content.trim().length > 0 && !pending;
+  const disabled = pending || !user;
+  const placeholder = composerPlaceholderForFeedTab(feedTab);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,11 +41,16 @@ export function PostComposerForm({ user, profile }: Props) {
     setError(null);
     const fd = new FormData();
     fd.set("content", content);
+    fd.set("post_type", postTypeForFeedTab(feedTab));
     startTransition(async () => {
       const result = await createPost(fd);
       if (result.error) setError(result.error);
       else setContent("");
     });
+  }
+
+  function appendEmoji(emoji: string) {
+    setContent((c) => c + emoji);
   }
 
   return (
@@ -54,13 +64,12 @@ export function PostComposerForm({ user, profile }: Props) {
         </Avatar>
 
         <div className="min-w-0 flex-1">
-          <Textarea
-            placeholder="Émettre un signal…"
-            className={composerTextareaClassName}
+          <ComposerTextarea
+            placeholder={placeholder}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={setContent}
             maxLength={500}
-            disabled={pending || !user}
+            disabled={disabled}
           />
 
           {error && (
@@ -68,7 +77,10 @@ export function PostComposerForm({ user, profile }: Props) {
           )}
 
           <div className="mt-1 flex items-center justify-between gap-3 px-1 pb-0.5">
-            <ComposerToolbar />
+            <ComposerToolbar
+              onEmojiSelect={appendEmoji}
+              disabled={disabled}
+            />
 
             {user ? (
               <button
@@ -79,10 +91,7 @@ export function PostComposerForm({ user, profile }: Props) {
                 {pending ? "..." : "Émettre"}
               </button>
             ) : (
-              <Link
-                href="/login"
-                className={composerSubmitClassName(true)}
-              >
+              <Link href="/login" className={composerSubmitClassName(true)}>
                 Émettre
               </Link>
             )}

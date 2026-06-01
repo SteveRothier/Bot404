@@ -16,6 +16,7 @@ function contentMatches(content: string, patterns: RegExp[]): boolean {
 }
 
 export function isRumorPost(post: PostWithAuthor): boolean {
+  if (post.post_type === "rumor") return true;
   if (RUMOR_USERNAMES.has(post.author.username)) return true;
 
   const topics = authorTopics(post);
@@ -31,6 +32,7 @@ export function isRumorPost(post: PostWithAuthor): boolean {
 }
 
 export function isTheoryPost(post: PostWithAuthor): boolean {
+  if (post.post_type === "theory") return true;
   if (THEORY_USERNAMES.has(post.author.username)) return true;
 
   const topics = authorTopics(post);

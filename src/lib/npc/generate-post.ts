@@ -1,49 +1,16 @@
+import { processPostFactionEffects } from "@/lib/factions/simulation";
 import { checkOllamaStatus } from "@/lib/ollama";
+import {
+  buildNpcPostPrompt,
+  npcPostUserMessage,
+  pickRandomNpcPostType,
+} from "@/lib/post-types";
+import { ollamaChat } from "@/lib/npc/ollama";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Personality, Profile } from "@/lib/supabase/types";
-
-const FORBIDDEN = /\b(kill|suicide|nazi)\b/i;
-
-async function ollamaChat(system: string, user: string): Promise<string | null> {
-  const baseUrl = process.env.OLLAMA_URL ?? "http://127.0.0.1:11434";
-  const model = process.env.OLLAMA_MODEL ?? "qwen3.5:4b";
-
-  const response = await fetch(`${baseUrl}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      stream: false,
-      think: false,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-    signal: AbortSignal.timeout(120_000),
-  });
-
-  if (!response.ok) return null;
-
-  const data = (await response.json()) as {
-    message?: { content?: string };
-  };
-  const text = data?.message?.content?.trim();
-  if (!text || FORBIDDEN.test(text)) return null;
-  return text.slice(0, 500);
-}
-
-function buildNpcPrompt(npc: Profile) {
-  const p = (npc.personality ?? {}) as Personality;
-  return `Tu es ${npc.username}, un NPC sur un réseau social fictif.
-Personnalité: ${p.personality ?? "neutre"}
-Style: ${p.writing_style ?? "court"}
-Sujets: ${(p.topics ?? ["IA"]).join(", ")}
-Écris UN seul post (max 280 caractères), sarcastique ou drôle, avec 1-2 hashtags. Français.`;
-}
+import type { Profile } from "@/lib/supabase/types";
 
 export type GenerateNpcPostResult =
-  | { ok: true; author: string; postId: number }
+  | { ok: true; author: string; postId: number; postType: string }
   | { ok: false; error: string };
 
 export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
@@ -69,9 +36,16 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
   }
 
   const npc = npcs[Math.floor(Math.random() * npcs.length)] as Profile;
+  const postType = pickRandomNpcPostType();
+  const sectorCodes = ["1A", "2B", "3C", "4D", "5E", "6F", "7G", "8H"];
+  const sector_code =
+    Math.random() < 0.4
+      ? sectorCodes[Math.floor(Math.random() * sectorCodes.length)]
+      : null;
+
   const content = await ollamaChat(
-    buildNpcPrompt(npc),
-    "Écris un nouveau post pour le feed."
+    buildNpcPostPrompt(npc, postType),
+    npcPostUserMessage(postType)
   );
 
   if (!content) {
@@ -86,6 +60,8 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     .insert({
       author_id: npc.id,
       content,
+      post_type: postType,
+      sector_code,
       likes_count: Math.floor(Math.random() * 500) + 50,
     })
     .select("id")
@@ -103,5 +79,12 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     .update({ popularity_score: (npc.popularity_score ?? 0) + 1 })
     .eq("id", npc.id);
 
-  return { ok: true, author: npc.username, postId: post.id };
+  await processPostFactionEffects(supabase, post.id);
+
+  return {
+    ok: true,
+    author: npc.username,
+    postId: post.id,
+    postType,
+  };
 }

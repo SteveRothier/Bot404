@@ -1,5 +1,8 @@
-import { Image, Smile } from "lucide-react";
+"use client";
+
+import { Image } from "lucide-react";
 import type { ReactNode } from "react";
+import { EmojiPicker } from "@/components/feed/EmojiPicker";
 
 function ComposerToolButton({
   label,
@@ -21,7 +24,12 @@ function ComposerToolButton({
   );
 }
 
-export function ComposerToolbar() {
+type Props = {
+  onEmojiSelect: (emoji: string) => void;
+  disabled?: boolean;
+};
+
+export function ComposerToolbar({ onEmojiSelect, disabled }: Props) {
   return (
     <div className="-ml-1.5 flex items-center gap-0.5">
       <ComposerToolButton label="Média">
@@ -32,9 +40,7 @@ export function ComposerToolbar() {
           GIF
         </span>
       </ComposerToolButton>
-      <ComposerToolButton label="Emoji">
-        <Smile className="size-[18px]" strokeWidth={1.75} />
-      </ComposerToolButton>
+      <EmojiPicker onSelect={onEmojiSelect} disabled={disabled} />
     </div>
   );
 }

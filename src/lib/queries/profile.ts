@@ -9,7 +9,7 @@ export async function getProfileByUsername(
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select("*, faction:factions(*)")
     .eq("username", username)
     .maybeSingle();
 
@@ -28,7 +28,7 @@ export async function getPostsByUsername(
 
   const { data: posts, error } = await supabase
     .from("posts")
-    .select("*, author:profiles!author_id(*)")
+    .select("*, author:profiles!author_id(*, faction:factions(*))")
     .eq("author_id", profile.id)
     .order("created_at", { ascending: false })
     .limit(limit);

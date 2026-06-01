@@ -1,5 +1,10 @@
 import { PostCard } from "@/components/feed/PostCard";
-import type { CommentWithAuthor, PostWithAuthor, Profile } from "@/lib/supabase/types";
+import type {
+  CommentWithAuthor,
+  PostWithAuthor,
+  Profile,
+  ReactionKind,
+} from "@/lib/supabase/types";
 
 type Props = {
   posts: PostWithAuthor[];
@@ -9,6 +14,7 @@ type Props = {
   profile?: Profile | null;
   userId?: string;
   commentsByPostId?: Record<number, CommentWithAuthor[]>;
+  userReactionsByPostId?: Record<number, ReactionKind>;
   referenceNowMs?: number;
   emptyMessage?: string;
   defaultCommentsOpen?: boolean;
@@ -22,6 +28,7 @@ export function FeedList({
   profile = null,
   userId,
   commentsByPostId = {},
+  userReactionsByPostId = {},
   referenceNowMs = Date.now(),
   emptyMessage = "Aucun post pour l'instant.",
   defaultCommentsOpen = false,
@@ -42,6 +49,7 @@ export function FeedList({
           post={post}
           likedByUser={likedPostIds.includes(post.id)}
           bookmarkedByUser={bookmarkedPostIds.includes(post.id)}
+          userReaction={userReactionsByPostId[post.id] ?? null}
           isLoggedIn={isLoggedIn}
           profile={profile}
           userId={userId}

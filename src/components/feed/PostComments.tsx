@@ -3,16 +3,13 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { createComment } from "@/app/actions/posts";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentDeleteButton } from "@/components/feed/CommentDeleteButton";
+import { ComposerTextarea } from "@/components/feed/ComposerTextarea";
 import { ComposerToolbar } from "@/components/feed/ComposerToolbar";
 import { PostContent } from "@/components/feed/PostContent";
 import { formatRelativeTimeShort } from "@/lib/format";
-import {
-  composerSubmitClassName,
-  composerTextareaClassName,
-} from "@/components/feed/composer-styles";
+import { composerSubmitClassName } from "@/components/feed/composer-styles";
 import type { CommentWithAuthor, Profile } from "@/lib/supabase/types";
 
 type Props = {
@@ -104,14 +101,13 @@ export function PostComments({
               </Avatar>
 
               <div className="min-w-0 flex-1">
-                <Textarea
+                <ComposerTextarea
                   name="content"
                   placeholder="Émettre une réponse"
                   maxLength={300}
                   disabled={pending}
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className={composerTextareaClassName}
+                  onChange={setContent}
                 />
 
                 {error && (
@@ -119,7 +115,10 @@ export function PostComments({
                 )}
 
                 <div className="mt-1 flex items-center justify-between gap-3 px-1 pb-0.5">
-                  <ComposerToolbar />
+                  <ComposerToolbar
+                    onEmojiSelect={(emoji) => setContent((c) => c + emoji)}
+                    disabled={pending}
+                  />
 
                   <button
                     type="submit"

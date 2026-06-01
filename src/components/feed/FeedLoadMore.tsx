@@ -4,7 +4,12 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { loadMoreFeedPosts } from "@/app/actions/feed";
 import { FeedList } from "@/components/feed/FeedList";
-import type { CommentWithAuthor, PostWithAuthor, Profile } from "@/lib/supabase/types";
+import type {
+  CommentWithAuthor,
+  PostWithAuthor,
+  Profile,
+  ReactionKind,
+} from "@/lib/supabase/types";
 
 type Props = {
   initialPosts: PostWithAuthor[];
@@ -15,6 +20,7 @@ type Props = {
   profile: Profile | null;
   userId?: string;
   commentsByPostId: Record<number, CommentWithAuthor[]>;
+  userReactionsByPostId: Record<number, ReactionKind>;
   referenceNowMs: number;
 };
 
@@ -27,6 +33,7 @@ export function FeedLoadMore({
   profile,
   userId,
   commentsByPostId,
+  userReactionsByPostId,
   referenceNowMs,
 }: Props) {
   const [posts, setPosts] = useState(initialPosts);
@@ -46,6 +53,7 @@ export function FeedLoadMore({
         profile={profile}
         userId={userId}
         commentsByPostId={commentsByPostId}
+        userReactionsByPostId={userReactionsByPostId}
         referenceNowMs={referenceNowMs}
       />
       {hasMore && (

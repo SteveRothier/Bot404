@@ -1,8 +1,14 @@
 import { AppSidebarContent } from "@/components/layout/AppSidebarContent";
 import { AppSidebarDrawer } from "@/components/layout/AppSidebarDrawer";
+import { AppSidebarNetworkMobile } from "@/components/layout/AppSidebarNetworkMobile";
 import { getSidebarAuth } from "@/lib/queries/sidebar-auth";
+import type { NetworkStats } from "@/lib/supabase/types";
 
-export async function AppSidebarMobile() {
+type Props = {
+  stats: NetworkStats;
+};
+
+export async function AppSidebarMobile({ stats }: Props) {
   const { user, profile, profileUsername } = await getSidebarAuth();
 
   return (
@@ -12,6 +18,7 @@ export async function AppSidebarMobile() {
         profile={profile}
         profileUsername={profileUsername}
       />
+      <AppSidebarNetworkMobile stats={stats} />
     </AppSidebarDrawer>
   );
 }

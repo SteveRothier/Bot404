@@ -232,3 +232,37 @@
 {"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
 [01/06/2026 15:36:57] START comments 
 {"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 16:06:57] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 16:36:57] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 17:06:57] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 17:36:57] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 18:06:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 18:36:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 19:06:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 19:36:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 20:06:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 20:36:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 21:06:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 21:36:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 22:06:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 22:36:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 23:06:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[01/06/2026 23:36:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[02/06/2026 00:06:56] START comments 
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}

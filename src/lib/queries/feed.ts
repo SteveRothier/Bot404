@@ -5,9 +5,16 @@ import {
   getPostsFromFollowing,
   getSuggestedNpcs,
 } from "@/lib/queries/follows";
+import { getUserReactionsByPostIds } from "@/lib/queries/reactions";
+import { countActiveWorldEvents } from "@/lib/queries/world-events";
+import { computeNetworkState } from "@/lib/network-state";
 import { createClient } from "@/lib/supabase/server";
+
+const POST_WITH_AUTHOR =
+  "*, author:profiles!author_id(*, faction:factions(*))";
 import type {
   NetworkStats,
+  PostType,
   PostWithAuthor,
   Profile,
   TrendingSnapshot,
@@ -22,7 +29,7 @@ export async function getCurrentUserProfile(): Promise<Profile | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("*")
+    .select("*, faction:factions(*)")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -46,15 +53,21 @@ export async function getUserLikedPostIds(): Promise<Set<number>> {
 
 export async function getFeedPosts(
   limit = 50,
-  offset = 0
+  offset = 0,
+  postType?: PostType
 ): Promise<PostWithAuthor[]> {
   const supabase = await createClient();
 
-  const { data: posts, error } = await supabase
+  let query = supabase
     .from("posts")
-    .select("*, author:profiles!author_id(*)")
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .select(POST_WITH_AUTHOR)
+    .order("created_at", { ascending: false });
+
+  if (postType) {
+    query = query.eq("post_type", postType);
+  }
+
+  const { data: posts, error } = await query.range(offset, offset + limit - 1);
 
   if (error || !posts) return [];
 
@@ -66,7 +79,7 @@ export async function getPostById(id: number): Promise<PostWithAuthor | null> {
 
   const { data: post, error } = await supabase
     .from("posts")
-    .select("*, author:profiles!author_id(*)")
+    .select(POST_WITH_AUTHOR)
     .eq("id", id)
     .maybeSingle();
 
@@ -81,7 +94,7 @@ export async function getPopularPosts(limit = 50): Promise<PostWithAuthor[]> {
 
   const { data: posts, error } = await supabase
     .from("posts")
-    .select("*, author:profiles!author_id(*)")
+    .select(POST_WITH_AUTHOR)
     .order("likes_count", { ascending: false })
     .limit(limit);
 
@@ -96,33 +109,41 @@ export async function getHomeFeedBundle() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [recentPosts, popularPosts, likedPostIds, bookmarkedPostIds, followingPosts, suggestedNpcs] =
-    await Promise.all([
-      getFeedPosts(50),
-      getPopularPosts(),
-      getUserLikedPostIds(),
-      getUserBookmarkedPostIds(),
-      user ? getPostsFromFollowing(50) : Promise.resolve([]),
-      getSuggestedNpcs(3),
-    ]);
+  const [
+    recentPosts,
+    theoryPosts,
+    rumorPosts,
+    likedPostIds,
+    bookmarkedPostIds,
+    followingPosts,
+    suggestedNpcs,
+  ] = await Promise.all([
+    getFeedPosts(50),
+    getFeedPosts(50, 0, "theory"),
+    getFeedPosts(50, 0, "rumor"),
+    getUserLikedPostIds(),
+    getUserBookmarkedPostIds(),
+    user ? getPostsFromFollowing(50) : Promise.resolve([]),
+    getSuggestedNpcs(3),
+  ]);
 
-  const postIds = [
-    ...new Set([
-      ...recentPosts.map((p) => p.id),
-      ...popularPosts.map((p) => p.id),
-      ...followingPosts.map((p) => p.id),
-    ]),
-  ];
-  const commentsByPostId = await getCommentsByPostIds(postIds);
+  const allPosts = [...recentPosts, ...theoryPosts, ...rumorPosts, ...followingPosts];
+  const postIds = [...new Set(allPosts.map((p) => p.id))];
+  const [commentsByPostId, userReactionsByPostId] = await Promise.all([
+    getCommentsByPostIds(postIds),
+    getUserReactionsByPostIds(postIds),
+  ]);
 
   return {
     recentPosts,
-    popularPosts,
+    theoryPosts,
+    rumorPosts,
     followingPosts,
     suggestedNpcs,
     likedPostIds: [...likedPostIds],
     bookmarkedPostIds: [...bookmarkedPostIds],
     commentsByPostId,
+    userReactionsByPostId,
   };
 }
 
@@ -142,36 +163,50 @@ export async function getTrendingSnapshot(): Promise<TrendingSnapshot | null> {
 
 export async function getNetworkStats(): Promise<NetworkStats> {
   const supabase = await createClient();
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ count: npcCount }, { count: humanCount }, { count: postsCount }] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("is_npc", true),
-      supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("is_npc", false),
-      supabase
-        .from("posts")
-        .select("*", { count: "exact", head: true })
-        .gte(
-          "created_at",
-          new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        ),
-    ]);
+  const [
+    { count: npcCount },
+    { count: humanCount },
+    { count: postsCount },
+    { data: flaggedPosts },
+    activeEventsCount,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("is_npc", true),
+    supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("is_npc", false),
+    supabase
+      .from("posts")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", since24h),
+    supabase.from("posts").select("flag_count").gte("created_at", since24h),
+    countActiveWorldEvents(),
+  ]);
 
   const total = (npcCount ?? 0) + (humanCount ?? 0);
-  const humanPercent =
-    total > 0
-      ? ((humanCount ?? 0) / total * 100).toFixed(2)
-      : "0.03";
+  const humanPct = total > 0 ? (humanCount ?? 0) / total : 0.0003;
+  const humanPercent = (humanPct * 100).toFixed(2);
+  const totalFlags24h =
+    flaggedPosts?.reduce((sum, p) => sum + (p.flag_count ?? 0), 0) ?? 0;
+
+  const networkState = computeNetworkState({
+    humanPercent: humanPct,
+    flags24h: totalFlags24h,
+    activeEvents: activeEventsCount,
+  });
 
   return {
     npcCount: npcCount ?? 0,
     humanCount: humanCount ?? 0,
     postsLast24h: postsCount ?? 0,
     humanPercent,
+    networkState,
+    totalFlags24h,
+    activeEventsCount,
   };
 }

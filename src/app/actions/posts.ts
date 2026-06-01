@@ -1,10 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { processPostFactionEffects } from "@/lib/factions/simulation";
+import { isValidPostType } from "@/lib/post-types";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { PostType } from "@/lib/supabase/types";
 
 export async function createPost(formData: FormData) {
   const content = (formData.get("content") as string)?.trim();
+  const rawType = (formData.get("post_type") as string) ?? "message";
+  const post_type: PostType = isValidPostType(rawType) ? rawType : "message";
+
   if (!content || content.length > 500) {
     return { error: "Post invalide (max 500 caractères)." };
   }
@@ -18,13 +25,22 @@ export async function createPost(formData: FormData) {
     return { error: "Connectez-vous pour poster." };
   }
 
-  const { error } = await supabase.from("posts").insert({
-    author_id: user.id,
-    content,
-  });
+  const { data: post, error } = await supabase
+    .from("posts")
+    .insert({
+      author_id: user.id,
+      content,
+      post_type,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (post?.id) {
+    await processPostFactionEffects(createAdminClient(), post.id);
   }
 
   revalidatePath("/");

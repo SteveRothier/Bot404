@@ -9,7 +9,11 @@ export default async function MainLayout({
   const shell = await getShellData();
 
   return (
-    <AppShell stats={shell.stats} hashtags={shell.hashtags}>
+    <AppShell
+      stats={shell.stats}
+      hashtags={shell.hashtags}
+      factions={shell.factions}
+    >
       {children}
     </AppShell>
   );

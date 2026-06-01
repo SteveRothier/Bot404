@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bookmark, Compass, Home, User } from "lucide-react";
+import {
+  Archive,
+  Bookmark,
+  Compass,
+  FileSearch,
+  Flag,
+  Home,
+  LayoutDashboard,
+  Map,
+  User,
+} from "lucide-react";
 import { useNavDrawerClose } from "@/components/layout/NavDrawerContext";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +30,11 @@ function buildNavItems(profileUsername?: string | null): NavItem[] {
   return [
     { href: "/", label: "Signaux", icon: Home },
     { href: "/trending", label: "Explorer", icon: Compass },
+    { href: "/map", label: "Carte", icon: Map },
+    { href: "/factions", label: "Factions", icon: Flag },
+    { href: "/dossiers", label: "Dossiers", icon: FileSearch },
+    { href: "/archives", label: "Archives", icon: Archive },
+    { href: "/dashboard", label: "Tableau", icon: LayoutDashboard },
     profileUsername
       ? { href: `/profile/${profileUsername}`, label: "Profil", icon: User }
       : { href: "/login", label: "Profil", icon: User },
@@ -40,6 +55,7 @@ export function LeftSidebarNav({ profileUsername = null }: Props) {
         const Icon = item.icon;
         const active =
           item.href === pathname ||
+          (item.href === "/factions" && pathname.startsWith("/factions")) ||
           (item.href.startsWith("/profile/") &&
             pathname.startsWith("/profile/") &&
             !pathname.startsWith("/profile/edit"));

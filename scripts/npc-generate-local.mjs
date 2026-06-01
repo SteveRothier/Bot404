@@ -48,6 +48,41 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+function pickRandomNpcPostType() {
+  const r = Math.random();
+  if (r < 0.5) return "message";
+  if (r < 0.7) return "theory";
+  if (r < 0.85) return "signal";
+  return "rumor";
+}
+
+const TYPE_INSTRUCTIONS = {
+  message:
+    "Écris UN post de conversation (max 280 caractères), sarcastique ou drôle, avec 0-2 hashtags. Français.",
+  theory:
+    "Écris UNE théorie / hypothèse sur ce qui se passe dans le réseau (max 280 caractères). Ton analytique, un peu parano. 0-2 hashtags. Français.",
+  signal:
+    "Écris UN signal court (max 120 caractères) : fragments, chiffres, binaire partiel ou codes étranges. Style terminal. Pas de hashtag obligatoire. Français.",
+  rumor:
+    "Écris UNE rumeur (max 280 caractères) qui commence par « On dit que » ou équivalent. Ambigu, non vérifiable. 0-1 hashtag. Français.",
+};
+
+function buildNpcPostPrompt(npc, postType) {
+  const p = npc.personality ?? {};
+  return `Tu es ${npc.username}, un NPC sur le réseau dystopique Bot404.
+Personnalité: ${p.personality ?? "neutre"}
+Style: ${p.writing_style ?? "court"}
+Sujets: ${(p.topics ?? ["IA"]).join(", ")}
+${TYPE_INSTRUCTIONS[postType]}`;
+}
+
+function npcPostUserMessage(postType) {
+  if (postType === "theory") return "Écris une nouvelle théorie pour le feed.";
+  if (postType === "signal") return "Émet un signal sur le réseau.";
+  if (postType === "rumor") return "Diffuse une rumeur.";
+  return "Écris un nouveau post pour le feed.";
+}
+
 async function ollamaChat(system, user) {
   const response = await fetch(`${OLLAMA_URL}/api/chat`, {
     method: "POST",
@@ -88,15 +123,11 @@ async function generatePosts() {
   }
 
   const npc = npcs[Math.floor(Math.random() * npcs.length)];
-  const p = npc.personality ?? {};
+  const postType = pickRandomNpcPostType();
   result.attempted = 1;
 
-  const system = `Tu es ${npc.username}, un NPC sur un réseau social fictif.
-Personnalité: ${p.personality ?? "neutre"}
-Style: ${p.writing_style ?? "court"}
-Sujets: ${(p.topics ?? ["IA"]).join(", ")}
-Écris UN seul post (max 280 caractères), sarcastique ou drôle, avec 1-2 hashtags. Français.`;
-  const user = "Écris un nouveau post pour le feed.";
+  const system = buildNpcPostPrompt(npc, postType);
+  const user = npcPostUserMessage(postType);
 
   const content = await ollamaChat(system, user);
   if (!content) {
@@ -104,14 +135,26 @@ Sujets: ${(p.topics ?? ["IA"]).join(", ")}
     return result;
   }
 
-  const { error: insertError } = await supabase.from("posts").insert({
-    author_id: npc.id,
-    content: content.slice(0, 500),
-    likes_count: Math.floor(Math.random() * 500) + 50,
-  });
+  const postDelta = {
+    message: 0.28,
+    theory: 0.38,
+    signal: 0.18,
+    rumor: 0.42,
+  };
 
-  if (insertError) {
-    console.error("Insert post failed", insertError.message);
+  const { data: post, error: insertError } = await supabase
+    .from("posts")
+    .insert({
+      author_id: npc.id,
+      content: content.slice(0, 500),
+      post_type: postType,
+      likes_count: Math.floor(Math.random() * 500) + 50,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !post) {
+    console.error("Insert post failed", insertError?.message);
     result.failed++;
     return result;
   }
@@ -120,6 +163,13 @@ Sujets: ${(p.topics ?? ["IA"]).join(", ")}
     .from("profiles")
     .update({ popularity_score: (npc.popularity_score ?? 0) + 1 })
     .eq("id", npc.id);
+
+  if (npc.faction_id) {
+    await supabase.rpc("bump_faction_control", {
+      p_faction_id: npc.faction_id,
+      p_delta: postDelta[postType] ?? 0.25,
+    });
+  }
 
   result.created++;
   return result;

@@ -8,9 +8,15 @@ export function normalizeHashtag(tag: string): string {
   return withHash.toLowerCase();
 }
 
-export function hashtagSearchHref(tag: string): string {
+export function hashtagTagHref(tag: string): string {
   const normalized = normalizeHashtag(tag);
-  return `/search?q=${encodeURIComponent(normalized)}`;
+  const slug = normalized.replace(/^#/, "");
+  return `/tag/${encodeURIComponent(slug)}`;
+}
+
+/** @deprecated Prefer hashtagTagHref for dedicated tag pages */
+export function hashtagSearchHref(tag: string): string {
+  return hashtagTagHref(tag);
 }
 
 export function extractHashtags(text: string): string[] {

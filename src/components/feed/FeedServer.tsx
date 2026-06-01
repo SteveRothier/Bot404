@@ -29,6 +29,7 @@ export async function FeedListLoader({
       profile={ctx.profile}
       userId={ctx.user?.id}
       commentsByPostId={ctx.commentsByPostId}
+      userReactionsByPostId={ctx.userReactionsByPostId}
       referenceNowMs={referenceNowMs}
       emptyMessage={emptyMessage}
       defaultCommentsOpen={defaultCommentsOpen}
@@ -52,6 +53,7 @@ export async function PostDetailLoader({ postId }: PostDetailProps) {
         post={post}
         likedByUser={ctx.likedPostIds.includes(post.id)}
         bookmarkedByUser={ctx.bookmarkedPostIds.includes(post.id)}
+        userReaction={ctx.userReactionsByPostId[post.id] ?? null}
         isLoggedIn={ctx.isLoggedIn}
         profile={ctx.profile}
         userId={ctx.user?.id}

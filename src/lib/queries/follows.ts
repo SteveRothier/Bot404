@@ -67,7 +67,7 @@ export async function getPostsFromFollowing(
 
   const { data: posts, error } = await supabase
     .from("posts")
-    .select("*, author:profiles!author_id(*)")
+    .select("*, author:profiles!author_id(*, faction:factions(*))")
     .in("author_id", followingIds)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);

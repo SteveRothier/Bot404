@@ -6,9 +6,14 @@ import { cn } from "@/lib/utils";
 type Props = {
   initialOnline: boolean;
   initialModel: string;
+  compact?: boolean;
 };
 
-export function OllamaStatusBadge({ initialOnline, initialModel }: Props) {
+export function OllamaStatusBadge({
+  initialOnline,
+  initialModel,
+  compact = false,
+}: Props) {
   const [online, setOnline] = useState(initialOnline);
   const [model, setModel] = useState(initialModel);
 
@@ -28,6 +33,31 @@ export function OllamaStatusBadge({ initialOnline, initialModel }: Props) {
     const id = window.setInterval(check, 30_000);
     return () => window.clearInterval(id);
   }, []);
+
+  if (compact) {
+    return (
+      <div className="flex items-center justify-between gap-2 text-meta">
+        <span className="min-w-0 truncate text-muted-foreground">
+          Ollama · {model}
+        </span>
+        <span
+          className={cn(
+            "flex shrink-0 items-center gap-1 font-medium",
+            online ? "text-emerald-500" : "text-muted-foreground"
+          )}
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "size-1.5 rounded-full",
+              online ? "bg-emerald-500" : "bg-muted-foreground"
+            )}
+          />
+          {online ? "Actif" : "Inactif"}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-between gap-2">

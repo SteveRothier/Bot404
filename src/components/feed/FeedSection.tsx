@@ -6,7 +6,12 @@ import { FeedList } from "@/components/feed/FeedList";
 import { FollowingEmptyState } from "@/components/feed/FollowingEmptyState";
 import { PostComposerForm } from "@/components/feed/PostComposerForm";
 import { FeedTabs, type FeedTab } from "@/components/feed/FeedTabs";
-import type { CommentWithAuthor, PostWithAuthor, Profile } from "@/lib/supabase/types";
+import type {
+  CommentWithAuthor,
+  PostWithAuthor,
+  Profile,
+  ReactionKind,
+} from "@/lib/supabase/types";
 
 const PAGE_SIZE = 20;
 const FeedTabContext = createContext<FeedTab>("for-you");
@@ -23,8 +28,8 @@ export function FeedSection({ user, profile, children }: ShellProps) {
   return (
     <FeedTabContext.Provider value={tab}>
       <div className="w-full">
-        <PostComposerForm user={user} profile={profile} />
         <FeedTabs value={tab} onChange={setTab} />
+        <PostComposerForm user={user} profile={profile} feedTab={tab} />
         {children}
       </div>
     </FeedTabContext.Provider>
@@ -33,7 +38,8 @@ export function FeedSection({ user, profile, children }: ShellProps) {
 
 type PostsProps = {
   recentPosts: PostWithAuthor[];
-  popularPosts: PostWithAuthor[];
+  theoryPosts: PostWithAuthor[];
+  rumorPosts: PostWithAuthor[];
   followingPosts: PostWithAuthor[];
   suggestedNpcs: Profile[];
   user: { id: string; email?: string } | null;
@@ -41,28 +47,27 @@ type PostsProps = {
   likedPostIds: number[];
   bookmarkedPostIds: number[];
   commentsByPostId: Record<number, CommentWithAuthor[]>;
+  userReactionsByPostId: Record<number, ReactionKind>;
   referenceNowMs: number;
 };
 
 function postsForTab(
   tab: FeedTab,
   recentPosts: PostWithAuthor[],
+  theoryPosts: PostWithAuthor[],
+  rumorPosts: PostWithAuthor[],
   followingPosts: PostWithAuthor[]
 ) {
-  switch (tab) {
-    case "recent":
-    case "for-you":
-      return recentPosts;
-    case "following":
-      return followingPosts;
-    default:
-      return recentPosts;
-  }
+  if (tab === "following") return followingPosts;
+  if (tab === "theory") return theoryPosts;
+  if (tab === "rumor") return rumorPosts;
+  return recentPosts;
 }
 
 export function FeedPosts({
   recentPosts,
-  popularPosts,
+  theoryPosts,
+  rumorPosts,
   followingPosts,
   suggestedNpcs,
   user,
@@ -70,16 +75,27 @@ export function FeedPosts({
   likedPostIds,
   bookmarkedPostIds,
   commentsByPostId,
+  userReactionsByPostId,
   referenceNowMs,
 }: PostsProps) {
   const tab = useContext(FeedTabContext);
   const isLoggedIn = !!user;
-  const posts = postsForTab(tab, recentPosts, followingPosts);
+  const posts = postsForTab(
+    tab,
+    recentPosts,
+    theoryPosts,
+    rumorPosts,
+    followingPosts
+  );
   const emptyMessage =
     tab === "following"
       ? "Aucun profil suivi pour l'instant."
-      : "Aucun post pour l'instant.";
-  const showLoadMore = tab === "for-you" || tab === "recent";
+      : tab === "theory"
+        ? "Aucune théorie pour l'instant."
+        : tab === "rumor"
+          ? "Aucune rumeur pour l'instant."
+          : "Aucun post pour l'instant.";
+  const showLoadMore = tab === "for-you";
 
   if (tab === "following" && posts.length === 0) {
     return <FollowingEmptyState suggestedNpcs={suggestedNpcs} />;
@@ -96,6 +112,7 @@ export function FeedPosts({
         profile={profile}
         userId={user?.id}
         commentsByPostId={commentsByPostId}
+        userReactionsByPostId={userReactionsByPostId}
         referenceNowMs={referenceNowMs}
       />
     );
@@ -110,6 +127,7 @@ export function FeedPosts({
       profile={profile}
       userId={user?.id}
       commentsByPostId={commentsByPostId}
+      userReactionsByPostId={userReactionsByPostId}
       referenceNowMs={referenceNowMs}
       emptyMessage={emptyMessage}
     />

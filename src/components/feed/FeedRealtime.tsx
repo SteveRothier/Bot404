@@ -29,6 +29,21 @@ export function FeedRealtime({ children }: Props) {
           router.refresh();
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+        },
+        (payload) => {
+          const oldRow = payload.old as { faction_id?: string | null };
+          const newRow = payload.new as { faction_id?: string | null };
+          if (oldRow.faction_id !== newRow.faction_id) {
+            router.refresh();
+          }
+        }
+      )
       .subscribe();
 
     return () => {
