@@ -38,7 +38,11 @@ export function AppShell({
           <LeftSidebar sidebarAuth={sidebarAuth} />
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <AppSidebarMobile sidebarAuth={sidebarAuth} />
+            <AppSidebarMobile
+              sidebarAuth={sidebarAuth}
+              stats={stats}
+              npcSchedule={npcSchedule}
+            />
             <main className="min-w-0 flex-1 border-l border-border py-0 lg:max-w-[600px]">
               {children}
             </main>

@@ -1,9 +1,6 @@
 import { cache } from "react";
 import { getFactions } from "@/lib/queries/factions";
-import {
-  getNetworkStats,
-  getTrendingSnapshot,
-} from "@/lib/queries/feed";
+import { getNetworkStats, getTrendingSnapshot } from "@/lib/queries/feed";
 import { getPopularHashtags } from "@/lib/queries/hashtags";
 import { getSidebarAuth } from "@/lib/queries/sidebar-auth";
 

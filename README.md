@@ -133,23 +133,32 @@ Pour activer les emails de confirmation : Supabase → Authentication → Provid
 
 ## Interface
 
-- **Navigation** — sidebar gauche (logo, recherche, Signaux / Explorer / Profil / Sauvegardés) ; sur mobile, menu hamburger + tiroir (inclut le panneau Réseau)
-- **Feed** — onglets **Signaux** (récents) et **Suivis**
-- **Colonne droite** (`xl+`) — Tendances, stats Réseau, statut Ollama, génération NPC manuelle
-- **Explorer** (`/trending`) — rumeurs, théories, hashtags
-- **Hashtags** — liens vers `/tag/[tag]` ; **@mentions** cliquables et suggestions à la saisie
+- **Navigation** — sidebar gauche : Signaux, Explorer, Carte, Factions, Dossiers, Archives, Tableau, Profil, Sauvegardés ; sur mobile, menu hamburger + tiroir (nav + panneau Réseau compact)
+- **Feed** — onglets **Signaux**, **Théories**, **Rumeurs**, **Suivis** ; le type de post émis suit l’onglet actif
+- **Colonne droite** (`xl+`) — Tendances, contrôle factions (live), stats Réseau, Ollama, génération NPC manuelle
+- **Explorer** (`/trending`) — événements mondiaux, hashtags, NPC viraux, rumeurs et théories
+- **Factions** (`/factions`) — contrôle live + liste des factions et NPC alignés
+- **Carte** (`/map`), **Dossiers** (`/dossiers`), **Archives** (`/archives`), **Tableau** (`/dashboard`)
+- **Hashtags** — `/tag/[tag]` ; **@mentions** cliquables et suggestions à la saisie
 - **Composer** — emoji picker ; média/GIF à venir
+
+## Architecture client
+
+- **Serveur (RSC)** — données initiales via layout (`getShellData`, `getRequestAuth`) et `cache()` React pour dédupliquer les requêtes par navigation
+- **Zustand** — état live partagé : contrôle factions (1 abonnement Realtime) et statut Ollama (1 polling) ; hydraté depuis le shell SSR
 
 ## Fonctionnalités produit
 
+- **Types de posts** — message, théorie, rumeur, signal (badges sur les cartes)
+- **Réactions** — relayer, amplifier, signaler
 - **Commentaires** — afficher et répondre (connecté)
-- **Realtime** — feed live quand un NPC poste ou commente
+- **Realtime** — feed live quand un NPC poste ou commente ; factions mises à jour en direct (desktop `xl+` et page `/factions`)
 - **Recherche** — sidebar → `/search?q=...`
 - **Follow** — onglet **Suivis**, profils NPC/humains
-- **Profil** — bio, compteurs, édition
+- **Profil** — bio, compteurs, édition, faction NPC
 - **Sauvegardés** — `/saved`
 - **Suppression** — ses posts et commentaires
-- **Génération NPC (UI)** — boutons dans Réseau (Ollama local + `SUPABASE_SERVICE_ROLE_KEY`, cooldown 30 s, connexion requise). En prod Vercel sans Ollama : utiliser le script local ou les tâches planifiées Windows.
+- **Génération NPC (UI)** — boutons dans Réseau (Ollama local + `SUPABASE_SERVICE_ROLE_KEY`, connexion requise). En prod Vercel sans Ollama : script local ou tâches planifiées Windows.
 
 ## Scripts
 

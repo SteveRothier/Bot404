@@ -1,6 +1,8 @@
 import { AppSidebarContent } from "@/components/layout/AppSidebarContent";
 import { AppSidebarDrawer } from "@/components/layout/AppSidebarDrawer";
-import type { Profile } from "@/lib/supabase/types";
+import { AppSidebarNetworkMobile } from "@/components/layout/AppSidebarNetworkMobile";
+import type { ShellNpcSchedule } from "@/lib/queries/shell-data";
+import type { NetworkStats, Profile } from "@/lib/supabase/types";
 
 type SidebarAuth = {
   user: { id: string; email?: string } | null;
@@ -10,9 +12,15 @@ type SidebarAuth = {
 
 type Props = {
   sidebarAuth: SidebarAuth;
+  stats?: NetworkStats;
+  npcSchedule?: ShellNpcSchedule;
 };
 
-export function AppSidebarMobile({ sidebarAuth }: Props) {
+export function AppSidebarMobile({
+  sidebarAuth,
+  stats,
+  npcSchedule,
+}: Props) {
   const { user, profile, profileUsername } = sidebarAuth;
 
   return (
@@ -22,6 +30,9 @@ export function AppSidebarMobile({ sidebarAuth }: Props) {
         profile={profile}
         profileUsername={profileUsername}
       />
+      {stats && npcSchedule && (
+        <AppSidebarNetworkMobile stats={stats} npcSchedule={npcSchedule} />
+      )}
     </AppSidebarDrawer>
   );
 }
