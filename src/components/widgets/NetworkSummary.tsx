@@ -1,3 +1,4 @@
+import { GenerateNpcPostButton } from "@/components/widgets/GenerateNpcPostButton";
 import { NpcNextIn } from "@/components/widgets/NpcNextIn";
 import { OllamaStatusBadge } from "@/components/widgets/OllamaStatusBadge";
 import { checkOllamaStatus } from "@/lib/ollama";
@@ -77,6 +78,7 @@ export async function NetworkSummary({ stats }: Props) {
           initialModel={ollama.model}
           initialOnline={ollama.online}
         />
+        <GenerateNpcPostButton initialOnline={ollama.online} />
       </div>
     </section>
   );
