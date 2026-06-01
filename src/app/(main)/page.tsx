@@ -1,8 +1,8 @@
 import { FeedRealtime } from "@/components/feed/FeedRealtime";
 import { FeedPosts, FeedSection } from "@/components/feed/FeedSection";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
-import { getCurrentUserProfile, getHomeFeedBundle } from "@/lib/queries/feed";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestAuth } from "@/lib/queries/auth";
+import { getHomeFeedBundle } from "@/lib/queries/feed";
 import type { Profile } from "@/lib/supabase/types";
 
 export const revalidate = 60;
@@ -18,7 +18,8 @@ async function HomeFeedPosts({
   user,
   profile,
 }: HomeFeedPostsProps) {
-  const data = await getHomeFeedBundle();
+  const auth = { user, profile };
+  const data = await getHomeFeedBundle(auth);
 
   return (
     <FeedPosts
@@ -32,11 +33,7 @@ async function HomeFeedPosts({
 
 export default async function HomePage() {
   const referenceNowMs = Date.now();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const profile = user ? await getCurrentUserProfile() : null;
+  const { user, profile } = await getRequestAuth();
 
   return (
     <FeedRealtime>

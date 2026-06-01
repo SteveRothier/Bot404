@@ -1,8 +1,18 @@
 import { AppSidebarContent } from "@/components/layout/AppSidebarContent";
-import { getSidebarAuth } from "@/lib/queries/sidebar-auth";
+import type { Profile } from "@/lib/supabase/types";
 
-export async function LeftSidebar() {
-  const { user, profile, profileUsername } = await getSidebarAuth();
+type SidebarAuth = {
+  user: { id: string; email?: string } | null;
+  profile: Profile | null;
+  profileUsername: string | null;
+};
+
+type Props = {
+  sidebarAuth: SidebarAuth;
+};
+
+export function LeftSidebar({ sidebarAuth }: Props) {
+  const { user, profile, profileUsername } = sidebarAuth;
 
   return (
     <aside className="sidebar-sticky hidden h-[calc(100vh-1rem)] w-[275px] shrink-0 lg:flex lg:flex-col">

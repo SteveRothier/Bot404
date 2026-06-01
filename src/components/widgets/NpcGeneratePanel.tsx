@@ -9,9 +9,9 @@ import {
   generateNpcPostAction,
 } from "@/app/actions/npc";
 import { cn } from "@/lib/utils";
+import { useOllamaStore } from "@/stores/ollama-store";
 
 type Props = {
-  initialOnline: boolean;
   compact?: boolean;
 };
 
@@ -19,24 +19,13 @@ type SuccessState =
   | { type: "post"; author: string; postId: number }
   | { type: "comment"; author: string; postId: number };
 
-export function NpcGeneratePanel({ initialOnline, compact = false }: Props) {
+export function NpcGeneratePanel({ compact = false }: Props) {
   const router = useRouter();
-  const [online, setOnline] = useState(initialOnline);
+  const online = useOllamaStore((s) => s.online);
+  const refresh = useOllamaStore((s) => s.refresh);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SuccessState | null>(null);
   const [pending, startTransition] = useTransition();
-
-  async function refreshOllamaStatus() {
-    try {
-      const res = await fetch("/api/ollama-status");
-      const data = (await res.json()) as { online: boolean };
-      setOnline(data.online);
-      return data.online;
-    } catch {
-      setOnline(false);
-      return false;
-    }
-  }
 
   function run(
     action: () => Promise<{
@@ -51,7 +40,7 @@ export function NpcGeneratePanel({ initialOnline, compact = false }: Props) {
     setError(null);
     setSuccess(null);
     startTransition(async () => {
-      const isOnline = online || (await refreshOllamaStatus());
+      const isOnline = online || (await refresh());
       if (!isOnline) {
         setError("Ollama est hors ligne.");
         return;

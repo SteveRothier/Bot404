@@ -2,20 +2,23 @@ import { createClient } from "@/lib/supabase/server";
 import type { ReactionKind } from "@/lib/supabase/types";
 
 export async function getUserReactionsByPostIds(
-  postIds: number[]
+  postIds: number[],
+  userId?: string
 ): Promise<Record<number, ReactionKind>> {
   if (postIds.length === 0) return {};
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return {};
+  const id =
+    userId ??
+    (
+      await supabase.auth.getUser()
+    ).data.user?.id;
+  if (!id) return {};
 
   const { data } = await supabase
     .from("post_reactions")
     .select("post_id, kind")
-    .eq("user_id", user.id)
+    .eq("user_id", id)
     .in("post_id", postIds);
 
   const map: Record<number, ReactionKind> = {};

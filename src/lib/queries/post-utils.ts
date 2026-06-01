@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PostWithAuthor, Profile } from "@/lib/supabase/types";
 
+export const POST_WITH_AUTHOR =
+  "*, author:profiles!author_id(*, faction:factions(*))";
+
+export const POST_WITH_AUTHOR_BASIC =
+  "*, author:profiles!author_id(*)";
+
 export async function attachCommentCountsToPosts(
   supabase: SupabaseClient,
   posts: Array<{ id: number; author: unknown; [key: string]: unknown }>

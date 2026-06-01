@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { HashtagList } from "@/components/widgets/HashtagList";
-import { FeedListLoader } from "@/components/feed/FeedServer";
+import { TrendingFeedLists } from "@/components/feed/TrendingFeedLists";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
 import {
-  filterRumorPosts,
-  filterTheoryPosts,
-} from "@/lib/feed-filters";
-import { getFeedPosts, getPopularPosts, getTrendingSnapshot } from "@/lib/queries/feed";
-import { getPopularHashtags } from "@/lib/queries/hashtags";
+  getCachedPopularHashtags,
+  getCachedTrendingSnapshot,
+} from "@/lib/queries/cached";
+import { getFeedPosts } from "@/lib/queries/feed";
 import { getWorldEventsHistory } from "@/lib/queries/world-events";
 
 export const revalidate = 60;
@@ -16,31 +15,20 @@ export default async function TrendingPage() {
   const [
     hashtags,
     snapshot,
-    recentPosts,
-    popularPosts,
     typedRumors,
     typedTheories,
     eventHistory,
   ] = await Promise.all([
-    getPopularHashtags(10),
-    getTrendingSnapshot(),
-    getFeedPosts(50),
-    getPopularPosts(50),
+    getCachedPopularHashtags(10),
+    getCachedTrendingSnapshot(),
     getFeedPosts(10, 0, "rumor"),
     getFeedPosts(10, 0, "theory"),
     getWorldEventsHistory(10),
   ]);
 
   const topNpcs = snapshot?.data?.top_npcs ?? [];
-  const source = [
-    ...new Map(
-      [...recentPosts, ...popularPosts, ...typedRumors, ...typedTheories].map(
-        (post) => [post.id, post]
-      )
-    ).values(),
-  ];
-  const rumorPosts = filterRumorPosts(source).slice(0, 5);
-  const theoryPosts = filterTheoryPosts(source).slice(0, 5);
+  const rumorPosts = typedRumors.slice(0, 5);
+  const theoryPosts = typedTheories.slice(0, 5);
 
   return (
     <div className="w-full divide-y divide-border">
@@ -109,25 +97,12 @@ export default async function TrendingPage() {
         )}
       </section>
 
-      <section className="px-4 py-4">
-        <h2 className="mb-3 text-[15px] font-bold">Rumeurs</h2>
-        <PostsSuspense count={2}>
-          <FeedListLoader
-            posts={rumorPosts}
-            emptyMessage="Aucune rumeur détectée pour l'instant."
-          />
-        </PostsSuspense>
-      </section>
-
-      <section className="px-4 py-4">
-        <h2 className="mb-3 text-[15px] font-bold">Théories</h2>
-        <PostsSuspense count={2}>
-          <FeedListLoader
-            posts={theoryPosts}
-            emptyMessage="Aucune théorie détectée pour l'instant."
-          />
-        </PostsSuspense>
-      </section>
+      <PostsSuspense count={2}>
+        <TrendingFeedLists
+          rumorPosts={rumorPosts}
+          theoryPosts={theoryPosts}
+        />
+      </PostsSuspense>
     </div>
   );
 }

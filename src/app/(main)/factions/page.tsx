@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { FactionControlLive } from "@/components/widgets/FactionControlLive";
 import {
-  getFactions,
-  getNpcMembersByFaction,
-} from "@/lib/queries/factions";
+  getCachedFactions,
+} from "@/lib/queries/cached";
+import { getNpcMembersByFaction } from "@/lib/queries/factions";
 
 export const revalidate = 30;
 
 export default async function FactionsPage() {
   const [factions, membersByFaction] = await Promise.all([
-    getFactions(),
+    getCachedFactions(),
     getNpcMembersByFaction(),
   ]);
 
@@ -23,7 +23,7 @@ export default async function FactionsPage() {
       </div>
 
       <section className="px-4 py-4">
-        <FactionControlLive initialFactions={factions} />
+        <FactionControlLive />
       </section>
 
       <section className="px-4 py-4">

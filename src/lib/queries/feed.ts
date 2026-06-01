@@ -1,4 +1,4 @@
-import { attachCommentCountsToPosts } from "@/lib/queries/post-utils";
+import { attachCommentCountsToPosts, POST_WITH_AUTHOR } from "@/lib/queries/post-utils";
 import { getCommentsByPostIds } from "@/lib/queries/comments";
 import { getUserBookmarkedPostIds } from "@/lib/queries/bookmarks";
 import {
@@ -8,45 +8,36 @@ import {
 import { getUserReactionsByPostIds } from "@/lib/queries/reactions";
 import { countActiveWorldEvents } from "@/lib/queries/world-events";
 import { computeNetworkState } from "@/lib/network-state";
+import { getRequestAuth, type RequestAuth } from "@/lib/queries/auth";
 import { createClient } from "@/lib/supabase/server";
 
-const POST_WITH_AUTHOR =
-  "*, author:profiles!author_id(*, faction:factions(*))";
 import type {
   NetworkStats,
   PostType,
   PostWithAuthor,
   Profile,
+  ReactionKind,
   TrendingSnapshot,
 } from "@/lib/supabase/types";
 
 export async function getCurrentUserProfile(): Promise<Profile | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data } = await supabase
-    .from("profiles")
-    .select("*, faction:factions(*)")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  return (data as Profile) ?? null;
+  const { profile } = await getRequestAuth();
+  return profile;
 }
 
-export async function getUserLikedPostIds(): Promise<Set<number>> {
+export async function getUserLikedPostIds(userId?: string): Promise<Set<number>> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return new Set();
+  const id =
+    userId ??
+    (
+      await supabase.auth.getUser()
+    ).data.user?.id;
+  if (!id) return new Set();
 
   const { data } = await supabase
     .from("post_likes")
     .select("post_id")
-    .eq("user_id", user.id);
+    .eq("user_id", id);
 
   return new Set(data?.map((r) => r.post_id) ?? []);
 }
@@ -103,11 +94,9 @@ export async function getPopularPosts(limit = 50): Promise<PostWithAuthor[]> {
   return attachCommentCountsToPosts(supabase, posts);
 }
 
-export async function getHomeFeedBundle() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export async function getHomeFeedBundle(auth?: RequestAuth) {
+  const { user } = auth ?? (await getRequestAuth());
+  const userId = user?.id;
 
   const [
     recentPosts,
@@ -121,8 +110,8 @@ export async function getHomeFeedBundle() {
     getFeedPosts(50),
     getFeedPosts(50, 0, "theory"),
     getFeedPosts(50, 0, "rumor"),
-    getUserLikedPostIds(),
-    getUserBookmarkedPostIds(),
+    userId ? getUserLikedPostIds(userId) : Promise.resolve(new Set<number>()),
+    userId ? getUserBookmarkedPostIds(userId) : Promise.resolve(new Set<number>()),
     user ? getPostsFromFollowing(50) : Promise.resolve([]),
     getSuggestedNpcs(3),
   ]);
@@ -131,7 +120,9 @@ export async function getHomeFeedBundle() {
   const postIds = [...new Set(allPosts.map((p) => p.id))];
   const [commentsByPostId, userReactionsByPostId] = await Promise.all([
     getCommentsByPostIds(postIds),
-    getUserReactionsByPostIds(postIds),
+    userId
+      ? getUserReactionsByPostIds(postIds, userId)
+      : Promise.resolve({} as Record<number, ReactionKind>),
   ]);
 
   return {

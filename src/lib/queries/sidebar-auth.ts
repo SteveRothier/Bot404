@@ -1,5 +1,4 @@
-import { getCurrentUserProfile } from "@/lib/queries/feed";
-import { createClient } from "@/lib/supabase/server";
+import { getRequestAuth } from "@/lib/queries/auth";
 import type { Profile } from "@/lib/supabase/types";
 
 export async function getSidebarAuth(): Promise<{
@@ -7,11 +6,7 @@ export async function getSidebarAuth(): Promise<{
   profile: Profile | null;
   profileUsername: string | null;
 }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const profile = user ? await getCurrentUserProfile() : null;
+  const { user, profile } = await getRequestAuth();
 
   return {
     user,

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { hashtagTagHref } from "@/lib/hashtags";
 import {
@@ -20,7 +18,6 @@ type Props = {
 
 export function PostContent({ content, postType, className }: Props) {
   const parts = splitContentTokens(content);
-
   const isSignal = postType === "signal";
 
   return (
@@ -40,7 +37,6 @@ export function PostContent({ content, postType, className }: Props) {
               key={`${part}-${i}`}
               href={hashtagTagHref(part)}
               className="text-accent hover:underline"
-              onClick={(e) => e.stopPropagation()}
             >
               {part}
             </Link>
@@ -53,7 +49,6 @@ export function PostContent({ content, postType, className }: Props) {
               key={`${part}-${i}`}
               href={mentionProfileHref(username)}
               className="text-accent hover:underline"
-              onClick={(e) => e.stopPropagation()}
             >
               {part}
             </Link>

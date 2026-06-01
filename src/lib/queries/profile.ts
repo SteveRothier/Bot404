@@ -1,4 +1,4 @@
-import { attachCommentCountsToPosts } from "@/lib/queries/post-utils";
+import { attachCommentCountsToPosts, POST_WITH_AUTHOR } from "@/lib/queries/post-utils";
 import { createClient } from "@/lib/supabase/server";
 import type { PostWithAuthor, Profile } from "@/lib/supabase/types";
 
@@ -17,23 +17,29 @@ export async function getProfileByUsername(
   return data as Profile;
 }
 
-export async function getPostsByUsername(
-  username: string,
+export async function getPostsByProfileId(
+  profileId: string,
   limit = 30
 ): Promise<PostWithAuthor[]> {
-  const profile = await getProfileByUsername(username);
-  if (!profile) return [];
-
   const supabase = await createClient();
 
   const { data: posts, error } = await supabase
     .from("posts")
-    .select("*, author:profiles!author_id(*, faction:factions(*))")
-    .eq("author_id", profile.id)
+    .select(POST_WITH_AUTHOR)
+    .eq("author_id", profileId)
     .order("created_at", { ascending: false })
     .limit(limit);
 
   if (error || !posts) return [];
 
   return attachCommentCountsToPosts(supabase, posts);
+}
+
+export async function getPostsByUsername(
+  username: string,
+  limit = 30
+): Promise<PostWithAuthor[]> {
+  const profile = await getProfileByUsername(username);
+  if (!profile) return [];
+  return getPostsByProfileId(profile.id, limit);
 }

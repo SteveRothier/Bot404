@@ -1,47 +1,9 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import type { Faction } from "@/lib/supabase/types";
+import { useFactionsStore } from "@/stores/factions-store";
 
-type Props = {
-  initialFactions: Faction[];
-};
-
-export function FactionControlLive({ initialFactions }: Props) {
-  const [factions, setFactions] = useState(initialFactions);
-  const channelName = `faction-control-${useId().replace(/:/g, "")}`;
-
-  useEffect(() => {
-    setFactions(initialFactions);
-  }, [initialFactions]);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    async function refreshFactions() {
-      const { data } = await supabase
-        .from("factions")
-        .select("*")
-        .order("control_percent", { ascending: false });
-      if (data?.length) setFactions(data as Faction[]);
-    }
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "factions" },
-        () => {
-          void refreshFactions();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [channelName]);
+export function FactionControlLive() {
+  const factions = useFactionsStore((s) => s.factions);
 
   if (factions.length === 0) return null;
 

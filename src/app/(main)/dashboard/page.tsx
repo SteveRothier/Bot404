@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/queries/dashboard";
-import { getNetworkStats } from "@/lib/queries/feed";
+import { getCachedNetworkStats } from "@/lib/queries/cached";
 import { NETWORK_STATE_LABELS } from "@/lib/network-state";
 
 export const revalidate = 60;
 
 export default async function DashboardPage() {
-  const [dashboard, network] = await Promise.all([
-    getDashboardStats(),
-    getNetworkStats(),
-  ]);
+  const network = await getCachedNetworkStats();
+  const dashboard = await getDashboardStats(network);
 
   const stateMeta = NETWORK_STATE_LABELS[network.networkState];
 

@@ -9,12 +9,11 @@ import {
   getFollowingCount,
   isFollowing,
 } from "@/lib/queries/follows";
-import { getCurrentUserProfile } from "@/lib/queries/feed";
+import { getRequestAuth } from "@/lib/queries/auth";
 import {
   getProfileByUsername,
-  getPostsByUsername,
+  getPostsByProfileId,
 } from "@/lib/queries/profile";
-import { createClient } from "@/lib/supabase/server";
 import type { Personality } from "@/lib/supabase/types";
 
 export const revalidate = 60;
@@ -23,12 +22,19 @@ type Props = {
   params: Promise<{ username: string }>;
 };
 
-async function ProfilePosts({ username }: { username: string }) {
-  const posts = await getPostsByUsername(username);
+async function ProfilePosts({
+  profileId,
+  auth,
+}: {
+  profileId: string;
+  auth: Awaited<ReturnType<typeof getRequestAuth>>;
+}) {
+  const posts = await getPostsByProfileId(profileId);
 
   return (
     <FeedListLoader
       posts={posts}
+      auth={auth}
       emptyMessage="Ce profil n'a pas encore posté."
     />
   );
@@ -36,15 +42,10 @@ async function ProfilePosts({ username }: { username: string }) {
 
 export default async function ProfilePage({ params }: Props) {
   const { username } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await getRequestAuth();
+  const { user, profile: currentProfile } = auth;
 
-  const [profile, currentProfile] = await Promise.all([
-    getProfileByUsername(username),
-    getCurrentUserProfile(),
-  ]);
+  const profile = await getProfileByUsername(username);
 
   if (!profile) notFound();
 
@@ -134,7 +135,7 @@ export default async function ProfilePage({ params }: Props) {
       </div>
 
       <PostsSuspense count={3}>
-        <ProfilePosts username={username} />
+        <ProfilePosts profileId={profile.id} auth={auth} />
       </PostsSuspense>
     </div>
   );

@@ -1,20 +1,16 @@
 import { NpcGeneratePanel } from "@/components/widgets/NpcGeneratePanel";
-import { NpcNextIn } from "@/components/widgets/NpcNextIn";
+import { NpcScheduleDisplay } from "@/components/widgets/NpcScheduleDisplay";
 import { OllamaStatusBadge } from "@/components/widgets/OllamaStatusBadge";
-import { checkOllamaStatus } from "@/lib/ollama";
 import {
   NPC_COMMENT_INTERVAL_MINUTES,
   NPC_POST_INTERVAL_MINUTES,
-  minutesUntilNextNpcRun,
 } from "@/lib/npc-schedule";
-import {
-  getLastNpcCommentTime,
-  getLastNpcPostTime,
-} from "@/lib/queries/npc-schedule";
+import type { ShellNpcSchedule } from "@/lib/queries/shell-data";
 import type { NetworkStats } from "@/lib/supabase/types";
 
 type Props = {
   stats: NetworkStats;
+  npcSchedule: ShellNpcSchedule;
 };
 
 function StatRow({
@@ -34,21 +30,21 @@ function StatRow({
   );
 }
 
-export async function NetworkSummary({ stats }: Props) {
-  const [lastPostAt, lastCommentAt, ollama] = await Promise.all([
-    getLastNpcPostTime(),
-    getLastNpcCommentTime(),
-    checkOllamaStatus(),
-  ]);
-
-  const nextPostMinutes = minutesUntilNextNpcRun(
-    lastPostAt,
-    NPC_POST_INTERVAL_MINUTES
-  );
-  const nextCommentMinutes = minutesUntilNextNpcRun(
-    lastCommentAt,
-    NPC_COMMENT_INTERVAL_MINUTES
-  );
+export function NetworkSummary({ stats, npcSchedule }: Props) {
+  const scheduleItems = [
+    {
+      key: "post",
+      intervalMinutes: NPC_POST_INTERVAL_MINUTES,
+      lastAt: npcSchedule.lastPostAt,
+      initialMinutes: npcSchedule.nextPostMinutes,
+    },
+    {
+      key: "comment",
+      intervalMinutes: NPC_COMMENT_INTERVAL_MINUTES,
+      lastAt: npcSchedule.lastCommentAt,
+      initialMinutes: npcSchedule.nextCommentMinutes,
+    },
+  ];
 
   return (
     <section className="rounded-2xl bg-secondary/50 p-3">
@@ -66,34 +62,25 @@ export async function NetworkSummary({ stats }: Props) {
           label="Posts / 24h"
           value={stats.postsLast24h.toLocaleString("fr-FR")}
         />
-        <StatRow
-          label="Post NPC"
-          value={
-            <NpcNextIn
-              intervalMinutes={NPC_POST_INTERVAL_MINUTES}
-              lastAt={lastPostAt?.toISOString() ?? null}
-              initialMinutes={nextPostMinutes}
-            />
-          }
-        />
-        <StatRow
-          label="Com. NPC"
-          value={
-            <NpcNextIn
-              intervalMinutes={NPC_COMMENT_INTERVAL_MINUTES}
-              lastAt={lastCommentAt?.toISOString() ?? null}
-              initialMinutes={nextCommentMinutes}
-            />
-          }
+        <NpcScheduleDisplay
+          items={scheduleItems}
+          render={(minutes) => (
+            <>
+              <StatRow
+                label="Post NPC"
+                value={`${minutes.post ?? npcSchedule.nextPostMinutes} min`}
+              />
+              <StatRow
+                label="Com. NPC"
+                value={`${minutes.comment ?? npcSchedule.nextCommentMinutes} min`}
+              />
+            </>
+          )}
         />
       </div>
       <div className="mt-2 border-t border-border pt-2">
-        <OllamaStatusBadge
-          initialModel={ollama.model}
-          initialOnline={ollama.online}
-          compact
-        />
-        <NpcGeneratePanel initialOnline={ollama.online} compact />
+        <OllamaStatusBadge compact />
+        <NpcGeneratePanel compact />
       </div>
     </section>
   );

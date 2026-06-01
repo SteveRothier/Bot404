@@ -1,3 +1,5 @@
+import { getOllamaConfig } from "@/lib/ollama-config";
+
 const FORBIDDEN = /\b(kill|suicide|nazi)\b/i;
 
 export async function ollamaChat(
@@ -5,8 +7,7 @@ export async function ollamaChat(
   user: string,
   maxChars = 500
 ): Promise<string | null> {
-  const baseUrl = process.env.OLLAMA_URL ?? "http://127.0.0.1:11434";
-  const model = process.env.OLLAMA_MODEL ?? "qwen3.5:4b";
+  const { baseUrl, model } = getOllamaConfig();
 
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: "POST",

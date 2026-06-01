@@ -1,3 +1,5 @@
+import { getOllamaConfig } from "@/lib/ollama-config";
+
 export type OllamaStatus = {
   online: boolean;
   model: string;
@@ -9,8 +11,7 @@ export {
 } from "@/lib/npc-schedule";
 
 export async function checkOllamaStatus(): Promise<OllamaStatus> {
-  const baseUrl = process.env.OLLAMA_URL ?? "http://127.0.0.1:11434";
-  const model = process.env.OLLAMA_MODEL ?? "qwen3.5:4b";
+  const { baseUrl, model } = getOllamaConfig();
 
   try {
     const response = await fetch(`${baseUrl}/api/tags`, {

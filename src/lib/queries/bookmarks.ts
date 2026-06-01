@@ -1,35 +1,39 @@
-import { attachCommentCountsToPosts } from "@/lib/queries/post-utils";
+import { attachCommentCountsToPosts, POST_WITH_AUTHOR_BASIC } from "@/lib/queries/post-utils";
 import { createClient } from "@/lib/supabase/server";
 import type { PostWithAuthor } from "@/lib/supabase/types";
 
-export async function getUserBookmarkedPostIds(): Promise<Set<number>> {
+export async function getUserBookmarkedPostIds(userId?: string): Promise<Set<number>> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const id =
+    userId ??
+    (
+      await supabase.auth.getUser()
+    ).data.user?.id;
 
-  if (!user) return new Set();
+  if (!id) return new Set();
 
   const { data } = await supabase
     .from("post_bookmarks")
     .select("post_id")
-    .eq("user_id", user.id);
+    .eq("user_id", id);
 
   return new Set(data?.map((row) => row.post_id) ?? []);
 }
 
-export async function getBookmarkedPosts(): Promise<PostWithAuthor[]> {
+export async function getBookmarkedPosts(userId?: string): Promise<PostWithAuthor[]> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const id =
+    userId ??
+    (
+      await supabase.auth.getUser()
+    ).data.user?.id;
 
-  if (!user) return [];
+  if (!id) return [];
 
   const { data: bookmarks } = await supabase
     .from("post_bookmarks")
     .select("post_id, created_at")
-    .eq("user_id", user.id)
+    .eq("user_id", id)
     .order("created_at", { ascending: false });
 
   if (!bookmarks?.length) return [];
@@ -37,7 +41,7 @@ export async function getBookmarkedPosts(): Promise<PostWithAuthor[]> {
   const postIds = bookmarks.map((row) => row.post_id);
   const { data: posts, error } = await supabase
     .from("posts")
-    .select("*, author:profiles!author_id(*)")
+    .select(POST_WITH_AUTHOR_BASIC)
     .in("id", postIds);
 
   if (error || !posts) return [];

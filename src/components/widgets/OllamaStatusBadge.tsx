@@ -1,38 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useOllamaStore } from "@/stores/ollama-store";
 
 type Props = {
-  initialOnline: boolean;
-  initialModel: string;
   compact?: boolean;
 };
 
-export function OllamaStatusBadge({
-  initialOnline,
-  initialModel,
-  compact = false,
-}: Props) {
-  const [online, setOnline] = useState(initialOnline);
-  const [model, setModel] = useState(initialModel);
-
-  useEffect(() => {
-    async function check() {
-      try {
-        const res = await fetch("/api/ollama-status");
-        const data = (await res.json()) as { online: boolean; model?: string };
-        setOnline(data.online);
-        if (data.model) setModel(data.model);
-      } catch {
-        setOnline(false);
-      }
-    }
-
-    check();
-    const id = window.setInterval(check, 30_000);
-    return () => window.clearInterval(id);
-  }, []);
+export function OllamaStatusBadge({ compact = false }: Props) {
+  const online = useOllamaStore((s) => s.online);
+  const model = useOllamaStore((s) => s.model);
 
   if (compact) {
     return (

@@ -1,25 +1,30 @@
 import { redirect } from "next/navigation";
 import { FeedListLoader } from "@/components/feed/FeedServer";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
+import { getRequestAuth } from "@/lib/queries/auth";
 import { getBookmarkedPosts } from "@/lib/queries/bookmarks";
-import { getCurrentUserProfile } from "@/lib/queries/feed";
 
 export const revalidate = 30;
 
-async function SavedPosts() {
-  const posts = await getBookmarkedPosts();
+async function SavedPosts({
+  auth,
+}: {
+  auth: Awaited<ReturnType<typeof getRequestAuth>>;
+}) {
+  const posts = await getBookmarkedPosts(auth.user?.id);
 
   return (
     <FeedListLoader
       posts={posts}
+      auth={auth}
       emptyMessage="Aucun post sauvegardé pour l'instant."
     />
   );
 }
 
 export default async function SavedPage() {
-  const profile = await getCurrentUserProfile();
-  if (!profile) {
+  const auth = await getRequestAuth();
+  if (!auth.profile) {
     redirect("/login");
   }
 
@@ -33,7 +38,7 @@ export default async function SavedPage() {
       </div>
 
       <PostsSuspense count={3}>
-        <SavedPosts />
+        <SavedPosts auth={auth} />
       </PostsSuspense>
     </div>
   );
