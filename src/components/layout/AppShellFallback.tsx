@@ -24,6 +24,15 @@ export function AppShellFallback({ children, sidebarAuth }: Props) {
             {children}
           </main>
         </div>
+
+        <aside
+          className="sidebar-sticky hidden w-80 shrink-0 flex-col gap-4 xl:flex"
+          aria-hidden
+        >
+          <div className="h-32 animate-pulse rounded-2xl bg-secondary/50" />
+          <div className="h-40 animate-pulse rounded-2xl bg-secondary/50" />
+          <div className="h-48 animate-pulse rounded-2xl bg-secondary/50" />
+        </aside>
       </div>
     </div>
   );

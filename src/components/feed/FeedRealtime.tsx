@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+
+const REFRESH_DEBOUNCE_MS = 400;
 
 type Props = {
   children: React.ReactNode;
@@ -10,43 +12,38 @@ type Props = {
 
 export function FeedRealtime({ children }: Props) {
   const router = useRouter();
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
+
+    function scheduleRefresh() {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+      refreshTimerRef.current = setTimeout(() => {
+        router.refresh();
+      }, REFRESH_DEBOUNCE_MS);
+    }
+
     const channel = supabase
       .channel("feed-posts")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "posts" },
-        () => {
-          router.refresh();
-        }
+        scheduleRefresh
       )
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "comments" },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "profiles",
-        },
-        (payload) => {
-          const oldRow = payload.old as { faction_id?: string | null };
-          const newRow = payload.new as { faction_id?: string | null };
-          if (oldRow.faction_id !== newRow.faction_id) {
-            router.refresh();
-          }
-        }
+        scheduleRefresh
       )
       .subscribe();
 
     return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
   }, [router]);

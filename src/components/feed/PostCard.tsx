@@ -9,6 +9,8 @@ import { PostReactions } from "@/components/feed/PostReactions";
 import { PostCardMenu } from "@/components/feed/PostCardMenu";
 import { PostContent } from "@/components/feed/PostContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RemoteImage } from "@/components/ui/remote-image";
+import { isOptimizableRemoteImage } from "@/lib/images";
 import { PostComments } from "@/components/feed/PostComments";
 import { formatCount, formatRelativeTimeShort } from "@/lib/format";
 import { POST_TYPE_LABELS } from "@/lib/post-types";
@@ -74,11 +76,24 @@ export function PostCard({
           onClick={(e) => e.stopPropagation()}
         >
           <Avatar className="size-10 rounded-lg">
-            <AvatarImage
-              src={author.avatar_url ?? undefined}
-              alt={author.username}
-              className="rounded-lg object-cover"
-            />
+            {author.avatar_url &&
+            isOptimizableRemoteImage(author.avatar_url) ? (
+              <div className="relative size-full overflow-hidden rounded-lg">
+                <RemoteImage
+                  src={author.avatar_url}
+                  alt={author.username}
+                  fill
+                  sizes="40px"
+                  className="rounded-lg object-cover"
+                />
+              </div>
+            ) : (
+              <AvatarImage
+                src={author.avatar_url ?? undefined}
+                alt={author.username}
+                className="rounded-lg object-cover"
+              />
+            )}
             <AvatarFallback className="rounded-lg bg-secondary text-xs text-muted-foreground">
               {author.username.slice(0, 2)}
             </AvatarFallback>
@@ -168,12 +183,13 @@ export function PostCard({
           )}
 
           {post.media_url && (
-            <div className="mt-2 overflow-hidden rounded-xl border border-border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="relative mt-2 max-h-96 min-h-[120px] w-full overflow-hidden rounded-xl border border-border">
+              <RemoteImage
                 src={post.media_url}
-                alt=""
-                className="max-h-96 w-full object-cover"
+                alt="Média du post"
+                fill
+                sizes="(max-width: 600px) 100vw, 600px"
+                className="object-cover"
               />
             </div>
           )}

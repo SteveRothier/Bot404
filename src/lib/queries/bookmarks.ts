@@ -20,6 +20,22 @@ export async function getUserBookmarkedPostIds(userId?: string): Promise<Set<num
   return new Set(data?.map((row) => row.post_id) ?? []);
 }
 
+export async function getUserBookmarkedPostIdsForPosts(
+  userId: string,
+  postIds: number[]
+): Promise<Set<number>> {
+  if (postIds.length === 0) return new Set();
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("post_bookmarks")
+    .select("post_id")
+    .eq("user_id", userId)
+    .in("post_id", postIds);
+
+  return new Set(data?.map((row) => row.post_id) ?? []);
+}
+
 export async function getBookmarkedPosts(userId?: string): Promise<PostWithAuthor[]> {
   const supabase = await createClient();
   const id =

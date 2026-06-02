@@ -50,9 +50,11 @@ export function ClientStoresHydrator({
 
   useEffect(() => {
     useFactionsStore.getState().hydrate(factions);
-    useOllamaStore.getState().hydrate(ollama);
     useNotificationsStore.getState().hydrate(initialUnreadCount);
-  }, [factions, ollama, initialUnreadCount]);
+    if (ollama.model) {
+      useOllamaStore.setState({ model: ollama.model });
+    }
+  }, [factions, ollama.model, initialUnreadCount]);
 
   useEffect(() => {
     useOllamaStore.getState().startPolling();

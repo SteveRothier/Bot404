@@ -1,12 +1,14 @@
 import { attachCommentCountsToPosts, POST_WITH_AUTHOR } from "@/lib/queries/post-utils";
 import { getCommentsByPostIds } from "@/lib/queries/comments";
-import { getUserBookmarkedPostIds } from "@/lib/queries/bookmarks";
+import {
+  getUserBookmarkedPostIdsForPosts,
+} from "@/lib/queries/bookmarks";
 import {
   getPostsFromFollowing,
   getSuggestedNpcs,
 } from "@/lib/queries/follows";
 import { getUserReactionsByPostIds } from "@/lib/queries/reactions";
-import { countActiveWorldEvents } from "@/lib/queries/world-events";
+import { countActiveWorldEventsCached } from "@/lib/queries/world-events";
 import { computeNetworkState } from "@/lib/network-state";
 import { getRequestAuth, type RequestAuth } from "@/lib/queries/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +27,8 @@ export async function getCurrentUserProfile(): Promise<Profile | null> {
   return profile;
 }
 
+export const HOME_FEED_LIMIT = 25;
+
 export async function getUserLikedPostIds(userId?: string): Promise<Set<number>> {
   const supabase = await createClient();
   const id =
@@ -38,6 +42,22 @@ export async function getUserLikedPostIds(userId?: string): Promise<Set<number>>
     .from("post_likes")
     .select("post_id")
     .eq("user_id", id);
+
+  return new Set(data?.map((r) => r.post_id) ?? []);
+}
+
+export async function getUserLikedPostIdsForPosts(
+  userId: string,
+  postIds: number[]
+): Promise<Set<number>> {
+  if (postIds.length === 0) return new Set();
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("post_likes")
+    .select("post_id")
+    .eq("user_id", userId)
+    .in("post_id", postIds);
 
   return new Set(data?.map((r) => r.post_id) ?? []);
 }
@@ -94,47 +114,79 @@ export async function getPopularPosts(limit = 50): Promise<PostWithAuthor[]> {
   return attachCommentCountsToPosts(supabase, posts);
 }
 
-export async function getHomeFeedBundle(auth?: RequestAuth) {
-  const { user } = auth ?? (await getRequestAuth());
-  const userId = user?.id;
+export type HomeFeedTab = "for-you" | "theory" | "rumor" | "following";
 
-  const [
-    recentPosts,
-    theoryPosts,
-    rumorPosts,
-    likedPostIds,
-    bookmarkedPostIds,
-    followingPosts,
-    suggestedNpcs,
-  ] = await Promise.all([
-    getFeedPosts(50),
-    getFeedPosts(50, 0, "theory"),
-    getFeedPosts(50, 0, "rumor"),
-    userId ? getUserLikedPostIds(userId) : Promise.resolve(new Set<number>()),
-    userId ? getUserBookmarkedPostIds(userId) : Promise.resolve(new Set<number>()),
-    user ? getPostsFromFollowing(50) : Promise.resolve([]),
-    getSuggestedNpcs(3),
-  ]);
+export async function getPostsForHomeFeedTab(
+  tab: HomeFeedTab,
+  limit = HOME_FEED_LIMIT,
+  hasUser = false
+): Promise<PostWithAuthor[]> {
+  if (tab === "following") {
+    return hasUser ? getPostsFromFollowing(limit) : [];
+  }
+  if (tab === "theory") return getFeedPosts(limit, 0, "theory");
+  if (tab === "rumor") return getFeedPosts(limit, 0, "rumor");
+  return getFeedPosts(limit);
+}
 
-  const allPosts = [...recentPosts, ...theoryPosts, ...rumorPosts, ...followingPosts];
-  const postIds = [...new Set(allPosts.map((p) => p.id))];
-  const [commentsByPostId, userReactionsByPostId] = await Promise.all([
-    getCommentsByPostIds(postIds),
-    userId
-      ? getUserReactionsByPostIds(postIds, userId)
-      : Promise.resolve({} as Record<number, ReactionKind>),
-  ]);
+async function getFeedInteractionsForPosts(
+  postIds: number[],
+  userId?: string
+) {
+  const [likedPostIds, bookmarkedPostIds, commentsByPostId, userReactionsByPostId] =
+    await Promise.all([
+      userId
+        ? getUserLikedPostIdsForPosts(userId, postIds)
+        : Promise.resolve(new Set<number>()),
+      userId
+        ? getUserBookmarkedPostIdsForPosts(userId, postIds)
+        : Promise.resolve(new Set<number>()),
+      getCommentsByPostIds(postIds),
+      userId
+        ? getUserReactionsByPostIds(postIds, userId)
+        : Promise.resolve({} as Record<number, ReactionKind>),
+    ]);
 
   return {
-    recentPosts,
-    theoryPosts,
-    rumorPosts,
-    followingPosts,
-    suggestedNpcs,
     likedPostIds: [...likedPostIds],
     bookmarkedPostIds: [...bookmarkedPostIds],
     commentsByPostId,
     userReactionsByPostId,
+  };
+}
+
+export async function getHomeFeedTabBundle(
+  tab: HomeFeedTab,
+  auth?: RequestAuth
+) {
+  const { user } = auth ?? (await getRequestAuth());
+  const userId = user?.id;
+  const posts = await getPostsForHomeFeedTab(tab, HOME_FEED_LIMIT, !!user);
+  const postIds = posts.map((p) => p.id);
+  const [interactions, suggestedNpcs] = await Promise.all([
+    getFeedInteractionsForPosts(postIds, userId),
+    tab === "following" && user
+      ? getSuggestedNpcs(3)
+      : Promise.resolve([] as Profile[]),
+  ]);
+
+  return { posts, suggestedNpcs, ...interactions };
+}
+
+export async function getHomeFeedBundle(auth?: RequestAuth) {
+  const resolved = auth ?? (await getRequestAuth());
+  const initial = await getHomeFeedTabBundle("for-you", resolved);
+
+  return {
+    recentPosts: initial.posts,
+    theoryPosts: [] as PostWithAuthor[],
+    rumorPosts: [] as PostWithAuthor[],
+    followingPosts: [] as PostWithAuthor[],
+    suggestedNpcs: initial.suggestedNpcs,
+    likedPostIds: initial.likedPostIds,
+    bookmarkedPostIds: initial.bookmarkedPostIds,
+    commentsByPostId: initial.commentsByPostId,
+    userReactionsByPostId: initial.userReactionsByPostId,
   };
 }
 
@@ -176,7 +228,7 @@ export async function getNetworkStats(): Promise<NetworkStats> {
       .select("*", { count: "exact", head: true })
       .gte("created_at", since24h),
     supabase.from("posts").select("flag_count").gte("created_at", since24h),
-    countActiveWorldEvents(),
+    countActiveWorldEventsCached(),
   ]);
 
   const total = (npcCount ?? 0) + (humanCount ?? 0);

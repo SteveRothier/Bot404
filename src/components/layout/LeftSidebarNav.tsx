@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useNavDrawerClose } from "@/components/layout/NavDrawerContext";
 import { cn } from "@/lib/utils";
+import { useNotificationsStore } from "@/stores/notifications-store";
 
 type NavItem = {
   href: string;
@@ -49,6 +50,7 @@ function buildNavItems(profileUsername?: string | null): NavItem[] {
 export function LeftSidebarNav({ profileUsername = null }: Props) {
   const pathname = usePathname();
   const closeDrawer = useNavDrawerClose();
+  const unreadCount = useNotificationsStore((s) => s.unreadCount);
   const navItems = buildNavItems(profileUsername);
 
   return (
@@ -75,7 +77,12 @@ export function LeftSidebarNav({ profileUsername = null }: Props) {
             )}
           >
             <Icon className="h-[26px] w-[26px]" strokeWidth={active ? 2.25 : 1.75} />
-            <span>{item.label}</span>
+            <span className="min-w-0 flex-1">{item.label}</span>
+            {item.href === "/notifications" && unreadCount > 0 && (
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </Link>
         );
       })}

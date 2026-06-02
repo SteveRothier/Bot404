@@ -1,11 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { loadHomeFeedTab } from "@/app/actions/feed";
 import { FeedLoadMore } from "@/components/feed/FeedLoadMore";
 import { FeedList } from "@/components/feed/FeedList";
 import { FollowingEmptyState } from "@/components/feed/FollowingEmptyState";
 import { PostComposerForm } from "@/components/feed/PostComposerForm";
 import { FeedTabs, type FeedTab } from "@/components/feed/FeedTabs";
+import { PostsSkeleton } from "@/components/feed/FeedSkeleton";
 import type {
   CommentWithAuthor,
   PostWithAuthor,
@@ -70,27 +72,86 @@ function postsForTab(
 
 export function FeedPosts({
   recentPosts,
-  theoryPosts,
-  rumorPosts,
-  followingPosts,
-  suggestedNpcs,
+  theoryPosts: initialTheoryPosts,
+  rumorPosts: initialRumorPosts,
+  followingPosts: initialFollowingPosts,
+  suggestedNpcs: initialSuggestedNpcs,
   user,
   profile,
-  likedPostIds,
-  bookmarkedPostIds,
-  commentsByPostId,
-  userReactionsByPostId,
+  likedPostIds: initialLikedPostIds,
+  bookmarkedPostIds: initialBookmarkedPostIds,
+  commentsByPostId: initialCommentsByPostId,
+  userReactionsByPostId: initialUserReactionsByPostId,
   referenceNowMs,
 }: PostsProps) {
   const tab = useContext(FeedTabContext);
   const isLoggedIn = !!user;
-  const posts = postsForTab(
-    tab,
-    recentPosts,
-    theoryPosts,
-    rumorPosts,
-    followingPosts
+
+  const [tabCache, setTabCache] = useState<Set<FeedTab>>(
+    () => new Set(["for-you"])
   );
+  const [loadingTab, setLoadingTab] = useState<FeedTab | null>(null);
+  const [theoryPosts, setTheoryPosts] = useState(initialTheoryPosts);
+  const [rumorPosts, setRumorPosts] = useState(initialRumorPosts);
+  const [followingPosts, setFollowingPosts] = useState(initialFollowingPosts);
+  const [suggestedNpcs, setSuggestedNpcs] = useState(initialSuggestedNpcs);
+  const [likedPostIds, setLikedPostIds] = useState(initialLikedPostIds);
+  const [bookmarkedPostIds, setBookmarkedPostIds] = useState(
+    initialBookmarkedPostIds
+  );
+  const [commentsByPostId, setCommentsByPostId] = useState(
+    initialCommentsByPostId
+  );
+  const [userReactionsByPostId, setUserReactionsByPostId] = useState(
+    initialUserReactionsByPostId
+  );
+
+  useEffect(() => {
+    if (tab === "for-you" || tabCache.has(tab)) return;
+
+    let cancelled = false;
+    setLoadingTab(tab);
+
+    loadHomeFeedTab(tab).then((payload) => {
+      if (cancelled) return;
+      setTabCache((prev) => new Set(prev).add(tab));
+      if (tab === "theory") setTheoryPosts(payload.posts);
+      if (tab === "rumor") setRumorPosts(payload.posts);
+      if (tab === "following") {
+        setFollowingPosts(payload.posts);
+        if (payload.suggestedNpcs.length > 0) {
+          setSuggestedNpcs(payload.suggestedNpcs);
+        }
+      }
+      setLikedPostIds((prev) => [
+        ...new Set([...prev, ...payload.likedPostIds]),
+      ]);
+      setBookmarkedPostIds((prev) => [
+        ...new Set([...prev, ...payload.bookmarkedPostIds]),
+      ]);
+      setCommentsByPostId((prev) => ({
+        ...prev,
+        ...payload.commentsByPostId,
+      }));
+      setUserReactionsByPostId((prev) => ({
+        ...prev,
+        ...payload.userReactionsByPostId,
+      }));
+      setLoadingTab(null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- merge once per tab fetch
+  }, [tab, tabCache]);
+
+  const posts = useMemo(
+    () =>
+      postsForTab(tab, recentPosts, theoryPosts, rumorPosts, followingPosts),
+    [tab, recentPosts, theoryPosts, rumorPosts, followingPosts]
+  );
+
   const emptyMessage =
     tab === "following"
       ? "Aucun profil suivi pour l'instant."
@@ -100,6 +161,10 @@ export function FeedPosts({
           ? "Aucune rumeur pour l'instant."
           : "Aucun post pour l'instant.";
   const showLoadMore = tab === "for-you";
+
+  if (loadingTab === tab) {
+    return <PostsSkeleton count={3} />;
+  }
 
   if (tab === "following" && posts.length === 0) {
     return <FollowingEmptyState suggestedNpcs={suggestedNpcs} />;

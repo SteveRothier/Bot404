@@ -1,6 +1,10 @@
 "use server";
 
-import { getFeedPosts } from "@/lib/queries/feed";
+import {
+  getFeedPosts,
+  getHomeFeedTabBundle,
+  type HomeFeedTab,
+} from "@/lib/queries/feed";
 import type { PostWithAuthor } from "@/lib/supabase/types";
 
 export async function loadMoreFeedPosts(
@@ -8,4 +12,8 @@ export async function loadMoreFeedPosts(
   limit = 20
 ): Promise<PostWithAuthor[]> {
   return getFeedPosts(limit, offset);
+}
+
+export async function loadHomeFeedTab(tab: HomeFeedTab) {
+  return getHomeFeedTabBundle(tab);
 }

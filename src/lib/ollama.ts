@@ -5,6 +5,11 @@ export type OllamaStatus = {
   model: string;
 };
 
+export function getDefaultOllamaStatus(): OllamaStatus {
+  const { model } = getOllamaConfig();
+  return { online: false, model };
+}
+
 export {
   NPC_COMMENT_INTERVAL_MINUTES,
   NPC_POST_INTERVAL_MINUTES,

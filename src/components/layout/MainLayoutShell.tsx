@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { AppShellFallback } from "@/components/layout/AppShellFallback";
 import { getCachedSidebarAuth } from "@/lib/queries/cached";
-import { getShellData } from "@/lib/queries/shell-data";
+import { getCachedShellData } from "@/lib/queries/cached";
+import { getDefaultOllamaStatus } from "@/lib/ollama";
 import { getUnreadNotificationCount } from "@/lib/queries/notifications";
 
 type Props = {
@@ -16,10 +17,10 @@ async function AppShellWithData({
   children: React.ReactNode;
   sidebarAuth: Awaited<ReturnType<typeof getCachedSidebarAuth>>;
 }) {
-  const shell = await getShellData();
-  const initialUnreadCount = sidebarAuth.user
-    ? await getUnreadNotificationCount()
-    : 0;
+  const [shell, initialUnreadCount] = await Promise.all([
+    getCachedShellData(),
+    sidebarAuth.user ? getUnreadNotificationCount() : Promise.resolve(0),
+  ]);
 
   return (
     <AppShell
@@ -28,7 +29,7 @@ async function AppShellWithData({
       factions={shell.factions}
       npcSchedule={shell.npcSchedule}
       loreAlerts={shell.loreAlerts}
-      ollama={shell.ollama}
+      ollama={getDefaultOllamaStatus()}
       sidebarAuth={sidebarAuth}
       initialUnreadCount={initialUnreadCount}
     >

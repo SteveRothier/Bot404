@@ -7,21 +7,14 @@ async function getLastNpcContentTime(
 
   const { data, error } = await supabase
     .from(table)
-    .select("created_at, author:profiles!author_id(is_npc)")
+    .select("created_at, author:profiles!inner(is_npc)")
+    .eq("author.is_npc", true)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(1)
+    .maybeSingle();
 
-  if (error || !data) return null;
-
-  const row = data.find(
-    (item) =>
-      item.author &&
-      typeof item.author === "object" &&
-      "is_npc" in item.author &&
-      item.author.is_npc
-  );
-
-  return row?.created_at ? new Date(row.created_at) : null;
+  if (error || !data?.created_at) return null;
+  return new Date(data.created_at);
 }
 
 export async function getLastNpcPostTime(): Promise<Date | null> {

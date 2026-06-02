@@ -1,4 +1,3 @@
-import { checkOllamaStatus } from "@/lib/ollama";
 import {
   minutesUntilNextNpcRun,
   NPC_COMMENT_INTERVAL_MINUTES,
@@ -14,8 +13,7 @@ import {
   getLastNpcCommentTime,
   getLastNpcPostTime,
 } from "@/lib/queries/npc-schedule";
-import { getActiveWorldEvents } from "@/lib/queries/world-events";
-import type { OllamaStatus } from "@/lib/ollama";
+import { getCachedActiveWorldEvents } from "@/lib/queries/world-events";
 import type { Archive, WorldEvent } from "@/lib/supabase/types";
 
 export type ShellLoreAlerts = {
@@ -37,7 +35,6 @@ export async function getShellData() {
     factions,
     lastPostAt,
     lastCommentAt,
-    ollama,
     activeEvents,
     recentArchives,
   ] = await Promise.all([
@@ -46,8 +43,7 @@ export async function getShellData() {
     getCachedFactions(),
     getLastNpcPostTime(),
     getLastNpcCommentTime(),
-    checkOllamaStatus(),
-    getActiveWorldEvents(),
+    getCachedActiveWorldEvents(),
     getRecentlyUnlockedArchives(168),
   ]);
 
@@ -74,7 +70,6 @@ export async function getShellData() {
     hashtags: hashtags.slice(0, 5),
     factions,
     npcSchedule,
-    ollama: ollama as OllamaStatus,
     loreAlerts,
   };
 }
