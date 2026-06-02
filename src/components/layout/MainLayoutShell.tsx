@@ -27,6 +27,7 @@ async function AppShellWithData({
       hashtags={shell.hashtags}
       factions={shell.factions}
       npcSchedule={shell.npcSchedule}
+      loreAlerts={shell.loreAlerts}
       ollama={shell.ollama}
       sidebarAuth={sidebarAuth}
       initialUnreadCount={initialUnreadCount}

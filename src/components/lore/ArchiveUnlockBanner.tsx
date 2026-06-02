@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Archive, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Archive as ArchiveRecord } from "@/lib/supabase/types";
 
 const DISMISS_KEY = "bot404-dismissed-archives";
 
 type Props = {
   archive: ArchiveRecord;
+  variant?: "feed" | "sidebar";
 };
 
 function isDismissed(slug: string): boolean {
@@ -34,7 +36,10 @@ function dismiss(slug: string) {
   }
 }
 
-export function ArchiveUnlockBanner({ archive }: Props) {
+export function ArchiveUnlockBanner({
+  archive,
+  variant = "feed",
+}: Props) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -49,7 +54,14 @@ export function ArchiveUnlockBanner({ archive }: Props) {
   }
 
   return (
-    <div className="border-b border-amber-500/30 bg-amber-500/5 px-4 py-3">
+    <div
+      className={cn(
+        "bg-amber-500/5",
+        variant === "sidebar"
+          ? "rounded-2xl border border-amber-500/30 p-3"
+          : "border-b border-amber-500/30 px-4 py-3"
+      )}
+    >
       <div className="flex items-start gap-3">
         <Archive
           className="mt-0.5 size-4 shrink-0 text-amber-500"

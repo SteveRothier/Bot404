@@ -3,7 +3,7 @@ import { LeftSidebar } from "@/components/layout/LeftSidebar";
 import { RightSidebar } from "@/components/layout/RightSidebar";
 import { ClientStoresHydrator } from "@/components/providers/ClientStoresHydrator";
 import type { OllamaStatus } from "@/lib/ollama";
-import type { ShellNpcSchedule } from "@/lib/queries/shell-data";
+import type { ShellLoreAlerts, ShellNpcSchedule } from "@/lib/queries/shell-data";
 import type { Faction, NetworkStats, Profile, TrendingHashtag } from "@/lib/supabase/types";
 
 type SidebarAuth = {
@@ -18,6 +18,7 @@ type Props = {
   hashtags: TrendingHashtag[];
   factions: Faction[];
   npcSchedule: ShellNpcSchedule;
+  loreAlerts: ShellLoreAlerts;
   ollama: OllamaStatus;
   sidebarAuth: SidebarAuth;
   initialUnreadCount: number;
@@ -29,6 +30,7 @@ export function AppShell({
   hashtags,
   factions,
   npcSchedule,
+  loreAlerts,
   ollama,
   sidebarAuth,
   initialUnreadCount,
@@ -61,6 +63,7 @@ export function AppShell({
             hashtags={hashtags}
             stats={stats}
             npcSchedule={npcSchedule}
+            loreAlerts={loreAlerts}
           />
         </div>
       </div>

@@ -3,18 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bot, Menu, X } from "lucide-react";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { NavDrawerProvider } from "@/components/layout/NavDrawerContext";
 
 type Props = {
   children: React.ReactNode;
-  showNotifications?: boolean;
 };
 
-export function AppSidebarDrawer({
-  children,
-  showNotifications = false,
-}: Props) {
+export function AppSidebarDrawer({ children }: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -41,9 +36,7 @@ export function AppSidebarDrawer({
           <Bot className="h-6 w-6 text-accent" strokeWidth={1.75} />
           <span className="text-lg font-bold text-foreground">Bot404</span>
         </Link>
-        <div className="flex items-center gap-1">
-          {showNotifications && <NotificationBell />}
-          <button
+        <button
           type="button"
           onClick={() => setOpen(true)}
           className="rounded-full p-2 text-foreground transition-colors hover:bg-secondary"
@@ -52,7 +45,6 @@ export function AppSidebarDrawer({
         >
           <Menu className="size-6" strokeWidth={1.75} />
         </button>
-        </div>
       </header>
 
       {open && (

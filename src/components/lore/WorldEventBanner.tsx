@@ -1,19 +1,28 @@
 import Link from "next/link";
 import { Radio } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { WorldEvent } from "@/lib/supabase/types";
 
 type Props = {
   event: WorldEvent;
+  variant?: "feed" | "sidebar";
 };
 
-export function WorldEventBanner({ event }: Props) {
+export function WorldEventBanner({ event, variant = "feed" }: Props) {
   const description =
     event.description.length > 120
       ? `${event.description.slice(0, 117)}…`
       : event.description;
 
   return (
-    <div className="border-b border-accent/30 bg-accent/5 px-4 py-3">
+    <div
+      className={cn(
+        "bg-accent/5",
+        variant === "sidebar"
+          ? "rounded-2xl border border-accent/30 p-3"
+          : "border-b border-accent/30 px-4 py-3"
+      )}
+    >
       <div className="flex items-start gap-3">
         <Radio
           className="mt-0.5 size-4 shrink-0 text-accent"
