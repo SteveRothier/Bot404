@@ -8,6 +8,8 @@ import {
 } from "@/lib/queries/cached";
 import { ActiveWorldEventHighlight } from "@/components/lore/ActiveWorldEventHighlight";
 import { getFeedPosts } from "@/lib/queries/feed";
+import { NarrativeStatusCard } from "@/components/lore/NarrativeStatusCard";
+import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import { getNarrativeStateForUi } from "@/lib/narrative/queries";
 import { getRecentNarrativeInteractions } from "@/lib/queries/narrative-ui";
 import {
@@ -94,29 +96,17 @@ export default async function TrendingPage() {
 
       {(narrativeState.scriptedActive || narrativeState.emergentActive) && (
         <section className="px-4 py-4">
-          <h2 className="mb-3 text-[15px] font-bold">Histoire du réseau</h2>
-          {narrativeState.scriptedActive && narrativeState.actOneTitle ? (
-            <p className="text-[15px] text-muted-foreground">
-              Acte en cours :{" "}
-              <span className="font-bold text-foreground">
-                {narrativeState.actOneTitle}
-              </span>
-            </p>
-          ) : (
-            <p className="text-[15px] text-muted-foreground">
-              Mode réactif — {narrativeState.pendingSignals} signal
-              {narrativeState.pendingSignals !== 1 ? "s" : ""} humain
-              {narrativeState.pendingSignals !== 1 ? "s" : ""} en attente de
-              réponse NPC.
-            </p>
-          )}
+          <h2 className="mb-3 text-[15px] font-bold">
+            {NARRATIVE_COPY.sections.networkStory}
+          </h2>
+          <NarrativeStatusCard {...narrativeState} variant="inline" />
         </section>
       )}
 
       {narrativeInteractions.length > 0 && (
         <section className="px-4 py-4">
           <h2 className="mb-3 text-[15px] font-bold">
-            Réponses du réseau aux humains
+            {NARRATIVE_COPY.sections.botReplies}
           </h2>
           <ul className="space-y-2">
             {narrativeInteractions.map((row) => (

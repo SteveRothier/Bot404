@@ -85,12 +85,34 @@ export async function isEmergentModeActive(): Promise<boolean> {
   return arc !== null;
 }
 
-export async function getNarrativeStateForUi(): Promise<{
+export type NarrativeUiState = {
   scriptedActive: boolean;
   emergentActive: boolean;
   actOneTitle: string | null;
   pendingSignals: number;
-}> {
+  scriptedProgress: { completed: number; total: number } | null;
+};
+
+async function getScriptedProgress(
+  arcId: number
+): Promise<{ completed: number; total: number } | null> {
+  const supabase = createAdminClient();
+  const { data: beats } = await supabase
+    .from("narrative_beats")
+    .select("status")
+    .eq("arc_id", arcId);
+
+  if (!beats?.length) return null;
+
+  const total = beats.length;
+  const completed = beats.filter(
+    (b) => b.status === "done" || b.status === "skipped"
+  ).length;
+
+  return { completed, total };
+}
+
+export async function getNarrativeStateForUi(): Promise<NarrativeUiState> {
   const supabase = createAdminClient();
   const [scripted, emergent, { count }] = await Promise.all([
     getActiveScriptedArc(),
@@ -101,10 +123,14 @@ export async function getNarrativeStateForUi(): Promise<{
       .eq("status", "pending"),
   ]);
 
+  const scriptedProgress =
+    scripted !== null ? await getScriptedProgress(scripted.id) : null;
+
   return {
     scriptedActive: scripted !== null,
     emergentActive: emergent !== null,
     actOneTitle: scripted?.title ?? null,
     pendingSignals: count ?? 0,
+    scriptedProgress,
   };
 }

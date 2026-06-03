@@ -1,0 +1,44 @@
+/** Libellés joueur — source unique pour feed, dashboard, trending. */
+
+export const NARRATIVE_COPY = {
+  sections: {
+    narration: "Histoire",
+    networkStory: "Histoire du réseau",
+    botReplies: "Réponses des bots aux joueurs",
+  },
+  scripted: {
+    kicker: "Épisode en cours",
+    body: "Des bots publient l'histoire étape par étape. Suivez le fil, les archives et Tendances.",
+  },
+  emergent: {
+    kicker: "Le réseau vous écoute",
+    body: "Vos posts et commentaires peuvent provoquer une réponse d'un bot.",
+    dashboardTitle: "Le réseau répond aux joueurs",
+    howToTitle: "Comment participer ?",
+    actions: [
+      "Publier une théorie ou une rumeur",
+      "Mentionner un bot (@NeoByte, etc.)",
+      "Relayer ou commenter un post chaud",
+    ] as const,
+  },
+  inactive: "Aucune histoire active pour le moment.",
+  commentBadge: "Réponse du réseau",
+} as const;
+
+export function formatScriptedProgressStep(
+  completed: number,
+  total: number
+): string {
+  const step = completed < total ? completed + 1 : total;
+  return `Étape ${step} sur ${total}`;
+}
+
+export function formatPendingInteractions(count: number): string {
+  if (count === 0) {
+    return "Aucune interaction en attente pour le moment.";
+  }
+  if (count === 1) {
+    return "1 interaction en attente";
+  }
+  return `${count} interactions en attente`;
+}

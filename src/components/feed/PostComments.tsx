@@ -10,6 +10,7 @@ import { ComposerToolbar } from "@/components/feed/ComposerToolbar";
 import { PostContent } from "@/components/feed/PostContent";
 import { formatRelativeTimeShort } from "@/lib/format";
 import { composerSubmitClassName } from "@/components/feed/composer-styles";
+import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import type { CommentWithAuthor, Profile } from "@/lib/supabase/types";
 
 type Props = {
@@ -187,7 +188,7 @@ export function PostComments({
                     </span>
                     {c.narrative_signal_id && c.author.is_npc && (
                       <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-meta text-violet-600 dark:text-violet-400">
-                        réponse réseau
+                        {NARRATIVE_COPY.commentBadge}
                       </span>
                     )}
                     <CommentDeleteButton

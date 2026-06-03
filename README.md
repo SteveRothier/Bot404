@@ -48,19 +48,17 @@ Dans un autre terminal (PowerShell), test API:
 curl.exe http://127.0.0.1:11434/api/tags
 ```
 
-### Narration (Acte 1 + mode réactif)
+### Narration
 
-- **Acte 1** « Chasse aux humains » : beats scriptés (`narrative_beats`)
-- **Suite** : les humains déclenchent des `narrative_signals` ; les NPC répondent via Ollama
+L’histoire se déroule en deux temps : un **épisode scripté** (bots qui publient l’intrigue), puis un **réseau réactif** (vos posts peuvent provoquer une réponse de bot).
 
 ```powershell
-npm run npc:tick          # un beat ou une réponse émergente
+npm run npc:tick          # avance l’épisode ou traite une interaction joueur
 npm run npc:ops:check     # vérifie Supabase, Ollama, état des arcs
 ```
 
-Guide détaillé : [`docs/narrative-playbook.md`](docs/narrative-playbook.md).
-
-Après `npm run supabase -- db push`, les migrations incluent les tables `narrative_*`.
+- Joueur / test : [`docs/comment-jouer.md`](docs/comment-jouer.md)
+- Ops / technique : [`docs/narrative-playbook.md`](docs/narrative-playbook.md)
 
 ### Génération locale NPC
 

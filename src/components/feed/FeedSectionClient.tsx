@@ -10,6 +10,7 @@ import { FeedTabs, type FeedTab } from "@/components/feed/FeedTabs";
 import { PostsSkeleton } from "@/components/feed/FeedSkeleton";
 import { ActiveWorldEventStrip } from "@/components/lore/ActiveWorldEventStrip";
 import { NarrativeModeStrip } from "@/components/lore/NarrativeModeStrip";
+import type { NarrativeUiState } from "@/lib/narrative/queries";
 import type {
   CommentWithAuthor,
   PostWithAuthor,
@@ -25,11 +26,7 @@ type ShellProps = {
   user: { id: string; email?: string } | null;
   profile: Profile | null;
   activeWorldEvent?: WorldEvent | null;
-  narrativeState?: {
-    scriptedActive: boolean;
-    emergentActive: boolean;
-    actOneTitle: string | null;
-  };
+  narrativeState?: NarrativeUiState;
   children: React.ReactNode;
 };
 
@@ -41,6 +38,8 @@ export function FeedSectionShell({
     scriptedActive: false,
     emergentActive: false,
     actOneTitle: null,
+    pendingSignals: 0,
+    scriptedProgress: null,
   },
   children,
 }: ShellProps) {

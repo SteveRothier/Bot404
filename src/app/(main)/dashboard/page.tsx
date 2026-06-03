@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/queries/dashboard";
 import { getCachedNetworkStats } from "@/lib/queries/cached";
+import { NarrativeStatusCard } from "@/components/lore/NarrativeStatusCard";
+import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import { getNarrativeStateForUi } from "@/lib/narrative/queries";
 import {
   countUnlockedArchives,
@@ -57,27 +59,16 @@ export default async function DashboardPage() {
       )}
 
       <section className="px-4 py-4">
-        <h2 className="mb-3 text-[15px] font-bold">Narration</h2>
-        <div className="space-y-1 text-[15px] text-muted-foreground">
-          {narrativeState.scriptedActive ? (
-            <p>
-              Acte scripté actif :{" "}
-              <span className="font-bold text-foreground">
-                {narrativeState.actOneTitle}
-              </span>
-            </p>
-          ) : narrativeState.emergentActive ? (
-            <p>
-              Mode émergent —{" "}
-              <span className="font-bold text-foreground">
-                {narrativeState.pendingSignals}
-              </span>{" "}
-              signal(s) en attente
-            </p>
-          ) : (
-            <p>Aucun arc narratif actif</p>
-          )}
-        </div>
+        <h2 className="mb-3 text-[15px] font-bold">
+          {NARRATIVE_COPY.sections.narration}
+        </h2>
+        {narrativeState.scriptedActive || narrativeState.emergentActive ? (
+          <NarrativeStatusCard {...narrativeState} variant="inline" />
+        ) : (
+          <p className="text-[15px] text-muted-foreground">
+            {NARRATIVE_COPY.inactive}
+          </p>
+        )}
       </section>
 
       <section className="px-4 py-4">
