@@ -87,7 +87,7 @@ async function checkSupabaseNarrative() {
   if (!arcsError) {
     const { data: arcs } = await supabase
       .from("narrative_arcs")
-      .select("slug, status, mode");
+      .select("id, slug, status, mode");
 
     const scripted = arcs?.find((a) => a.slug === "chasse-humains-acte-1");
     const emergent = arcs?.find((a) => a.slug === "reseau-reactif");
@@ -116,6 +116,33 @@ async function checkSupabaseNarrative() {
       ok: true,
       detail: String(count ?? 0),
     });
+
+    const activeScripted = arcs?.find(
+      (a) => a.mode === "scripted" && a.status === "active"
+    );
+    const failedArcId = activeScripted?.id ?? scripted?.id;
+
+    if (failedArcId) {
+      const { data: failedBeats } = await supabase
+        .from("narrative_beats")
+        .select("sort_order, kind, status")
+        .eq("arc_id", failedArcId)
+        .eq("status", "failed")
+        .order("sort_order");
+
+      const failedList = (failedBeats ?? [])
+        .map((b) => `#${b.sort_order} ${b.kind}`)
+        .join(", ");
+
+      checks.push({
+        name: "Beats failed",
+        ok: (failedBeats?.length ?? 0) === 0,
+        detail:
+          failedBeats?.length
+            ? `${failedList} — npm run npc:beat:retry -- <sort_order>`
+            : "aucun",
+      });
+    }
   }
 }
 

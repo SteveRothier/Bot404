@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Radio } from "lucide-react";
 import {
   formatPendingInteractions,
@@ -18,6 +19,7 @@ export function NarrativeStatusCard({
   actOneTitle,
   scriptedProgress,
   pendingSignals,
+  failedBeatsCount,
   variant,
   showHowTo = false,
 }: Props) {
@@ -28,6 +30,7 @@ export function NarrativeStatusCard({
     <ScriptedContent
       title={actOneTitle}
       progress={scriptedProgress}
+      failedBeatsCount={failedBeatsCount}
       isStrip={isStrip}
     />
   ) : emergentActive ? (
@@ -61,10 +64,12 @@ export function NarrativeStatusCard({
 function ScriptedContent({
   title,
   progress,
+  failedBeatsCount,
   isStrip,
 }: {
   title: string;
   progress: { completed: number; total: number } | null;
+  failedBeatsCount: number;
   isStrip: boolean;
 }) {
   const { scripted } = NARRATIVE_COPY;
@@ -90,6 +95,11 @@ function ScriptedContent({
         </p>
       )}
       <p className="mt-0.5 text-muted-foreground">{scripted.body}</p>
+      {failedBeatsCount > 0 && (
+        <p className="mt-1 text-sm font-medium text-amber-600 dark:text-amber-400">
+          {scripted.failedBeatWarning}
+        </p>
+      )}
     </>
   );
 }
@@ -115,9 +125,17 @@ function EmergentContent({
       )}
       <p className="mt-0.5 text-muted-foreground">{emergent.body}</p>
       {!isStrip && (
-        <p className="text-muted-foreground">
-          {formatPendingInteractions(pendingSignals)}
-        </p>
+        <>
+          <p className="text-muted-foreground">
+            {formatPendingInteractions(pendingSignals)}
+          </p>
+          <Link
+            href="/comment-jouer"
+            className="inline-block text-sm font-medium text-accent hover:underline"
+          >
+            {emergent.guideLink} →
+          </Link>
+        </>
       )}
       {showHowTo && (
         <details className="mt-2 text-sm">
@@ -129,6 +147,12 @@ function EmergentContent({
               <li key={action}>{action}</li>
             ))}
           </ul>
+          <Link
+            href="/comment-jouer"
+            className="mt-2 inline-block text-sm font-medium text-accent hover:underline"
+          >
+            {emergent.guideLink} →
+          </Link>
         </details>
       )}
     </>

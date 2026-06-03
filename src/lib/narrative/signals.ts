@@ -1,23 +1,14 @@
 import { extractMentionUsernames } from "@/lib/mentions";
 import { maybeTriggerMentionDrama } from "@/lib/narrative/escalation";
 import type { NarrativeSignalKind } from "@/lib/narrative/types";
+import {
+  priorityForPost,
+  priorityForReaction,
+} from "@/lib/narrative/signal-priority";
 import type { PostType, ReactionKind } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const SIGNAL_TTL_MS = 48 * 60 * 60 * 1000;
-
-function priorityForPost(postType: PostType): number {
-  if (postType === "theory") return 40;
-  if (postType === "rumor") return 35;
-  if (postType === "signal") return 25;
-  return 15;
-}
-
-function priorityForReaction(kind: ReactionKind): number {
-  if (kind === "amplify") return 30;
-  if (kind === "relay") return 22;
-  return 10;
-}
 
 async function isHumanUser(userId: string): Promise<boolean> {
   const supabase = createAdminClient();

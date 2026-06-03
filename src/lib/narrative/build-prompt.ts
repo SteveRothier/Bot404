@@ -100,3 +100,35 @@ ${opts.threadSnippet ? `\nFil récent :\n${opts.threadSnippet}` : ""}
 
   return { system, user };
 }
+
+export async function buildEmergentPostPrompt(
+  npc: Profile,
+  opts: {
+    humanUsername: string;
+    actionLabel: string;
+    content: string;
+    threadSnippet: string;
+    emergentSynopsis: string;
+    postType: "theory" | "rumor";
+  }
+): Promise<{ system: string; user: string }> {
+  const loreBlock = buildNpcLorePromptBlock(await getNpcLoreContext());
+  const actOne = await getCompletedActOneSynopsis();
+  const p = (npc.personality ?? {}) as Personality;
+  const typeLine = TYPE_INSTRUCTIONS[opts.postType];
+
+  const system = `${npcBase(npc)}${loreBlock}
+
+${actOne ?? opts.emergentSynopsis}
+
+Un humain (@${opts.humanUsername}) a déclenché une réponse du réseau. Publie un post autonome en feed (pas un commentaire).
+Ton : ${p.personality ?? "neutre"}. Style : ${p.writing_style ?? "court"}.
+${typeLine}`;
+
+  const user = `Action humaine : ${opts.actionLabel}
+« ${opts.content} »
+${opts.threadSnippet ? `\nFil récent :\n${opts.threadSnippet}` : ""}
+Écris le post en personnage.`;
+
+  return { system, user };
+}

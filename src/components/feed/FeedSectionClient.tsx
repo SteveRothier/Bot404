@@ -40,6 +40,7 @@ export function FeedSectionShell({
     actOneTitle: null,
     pendingSignals: 0,
     scriptedProgress: null,
+    failedBeatsCount: 0,
   },
   children,
 }: ShellProps) {

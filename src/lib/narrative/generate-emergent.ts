@@ -1,11 +1,18 @@
-import { processCommentFactionEffects } from "@/lib/factions/simulation";
-import { buildEmergentPrompt } from "@/lib/narrative/build-prompt";
+import {
+  processCommentFactionEffects,
+  processPostFactionEffects,
+} from "@/lib/factions/simulation";
+import {
+  buildEmergentPostPrompt,
+  buildEmergentPrompt,
+} from "@/lib/narrative/build-prompt";
+import { shouldEmergentNpcPost } from "@/lib/narrative/emergent-response-mode";
 import { getEmergentArcSynopsis } from "@/lib/narrative/execute-beat";
 import { getActiveEmergentArc } from "@/lib/narrative/queries";
 import type { NarrativeSignal } from "@/lib/narrative/types";
 import { ollamaChat } from "@/lib/npc/ollama";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Profile } from "@/lib/supabase/types";
+import type { PostType, Profile } from "@/lib/supabase/types";
 
 const PURBOT_USERNAMES = ["ConspiracyBot", "Omega", "TrollMaster", "Orion"];
 const HUMANIST_USERNAMES = ["ByteDreamer", "Nova", "Philosoraptor", "FakeInfluencer"];
@@ -161,7 +168,14 @@ async function buildThreadSnippet(postId: number | null): Promise<string> {
 }
 
 export async function generateEmergentNpcResponse(): Promise<
-  | { ok: true; author: string; postId: number; commentId: number; signalId: number }
+  | {
+      ok: true;
+      author: string;
+      postId: number;
+      commentId: number | null;
+      signalId: number;
+      responseType: "comment" | "post";
+    }
   | { ok: false; error: string }
 > {
   const emergentArc = await getActiveEmergentArc();
@@ -200,6 +214,75 @@ export async function generateEmergentNpcResponse(): Promise<
 
   const threadSnippet = await buildThreadSnippet(targetPostId);
   const synopsis = await getEmergentArcSynopsis();
+  const respondWithPost = shouldEmergentNpcPost(typedSignal);
+
+  if (respondWithPost) {
+    const postType: PostType =
+      typeof typedSignal.payload.post_type === "string" &&
+      typedSignal.payload.post_type === "rumor"
+        ? "rumor"
+        : "theory";
+
+    const { system, user } = await buildEmergentPostPrompt(npc, {
+      humanUsername: ctx.humanUsername,
+      actionLabel: ctx.actionLabel,
+      content: ctx.content,
+      threadSnippet,
+      emergentSynopsis: synopsis,
+      postType: postType === "rumor" ? "rumor" : "theory",
+    });
+
+    const content = await ollamaChat(system, user, 400);
+    if (!content) {
+      return { ok: false, error: "Échec génération Ollama." };
+    }
+
+    const { data: newPost, error: postError } = await supabase
+      .from("posts")
+      .insert({
+        author_id: npc.id,
+        content: content.slice(0, 500),
+        post_type: postType,
+        narrative_signal_id: typedSignal.id,
+        likes_count: Math.floor(Math.random() * 80) + 10,
+      })
+      .select("id")
+      .single();
+
+    if (postError || !newPost) {
+      return { ok: false, error: postError?.message ?? "Insert post failed" };
+    }
+
+    await supabase
+      .from("narrative_signals")
+      .update({
+        status: "handled",
+        handled_at: new Date().toISOString(),
+        result: {
+          post_id: newPost.id,
+          response_type: "post",
+          author: npc.username,
+          trigger_post_id: targetPostId,
+        },
+      })
+      .eq("id", typedSignal.id);
+
+    await supabase
+      .from("profiles")
+      .update({ popularity_score: (npc.popularity_score ?? 0) + 2 })
+      .eq("id", npc.id);
+
+    await processPostFactionEffects(supabase, newPost.id);
+
+    return {
+      ok: true,
+      author: npc.username,
+      postId: newPost.id,
+      commentId: null,
+      signalId: typedSignal.id,
+      responseType: "post",
+    };
+  }
 
   const { system, user } = await buildEmergentPrompt(npc, {
     humanUsername: ctx.humanUsername,
@@ -236,6 +319,7 @@ export async function generateEmergentNpcResponse(): Promise<
       handled_at: new Date().toISOString(),
       result: {
         comment_id: comment.id,
+        response_type: "comment",
         author: npc.username,
         post_id: targetPostId,
       },
@@ -255,5 +339,6 @@ export async function generateEmergentNpcResponse(): Promise<
     postId: targetPostId,
     commentId: comment.id,
     signalId: typedSignal.id,
+    responseType: "comment",
   };
 }

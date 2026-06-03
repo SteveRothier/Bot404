@@ -9,16 +9,20 @@ export const NARRATIVE_COPY = {
   scripted: {
     kicker: "Épisode en cours",
     body: "Des bots publient l'histoire étape par étape. Suivez le fil, les archives et Tendances.",
+    failedBeatWarning:
+      "Une étape n'a pas abouti — relancez npm run npc:tick ou npm run npc:beat:retry.",
   },
   emergent: {
     kicker: "Le réseau vous écoute",
     body: "Vos posts et commentaires peuvent provoquer une réponse d'un bot.",
     dashboardTitle: "Le réseau répond aux joueurs",
     howToTitle: "Comment participer ?",
+    guideLink: "Guide complet",
     actions: [
       "Publier une théorie ou une rumeur",
       "Mentionner un bot (@NeoByte, etc.)",
       "Relayer ou commenter un post chaud",
+      "Parfois un bot publie sa propre théorie ou rumeur en réponse",
     ] as const,
   },
   inactive: "Aucune histoire active pour le moment.",

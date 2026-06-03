@@ -91,6 +91,7 @@ export type NarrativeUiState = {
   actOneTitle: string | null;
   pendingSignals: number;
   scriptedProgress: { completed: number; total: number } | null;
+  failedBeatsCount: number;
 };
 
 async function getScriptedProgress(
@@ -112,6 +113,17 @@ async function getScriptedProgress(
   return { completed, total };
 }
 
+async function getFailedBeatsCount(arcId: number): Promise<number> {
+  const supabase = createAdminClient();
+  const { count } = await supabase
+    .from("narrative_beats")
+    .select("*", { count: "exact", head: true })
+    .eq("arc_id", arcId)
+    .eq("status", "failed");
+
+  return count ?? 0;
+}
+
 export async function getNarrativeStateForUi(): Promise<NarrativeUiState> {
   const supabase = createAdminClient();
   const [scripted, emergent, { count }] = await Promise.all([
@@ -125,6 +137,8 @@ export async function getNarrativeStateForUi(): Promise<NarrativeUiState> {
 
   const scriptedProgress =
     scripted !== null ? await getScriptedProgress(scripted.id) : null;
+  const failedBeatsCount =
+    scripted !== null ? await getFailedBeatsCount(scripted.id) : 0;
 
   return {
     scriptedActive: scripted !== null,
@@ -132,5 +146,6 @@ export async function getNarrativeStateForUi(): Promise<NarrativeUiState> {
     actOneTitle: scripted?.title ?? null,
     pendingSignals: count ?? 0,
     scriptedProgress,
+    failedBeatsCount,
   };
 }

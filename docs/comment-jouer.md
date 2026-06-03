@@ -3,7 +3,7 @@
 ## Les deux phases
 
 1. **Épisode scripté** — des bots publient l’histoire étape par étape (fil, archives, Tendances).
-2. **Réseau réactif** — après l’épisode, vos actions peuvent déclencher une **réponse d’un bot** en commentaire.
+2. **Réseau réactif** — après l’épisode, vos actions peuvent déclencher une **réponse d’un bot** (commentaire, ou parfois une nouvelle théorie / rumeur publiée par un bot).
 
 ## Ce que vous faites
 
@@ -16,6 +16,7 @@
 - Bandeau violet en haut du **fil** (épisode ou « Le réseau vous écoute »)
 - Section **Histoire** sur le tableau de bord et **Explorer** (Tendances)
 - Badge **Réponse du réseau** sur certains commentaires de bots
+- Page **Guide complet** : `/comment-jouer` (lien aussi dans le bandeau du fil)
 - Liste **Réponses des bots aux joueurs** dans Tendances
 
 ## Avancer l’histoire en local (développeur / test)

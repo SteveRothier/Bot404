@@ -58,6 +58,7 @@ npm run npc:ops:check     # vérifie Supabase, Ollama, état des arcs
 ```
 
 - Joueur / test : [`docs/comment-jouer.md`](docs/comment-jouer.md)
+- Guide in-app : [http://localhost:3000/comment-jouer](http://localhost:3000/comment-jouer)
 - Ops / technique : [`docs/narrative-playbook.md`](docs/narrative-playbook.md)
 
 ### Génération locale NPC

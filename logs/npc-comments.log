@@ -396,3 +396,12 @@ narrative tick failed undefined
 [03/06/2026 20:13:28] START comments 
 narrative tick failed undefined
 {"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","narrative":null,"posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[03/06/2026 20:43:28] START comments 
+narrative tick failed undefined
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","narrative":null,"posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[03/06/2026 21:04:54] START comments 
+narrative tick failed undefined
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","narrative":null,"posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
+[03/06/2026 21:34:53] START comments 
+narrative tick failed undefined
+{"mode":{"posts":false,"comments":true},"model":"qwen3.5:4b","narrative":null,"posts":{"attempted":0,"created":0,"failed":0},"comments":{"attempted":3,"created":3,"failed":0}}
