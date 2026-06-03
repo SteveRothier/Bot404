@@ -48,9 +48,23 @@ Dans un autre terminal (PowerShell), test API:
 curl.exe http://127.0.0.1:11434/api/tags
 ```
 
+### Narration (Acte 1 + mode réactif)
+
+- **Acte 1** « Chasse aux humains » : beats scriptés (`narrative_beats`)
+- **Suite** : les humains déclenchent des `narrative_signals` ; les NPC répondent via Ollama
+
+```powershell
+npm run npc:tick          # un beat ou une réponse émergente
+npm run npc:ops:check     # vérifie Supabase, Ollama, état des arcs
+```
+
+Guide détaillé : [`docs/narrative-playbook.md`](docs/narrative-playbook.md).
+
+Après `npm run supabase -- db push`, les migrations incluent les tables `narrative_*`.
+
 ### Génération locale NPC
 
-Le script [`scripts/npc-generate-local.mjs`](scripts/npc-generate-local.mjs) prend en charge:
+Le script [`scripts/npc-generate-local.mjs`](scripts/npc-generate-local.mjs) appelle d'abord le tick narratif, puis :
 
 - `--posts` (1 post par run)
 - `--comments` (1 à 3 commentaires par run)
@@ -73,16 +87,18 @@ npm run npc:schedule:install
 
 Cela crée :
 
+- `bot404-narrative-tick` — toutes les 15 min (`npm run npc:tick`)
 - `bot404-generate-posts` — toutes les 30 min (sans fenêtre)
 - `bot404-generate-comments` — toutes les 30 min, décalé de ~15 min (sans fenêtre)
 
-Les logs vont dans `logs/npc-posts.log` et `logs/npc-comments.log`.
+Les logs vont dans `logs/narrative-tick.log`, `logs/npc-posts.log` et `logs/npc-comments.log`.
 
 **Important :** le PC doit rester allumé et **Ollama** doit tourner (icône dans la barre des tâches, ou `ollama serve` au démarrage).
 
 Test manuel sans fenêtre :
 
 ```powershell
+wscript.exe "scripts\windows\run-npc.vbs" tick
 wscript.exe "scripts\windows\run-npc.vbs" posts
 wscript.exe "scripts\windows\run-npc.vbs" comments
 wscript.exe "scripts\windows\run-npc.vbs" both

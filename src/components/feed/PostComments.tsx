@@ -185,6 +185,11 @@ export function PostComments({
                     <span className="text-meta text-muted-foreground">
                       {formatRelativeTimeShort(c.created_at, referenceNowMs)}
                     </span>
+                    {c.narrative_signal_id && c.author.is_npc && (
+                      <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-meta text-violet-600 dark:text-violet-400">
+                        réponse réseau
+                      </span>
+                    )}
                     <CommentDeleteButton
                       commentId={c.id}
                       postId={postId}

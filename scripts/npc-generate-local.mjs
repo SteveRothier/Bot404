@@ -1,5 +1,6 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { spawnSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 
 function loadDotEnv(filePath) {
@@ -308,9 +309,33 @@ async function generateComments() {
 const output = {
   mode: { posts: runPosts, comments: runComments },
   model: OLLAMA_MODEL,
+  narrative: null,
   posts: { attempted: 0, created: 0, failed: 0 },
   comments: { attempted: 0, created: 0, failed: 0 },
 };
+
+function runNarrativeTickCli() {
+  const cmd = process.platform === "win32" ? "npx.cmd" : "npx";
+  const result = spawnSync(cmd, ["tsx", "scripts/narrative-tick.ts"], {
+    encoding: "utf8",
+    cwd: process.cwd(),
+  });
+  if (result.status !== 0) {
+    console.error("narrative tick failed", result.stderr || result.stdout);
+    return null;
+  }
+  try {
+    return JSON.parse(result.stdout.trim());
+  } catch {
+    return null;
+  }
+}
+
+output.narrative = runNarrativeTickCli();
+if (output.narrative?.handled) {
+  console.log(JSON.stringify(output));
+  process.exit(0);
+}
 
 if (runPosts) output.posts = await generatePosts();
 if (runComments) output.comments = await generateComments();

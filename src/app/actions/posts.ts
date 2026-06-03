@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { processPostFactionEffects } from "@/lib/factions/simulation";
+import {
+  enqueueHumanCommentSignal,
+  enqueueHumanPostSignal,
+} from "@/lib/narrative/signals";
 import { createMentionNotifications } from "@/lib/notifications";
 import { isValidPostType } from "@/lib/post-types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -106,6 +110,7 @@ export async function createPost(formData: FormData) {
     if (content) {
       await createMentionNotifications(content, user.id, post.id);
     }
+    await enqueueHumanPostSignal(user.id, post.id, content, post_type);
   }
 
   revalidatePath("/");
@@ -163,17 +168,25 @@ export async function createComment(postId: number, formData: FormData) {
     return { error: "Connectez-vous pour commenter." };
   }
 
-  const { error } = await supabase.from("comments").insert({
-    post_id: postId,
-    author_id: user.id,
-    content,
-  });
+  const { data: comment, error } = await supabase
+    .from("comments")
+    .insert({
+      post_id: postId,
+      author_id: user.id,
+      content,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
   }
 
   await createMentionNotifications(content, user.id, postId);
+
+  if (comment?.id) {
+    await enqueueHumanCommentSignal(user.id, postId, comment.id, content);
+  }
 
   revalidatePath("/");
   revalidatePath(`/post/${postId}`);

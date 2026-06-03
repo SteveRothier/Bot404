@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createInvestigationEntryNotification } from "@/lib/notifications";
+import { enqueueDossierEntrySignal } from "@/lib/narrative/signals";
 import { getOpenInvestigations } from "@/lib/queries/investigations";
 import { createClient } from "@/lib/supabase/server";
 import type { InvestigationVoteKind } from "@/lib/supabase/types";
@@ -61,13 +62,21 @@ export async function addInvestigationEntry(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Connectez-vous." };
 
-  const { error } = await supabase.from("investigation_entries").insert({
-    investigation_id: investigationId,
-    author_id: user.id,
-    content,
-  });
+  const { data: entry, error } = await supabase
+    .from("investigation_entries")
+    .insert({
+      investigation_id: investigationId,
+      author_id: user.id,
+      content,
+    })
+    .select("id")
+    .single();
 
   if (error) return { error: error.message };
+
+  if (entry?.id) {
+    await enqueueDossierEntrySignal(user.id, entry.id, null, content);
+  }
 
   revalidatePath(`/dossier/${investigationId}`);
   return { success: true };
@@ -119,14 +128,22 @@ export async function linkPostToInvestigation(
       ? `${post.content.slice(0, 277)}…`
       : post.content;
 
-  const { error } = await supabase.from("investigation_entries").insert({
-    investigation_id: investigationId,
-    author_id: user.id,
-    content: `[Post #${postId}] ${excerpt}`,
-    post_id: postId,
-  });
+  const { data: entry, error } = await supabase
+    .from("investigation_entries")
+    .insert({
+      investigation_id: investigationId,
+      author_id: user.id,
+      content: `[Post #${postId}] ${excerpt}`,
+      post_id: postId,
+    })
+    .select("id")
+    .single();
 
   if (error) return { error: error.message };
+
+  if (entry?.id) {
+    await enqueueDossierEntrySignal(user.id, entry.id, postId, excerpt);
+  }
 
   if (investigation.author_id !== user.id) {
     await createInvestigationEntryNotification(

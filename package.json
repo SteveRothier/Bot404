@@ -11,7 +11,10 @@
     "npc:generate": "node scripts/npc-generate-local.mjs",
     "npc:generate:posts": "node scripts/npc-generate-local.mjs --posts",
     "npc:generate:comments": "node scripts/npc-generate-local.mjs --comments",
+    "npc:tick": "tsx scripts/narrative-tick.ts",
+    "npc:ops:check": "tsx scripts/narrative-ops-check.ts",
     "npc:schedule:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/register-scheduler.ps1",
+    "npc:schedule:tick": "wscript.exe scripts/windows/run-npc.vbs tick",
     "npc:schedule:posts": "wscript.exe scripts/windows/run-npc.vbs posts",
     "npc:schedule:comments": "wscript.exe scripts/windows/run-npc.vbs comments",
     "npc:schedule:both": "wscript.exe scripts/windows/run-npc.vbs both"
@@ -42,6 +45,7 @@
     "shadcn": "^4.8.0",
     "supabase": "^2.101.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.3",
     "typescript": "^5"
   }
 }

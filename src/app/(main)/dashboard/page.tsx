@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/queries/dashboard";
 import { getCachedNetworkStats } from "@/lib/queries/cached";
+import { getNarrativeStateForUi } from "@/lib/narrative/queries";
 import {
   countUnlockedArchives,
   getLatestUnlockedArchive,
@@ -11,10 +12,12 @@ export const revalidate = 60;
 
 export default async function DashboardPage() {
   const network = await getCachedNetworkStats();
-  const [dashboard, latestArchive, unlockedArchivesCount] = await Promise.all([
+  const [dashboard, latestArchive, unlockedArchivesCount, narrativeState] =
+    await Promise.all([
     getDashboardStats(network),
     getLatestUnlockedArchive(),
     countUnlockedArchives(),
+    getNarrativeStateForUi(),
   ]);
 
   const stateMeta = NETWORK_STATE_LABELS[network.networkState];
@@ -52,6 +55,30 @@ export default async function DashboardPage() {
           </p>
         </section>
       )}
+
+      <section className="px-4 py-4">
+        <h2 className="mb-3 text-[15px] font-bold">Narration</h2>
+        <div className="space-y-1 text-[15px] text-muted-foreground">
+          {narrativeState.scriptedActive ? (
+            <p>
+              Acte scripté actif :{" "}
+              <span className="font-bold text-foreground">
+                {narrativeState.actOneTitle}
+              </span>
+            </p>
+          ) : narrativeState.emergentActive ? (
+            <p>
+              Mode émergent —{" "}
+              <span className="font-bold text-foreground">
+                {narrativeState.pendingSignals}
+              </span>{" "}
+              signal(s) en attente
+            </p>
+          ) : (
+            <p>Aucun arc narratif actif</p>
+          )}
+        </div>
+      </section>
 
       <section className="px-4 py-4">
         <h2 className="mb-3 text-[15px] font-bold">Lore &amp; archives</h2>

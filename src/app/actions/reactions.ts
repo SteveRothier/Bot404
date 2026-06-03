@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { processReactionFactionEffects } from "@/lib/factions/simulation";
+import { runNarrativeEscalation } from "@/lib/narrative/escalation";
+import { enqueueReactionSignal } from "@/lib/narrative/signals";
 import { createReactionNotification } from "@/lib/notifications";
 import { isReactionKind } from "@/lib/reactions";
 import { maybePromoteRumorToEvent } from "@/lib/rumor-events";
@@ -70,7 +72,9 @@ export async function toggleReaction(postId: number, kind: string) {
     if (kind === "relay" || kind === "amplify") {
       await createReactionNotification(postId, user.id, kind);
       await maybePromoteRumorToEvent(postId);
+      await runNarrativeEscalation(postId);
     }
+    await enqueueReactionSignal(user.id, postId, kind as ReactionKind);
   }
 
   revalidatePath("/");

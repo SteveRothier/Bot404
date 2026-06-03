@@ -47,6 +47,8 @@ export type Post = {
   relay_count: number;
   amplify_count: number;
   flag_count: number;
+  narrative_beat_id: number | null;
+  narrative_signal_id: number | null;
   created_at: string;
 };
 
@@ -60,6 +62,8 @@ export type Comment = {
   post_id: number;
   author_id: string;
   content: string;
+  narrative_beat_id: number | null;
+  narrative_signal_id: number | null;
   created_at: string;
 };
 

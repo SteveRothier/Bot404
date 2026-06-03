@@ -1,5 +1,5 @@
 ' Lance la génération NPC sans fenêtre (pour le Planificateur de tâches Windows).
-' Usage: wscript.exe run-npc.vbs [posts|comments|both]
+' Usage: wscript.exe run-npc.vbs [posts|comments|both|tick]
 
 Option Explicit
 
@@ -38,6 +38,12 @@ Select Case mode
   Case "comments"
     logFile = logDir & "\npc-comments.log"
     args = "scripts\npc-generate-local.mjs --comments"
+  Case "tick"
+    logFile = logDir & "\narrative-tick.log"
+    cmd = "cmd /c echo [" & Now & "] START tick>> """ & logFile & """ && " & _
+          "npm run npc:tick >> """ & logFile & """ 2>&1"
+    shell.Run cmd, 0, False
+    WScript.Quit 0
   Case Else
     logFile = logDir & "\npc-generate.log"
     args = "scripts\npc-generate-local.mjs"

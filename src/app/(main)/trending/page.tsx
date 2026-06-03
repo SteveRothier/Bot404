@@ -8,6 +8,8 @@ import {
 } from "@/lib/queries/cached";
 import { ActiveWorldEventHighlight } from "@/components/lore/ActiveWorldEventHighlight";
 import { getFeedPosts } from "@/lib/queries/feed";
+import { getNarrativeStateForUi } from "@/lib/narrative/queries";
+import { getRecentNarrativeInteractions } from "@/lib/queries/narrative-ui";
 import {
   getActiveWorldEvents,
   getWorldEventsHistory,
@@ -23,6 +25,8 @@ export default async function TrendingPage() {
     typedTheories,
     activeEvents,
     eventHistory,
+    narrativeState,
+    narrativeInteractions,
   ] = await Promise.all([
     getCachedPopularHashtags(10),
     getCachedTrendingSnapshot(),
@@ -30,6 +34,8 @@ export default async function TrendingPage() {
     getFeedPosts(10, 0, "theory"),
     getActiveWorldEvents(),
     getWorldEventsHistory(10),
+    getNarrativeStateForUi(),
+    getRecentNarrativeInteractions(6),
   ]);
 
   const activeEvent = activeEvents[0] ?? null;
@@ -85,6 +91,55 @@ export default async function TrendingPage() {
           </p>
         )}
       </section>
+
+      {(narrativeState.scriptedActive || narrativeState.emergentActive) && (
+        <section className="px-4 py-4">
+          <h2 className="mb-3 text-[15px] font-bold">Histoire du réseau</h2>
+          {narrativeState.scriptedActive && narrativeState.actOneTitle ? (
+            <p className="text-[15px] text-muted-foreground">
+              Acte en cours :{" "}
+              <span className="font-bold text-foreground">
+                {narrativeState.actOneTitle}
+              </span>
+            </p>
+          ) : (
+            <p className="text-[15px] text-muted-foreground">
+              Mode réactif — {narrativeState.pendingSignals} signal
+              {narrativeState.pendingSignals !== 1 ? "s" : ""} humain
+              {narrativeState.pendingSignals !== 1 ? "s" : ""} en attente de
+              réponse NPC.
+            </p>
+          )}
+        </section>
+      )}
+
+      {narrativeInteractions.length > 0 && (
+        <section className="px-4 py-4">
+          <h2 className="mb-3 text-[15px] font-bold">
+            Réponses du réseau aux humains
+          </h2>
+          <ul className="space-y-2">
+            {narrativeInteractions.map((row) => (
+              <li
+                key={row.id}
+                className="rounded-lg border border-border px-3 py-2"
+              >
+                <p className="text-meta text-muted-foreground">
+                  @{row.npc_username}
+                  {row.human_username ? ` → @${row.human_username}` : ""}
+                </p>
+                <p className="mt-0.5 text-[15px]">{row.content}</p>
+                <Link
+                  href={`/post/${row.post_id}`}
+                  className="mt-1 inline-block text-sm text-accent hover:underline"
+                >
+                  Voir le fil →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="px-4 py-4">
         <h2 className="mb-3 text-[15px] font-bold">Hashtags populaires</h2>
