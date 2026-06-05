@@ -132,7 +132,7 @@ export async function createPost(formData: FormData) {
     : false;
 
   revalidatePath("/");
-  return { success: true, narrativeQueued };
+  return { success: true, postId: post.id, narrativeQueued };
 }
 
 export async function toggleLike(postId: number) {
@@ -212,7 +212,7 @@ export async function createComment(postId: number, formData: FormData) {
 
   revalidatePath("/");
   revalidatePath(`/post/${postId}`);
-  return { success: true, narrativeQueued };
+  return { success: true, commentId: comment.id, narrativeQueued };
 }
 
 export async function deletePost(postId: number) {

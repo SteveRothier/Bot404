@@ -32,15 +32,6 @@ export function ActiveWorldEventStrip({ event }: Props) {
             {boosted && (
               <span className="text-accent">Feed : {boosted} amplifiés</span>
             )}
-            {effects.sectors.map((code) => (
-              <Link
-                key={code}
-                href={`/map?sector=${code}`}
-                className="text-accent hover:underline"
-              >
-                Secteur {code}
-              </Link>
-            ))}
             <Link href="/trending" className="text-muted-foreground hover:underline">
               Détails →
             </Link>

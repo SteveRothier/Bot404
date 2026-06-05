@@ -1,7 +1,19 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { loadHomeFeedTab } from "@/app/actions/feed";
+import {
+  FeedBridgeProvider,
+  useRegisterFeedBridge,
+  type FeedBridgeApi,
+} from "@/components/feed/FeedBridgeContext";
 import { FeedLoadMore } from "@/components/feed/FeedLoadMore";
 import { FeedList } from "@/components/feed/FeedList";
 import { FollowingEmptyState } from "@/components/feed/FollowingEmptyState";
@@ -47,15 +59,17 @@ export function FeedSectionShell({
   const [tab, setTab] = useState<FeedTab>("for-you");
 
   return (
-    <FeedTabContext.Provider value={tab}>
-      <div className="w-full">
-        <FeedTabs value={tab} onChange={setTab} />
-        <NarrativeModeStrip {...narrativeState} />
-        {activeWorldEvent && <ActiveWorldEventStrip event={activeWorldEvent} />}
-        <PostComposerForm user={user} profile={profile} feedTab={tab} />
-        {children}
-      </div>
-    </FeedTabContext.Provider>
+    <FeedBridgeProvider>
+      <FeedTabContext.Provider value={tab}>
+        <div className="w-full">
+          <FeedTabs value={tab} onChange={setTab} />
+          <NarrativeModeStrip {...narrativeState} />
+          {activeWorldEvent && <ActiveWorldEventStrip event={activeWorldEvent} />}
+          <PostComposerForm user={user} profile={profile} feedTab={tab} />
+          {children}
+        </div>
+      </FeedTabContext.Provider>
+    </FeedBridgeProvider>
   );
 }
 
@@ -87,8 +101,12 @@ function postsForTab(
   return recentPosts;
 }
 
+function prependUnique(post: PostWithAuthor, list: PostWithAuthor[]) {
+  return [post, ...list.filter((p) => p.id !== post.id)];
+}
+
 export function FeedPosts({
-  recentPosts,
+  recentPosts: initialRecentPosts,
   theoryPosts: initialTheoryPosts,
   rumorPosts: initialRumorPosts,
   followingPosts: initialFollowingPosts,
@@ -102,12 +120,14 @@ export function FeedPosts({
   referenceNowMs,
 }: PostsProps) {
   const tab = useContext(FeedTabContext);
+  const registerBridge = useRegisterFeedBridge();
   const isLoggedIn = !!user;
 
   const [tabCache, setTabCache] = useState<Set<FeedTab>>(
     () => new Set(["for-you"])
   );
   const [loadingTab, setLoadingTab] = useState<FeedTab | null>(null);
+  const [recentPosts, setRecentPosts] = useState(initialRecentPosts);
   const [theoryPosts, setTheoryPosts] = useState(initialTheoryPosts);
   const [rumorPosts, setRumorPosts] = useState(initialRumorPosts);
   const [followingPosts, setFollowingPosts] = useState(initialFollowingPosts);
@@ -122,6 +142,64 @@ export function FeedPosts({
   const [userReactionsByPostId, setUserReactionsByPostId] = useState(
     initialUserReactionsByPostId
   );
+
+  useEffect(() => {
+    setRecentPosts(initialRecentPosts);
+    setTheoryPosts(initialTheoryPosts);
+    setRumorPosts(initialRumorPosts);
+    setFollowingPosts(initialFollowingPosts);
+    setSuggestedNpcs(initialSuggestedNpcs);
+    setLikedPostIds(initialLikedPostIds);
+    setBookmarkedPostIds(initialBookmarkedPostIds);
+    setCommentsByPostId(initialCommentsByPostId);
+    setUserReactionsByPostId(initialUserReactionsByPostId);
+  }, [
+    initialRecentPosts,
+    initialTheoryPosts,
+    initialRumorPosts,
+    initialFollowingPosts,
+    initialSuggestedNpcs,
+    initialLikedPostIds,
+    initialBookmarkedPostIds,
+    initialCommentsByPostId,
+    initialUserReactionsByPostId,
+  ]);
+
+  const prependPost = useCallback(
+    (post: PostWithAuthor, activeTab: FeedTab) => {
+      setRecentPosts((prev) => prependUnique(post, prev));
+      if (post.post_type === "theory") {
+        setTheoryPosts((prev) => prependUnique(post, prev));
+      }
+      if (post.post_type === "rumor") {
+        setRumorPosts((prev) => prependUnique(post, prev));
+      }
+      if (user?.id === post.author_id) {
+        setFollowingPosts((prev) => prependUnique(post, prev));
+      }
+      if (activeTab !== "for-you" && !tabCache.has(activeTab)) {
+        setTabCache((prev) => new Set(prev).add(activeTab));
+      }
+    },
+    [user?.id, tabCache]
+  );
+
+  const prependComment = useCallback(
+    (postId: number, comment: CommentWithAuthor) => {
+      setCommentsByPostId((prev) => {
+        const existing = prev[postId] ?? [];
+        if (existing.some((c) => c.id === comment.id)) return prev;
+        return { ...prev, [postId]: [...existing, comment] };
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    const api: FeedBridgeApi = { prependPost, prependComment };
+    registerBridge(api);
+    return () => registerBridge(null);
+  }, [registerBridge, prependPost, prependComment]);
 
   useEffect(() => {
     if (tab === "for-you" || tabCache.has(tab)) return;

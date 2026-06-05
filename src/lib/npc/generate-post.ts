@@ -5,15 +5,16 @@ import {
 } from "@/lib/lore/lore-context";
 import { getWorldEventEffects } from "@/lib/lore/world-event-effects";
 import { checkOllamaStatus } from "@/lib/ollama";
+import { resolveNpcPostMedia, shouldAttachMediaToNpcPost } from "@/lib/npc/media";
+import { ollamaChat, ollamaProfileForPostType } from "@/lib/npc/ollama";
 import {
   buildNpcPostPrompt,
   npcPostUserMessage,
-  pickRandomNpcPostType,
-} from "@/lib/post-types";
-import { ollamaChat } from "@/lib/npc/ollama";
+} from "@/lib/npc/prompt";
+import { pickRotatingNpc, factionNameForNpc } from "@/lib/npc/select-npc";
+import { validateNpcPostContent } from "@/lib/npc/validate-content";
+import { pickRandomNpcPostType } from "@/lib/post-types";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Profile } from "@/lib/supabase/types";
-
 export type GenerateNpcPostResult =
   | { ok: true; author: string; postId: number; postType: string }
   | { ok: false; error: string };
@@ -28,19 +29,11 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
   }
 
   const supabase = createAdminClient();
-
-  const { data: npcs, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("is_npc", true)
-    .order("popularity_score", { ascending: true })
-    .limit(5);
-
-  if (error || !npcs?.length) {
+  const npc = await pickRotatingNpc();
+  if (!npc) {
     return { ok: false, error: "Aucun NPC trouvé." };
   }
 
-  const npc = npcs[Math.floor(Math.random() * npcs.length)] as Profile;
   const loreContext = await getNpcLoreContext();
   const loreBlock = buildNpcLorePromptBlock(loreContext);
 
@@ -60,27 +53,14 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
       ];
   }
 
-  const sectorCodes = ["1A", "2B", "3C", "4D", "5E", "6F", "7G", "8H"];
-  let sector_code =
-    Math.random() < 0.4
-      ? sectorCodes[Math.floor(Math.random() * sectorCodes.length)]
-      : null;
-
-  if (
-    eventEffects &&
-    eventEffects.sectors.length > 0 &&
-    Math.random() < 0.5
-  ) {
-    sector_code =
-      eventEffects.sectors[
-        Math.floor(Math.random() * eventEffects.sectors.length)
-      ];
-  }
-
-  const content = await ollamaChat(
-    buildNpcPostPrompt(npc, postType, loreBlock),
-    npcPostUserMessage(postType)
+  const raw = await ollamaChat(
+    buildNpcPostPrompt(npc, postType, loreBlock, factionNameForNpc(npc)),
+    npcPostUserMessage(postType),
+    500,
+    ollamaProfileForPostType(postType)
   );
+
+  const content = raw ? validateNpcPostContent(raw, postType) : null;
 
   if (!content) {
     return {
@@ -89,14 +69,19 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     };
   }
 
+  const media = shouldAttachMediaToNpcPost(npc, postType)
+    ? await resolveNpcPostMedia(npc, content, postType)
+    : null;
+
   const { data: post, error: insertError } = await supabase
     .from("posts")
     .insert({
       author_id: npc.id,
       content,
       post_type: postType,
-      sector_code,
       likes_count: Math.floor(Math.random() * 500) + 50,
+      media_url: media?.media_url ?? null,
+      media_type: media?.media_type ?? null,
     })
     .select("id")
     .single();

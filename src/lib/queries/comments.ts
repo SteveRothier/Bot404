@@ -40,3 +40,26 @@ export async function getCommentsByPostIds(
 
   return grouped;
 }
+
+export async function getCommentById(
+  id: number
+): Promise<CommentWithAuthor | null> {
+  const supabase = await createClient();
+  const { data: row, error } = await supabase
+    .from("comments")
+    .select("*, author:profiles!author_id(*)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !row) return null;
+
+  const author = row.author as Profile;
+  return {
+    ...row,
+    author,
+    isRecentNarrativeResponse:
+      !!row.narrative_signal_id &&
+      author.is_npc &&
+      isRecentNarrativeResponse(row.created_at),
+  } as CommentWithAuthor;
+}

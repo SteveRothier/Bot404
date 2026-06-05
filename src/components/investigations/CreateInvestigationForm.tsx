@@ -4,8 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createInvestigation } from "@/app/actions/investigations";
 
-const SECTORS = ["", "1A", "2B", "3C", "4D", "5E", "6F", "7G", "8H"];
-
 type Props = {
   isLoggedIn: boolean;
 };
@@ -53,16 +51,6 @@ export function CreateInvestigationForm({ isLoggedIn }: Props) {
         placeholder="Description de l'enquête"
         className="mb-2 w-full resize-none rounded-lg border border-border bg-transparent px-3 py-2 text-[15px]"
       />
-      <select
-        name="sector_code"
-        className="mb-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-meta"
-      >
-        {SECTORS.map((code) => (
-          <option key={code || "none"} value={code}>
-            {code ? `Secteur ${code}` : "Aucun secteur"}
-          </option>
-        ))}
-      </select>
       {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
       <button
         type="submit"

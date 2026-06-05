@@ -1,7 +1,6 @@
 import type { PostType, WorldEvent } from "@/lib/supabase/types";
 
 export type WorldEventEffects = {
-  sectors: string[];
   factions: string[];
   banner_copy: string | null;
   boost_post_types: PostType[];
@@ -27,7 +26,6 @@ export function parseWorldEventEffects(
 ): WorldEventEffects {
   const effects = raw ?? {};
   return {
-    sectors: asStringArray(effects.sectors),
     factions: asStringArray(effects.factions),
     banner_copy:
       typeof effects.banner_copy === "string" ? effects.banner_copy : null,

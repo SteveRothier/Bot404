@@ -52,9 +52,6 @@ export default async function DossierPage({ params }: Props) {
         </p>
         <p className="mt-2 text-meta text-muted-foreground">
           @{investigation.author.username}
-          {investigation.sector_code
-            ? ` · secteur ${investigation.sector_code}`
-            : ""}
         </p>
       </div>
 

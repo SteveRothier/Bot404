@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageCircle, Sparkles } from "lucide-react";
 import {
   generateNpcCommentAction,
   generateNpcPostAction,
+  getNpcMediaStatusAction,
 } from "@/app/actions/npc";
 import { cn } from "@/lib/utils";
 import { useOllamaStore } from "@/stores/ollama-store";
@@ -26,6 +27,25 @@ export function NpcGeneratePanel({ compact = false }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SuccessState | null>(null);
   const [pending, startTransition] = useTransition();
+  const [mediaStatus, setMediaStatus] = useState<{
+    enabled: boolean;
+    gif: boolean;
+    steam: boolean;
+    ai: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    getNpcMediaStatusAction().then(setMediaStatus);
+  }, []);
+
+  const mediaLabel = (() => {
+    if (!mediaStatus?.enabled) return null;
+    const parts: string[] = [];
+    if (mediaStatus.gif) parts.push("GIF");
+    if (mediaStatus.steam) parts.push("Steam");
+    if (mediaStatus.ai) parts.push("Image IA");
+    return parts.length > 0 ? parts.join(" · ") : "Médias";
+  })();
 
   function run(
     action: () => Promise<{
@@ -103,6 +123,16 @@ export function NpcGeneratePanel({ compact = false }: Props) {
 
   return (
     <div className={compact ? "mt-2 grid gap-1.5" : "mt-3 space-y-2"}>
+      {mediaLabel && (
+        <p
+          className={cn(
+            "text-center text-muted-foreground",
+            compact ? "text-meta" : "text-xs"
+          )}
+        >
+          Médias NPC : {mediaLabel}
+        </p>
+      )}
       <button
         type="button"
         onClick={() => run(generateNpcPostAction, "post")}

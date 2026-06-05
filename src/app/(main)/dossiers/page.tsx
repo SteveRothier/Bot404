@@ -45,7 +45,6 @@ export default async function DossiersPage() {
                   </p>
                   <p className="mt-1 text-meta text-muted-foreground">
                     @{inv.author.username}
-                    {inv.sector_code ? ` · secteur ${inv.sector_code}` : ""}
                     {" · "}
                     {inv.status}
                   </p>

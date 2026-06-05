@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { fetchFeedCommentById } from "@/app/actions/feed";
 import { createComment } from "@/app/actions/posts";
+import { useFeedBridge } from "@/components/feed/FeedBridgeContext";
 import { NarrativeQueuedBanner } from "@/components/lore/NarrativeQueuedBanner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentDeleteButton } from "@/components/feed/CommentDeleteButton";
@@ -38,6 +41,8 @@ export function PostComments({
   onOpenChange,
   referenceNowMs = Date.now(),
 }: Props) {
+  const router = useRouter();
+  const feedBridge = useFeedBridge();
   const [error, setError] = useState<string | null>(null);
   const [queuedMessage, setQueuedMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -75,6 +80,13 @@ export function PostComments({
         if (result.narrativeQueued) {
           setQueuedMessage(NARRATIVE_COPY.queuedInteraction);
         }
+        if (result.commentId) {
+          const comment = await fetchFeedCommentById(result.commentId);
+          if (comment) {
+            feedBridge.prependComment(postId, comment);
+          }
+        }
+        router.refresh();
       }
     });
   }

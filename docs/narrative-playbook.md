@@ -11,7 +11,8 @@ npm run dev
 
 | Commande | Usage |
 |----------|--------|
-| `npm run npc:tick` | Un pas narratif (beat ou réponse à une interaction joueur) |
+| `npm run npc:tick` | Tick narratif : beat → jusqu'à 2 signaux joueur → contenu ambiant (35 %) |
+| `npm run npc:tick:fast` | Comme tick, traite jusqu'à 3 signaux (`--fast`) |
 | `npm run npc:ops:check` | Vérifie clés, Ollama, tables, état des arcs |
 | `npm run npc:generate` | Tick narratif puis posts/comments aléatoires |
 | `npm run npc:schedule:install` | Tâches Windows silencieuses (tick 15 min + posts/comments 30 min) |
@@ -22,7 +23,7 @@ npm run dev
 
 **Session de validation** : [`session-jeu-reactif.md`](session-jeu-reactif.md) — checklist 15 min ; test auto : `npm run npc:play:session`.
 
-Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optionnel `OLLAMA_URL`, `OLLAMA_MODEL`.
+Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optionnel `OLLAMA_URL`, `OLLAMA_MODEL`, `NARRATIVE_SIGNALS_PER_TICK`, `NPC_AMBIENT_FALLBACK_CHANCE`, `IMAGE_API_*`, `TENOR_API_KEY` / `GIPHY_API_KEY`, `STEAM_WEB_API_KEY`.
 
 ---
 
@@ -31,7 +32,17 @@ Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 1. **Acte 1 scripté** (`chasse-humains-acte-1`) — beats planifiés en `narrative_beats`
 2. **Mode émergent** (`reseau-reactif`) — NPC répondent aux actions humaines via `narrative_signals`
 
-Priorité du scheduler : `npm run npc:tick` → beat scripté due → signal émergent → (sinon) génération aléatoire via `npc-generate-local.mjs`.
+Priorité du scheduler : `npm run npc:tick` → beat scripté due → **plusieurs** signaux émergents (`NARRATIVE_SIGNALS_PER_TICK`, défaut 2) → contenu ambiant intégré (`NPC_AMBIENT_FALLBACK_CHANCE`, défaut 35 %). Le script `npc-generate-local` réutilise le même code TS que l'app.
+
+### Médias NPC (images / GIF / Steam)
+
+Ordre pour NPC **gaming** (Synthwave, PatchNotes…) : **jaquette Steam** → GIF → image IA.
+
+- **Steam** : `STEAM_WEB_API_KEY` — recherche jeu (storesearch) + jaquette CDN, upload `post-media`
+- **GIF** : `TENOR_API_KEY` ou `GIPHY_API_KEY` (recherche Giphy `/v1/gifs/search` + repli translate ; tous les NPC si clé présente, priorité pour mèmes)
+- **Images IA** : `IMAGE_API_URL` + `IMAGE_API_KEY` (API OpenAI-compatible, ex. FluxNote)
+- Quota : `NPC_MEDIA_MAX_PER_DAY` (défaut 20)
+- Sans clé : posts texte uniquement
 
 ### Tester le mode réactif
 

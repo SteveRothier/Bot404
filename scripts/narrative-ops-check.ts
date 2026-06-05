@@ -111,10 +111,31 @@ async function checkSupabaseNarrative() {
       .select("*", { count: "exact", head: true })
       .eq("status", "pending");
 
+    const { data: oldestPending } = await supabase
+      .from("narrative_signals")
+      .select("created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    let pendingDetail = String(count ?? 0);
+    if (oldestPending?.created_at) {
+      const ageMin = Math.floor(
+        (Date.now() - new Date(oldestPending.created_at).getTime()) / 60_000
+      );
+      const perTick = Number.parseInt(
+        process.env.NARRATIVE_SIGNALS_PER_TICK ?? "2",
+        10
+      );
+      const etaMin = Math.ceil((count ?? 0) / Math.max(perTick, 1)) * 15;
+      pendingDetail += ` — plus ancien: ${ageMin} min, ETA ~${etaMin} min (tick 15 min)`;
+    }
+
     checks.push({
       name: "Signaux pending",
       ok: true,
-      detail: String(count ?? 0),
+      detail: pendingDetail,
     });
 
     const activeScripted = arcs?.find(
@@ -146,8 +167,58 @@ async function checkSupabaseNarrative() {
   }
 }
 
+function checkMediaEnv() {
+  const imageOk = !!(process.env.IMAGE_API_URL && process.env.IMAGE_API_KEY);
+  const gifOk = !!(process.env.TENOR_API_KEY || process.env.GIPHY_API_KEY);
+  const steamKey = !!process.env.STEAM_WEB_API_KEY?.trim();
+
+  checks.push({
+    name: "Médias NPC (IMAGE API)",
+    ok: true,
+    detail: imageOk
+      ? `${process.env.IMAGE_API_URL} (modèle ${process.env.IMAGE_API_MODEL ?? "flux-schnell"})`
+      : "non configuré",
+  });
+
+  checks.push({
+    name: "Médias NPC (GIF)",
+    ok: true,
+    detail: gifOk
+      ? process.env.TENOR_API_KEY
+        ? "Tenor"
+        : "Giphy"
+      : "non configuré",
+  });
+
+  checks.push({
+    name: "Médias NPC (Steam)",
+    ok: true,
+    detail: steamKey ? "clé définie (vérif API au runtime)" : "non configuré",
+  });
+}
+
+async function checkSteamApi() {
+  const key = process.env.STEAM_WEB_API_KEY?.trim();
+  if (!key) return;
+
+  const { verifySteamWebApiKey } = await import("@/lib/npc/steam-media");
+  const ok = await verifySteamWebApiKey();
+  const idx = checks.findIndex((c) => c.name === "Médias NPC (Steam)");
+  if (idx >= 0) {
+    checks[idx] = {
+      name: "Médias NPC (Steam)",
+      ok,
+      detail: ok
+        ? "STEAM_WEB_API_KEY valide (GetServerInfo)"
+        : "clé définie mais API Steam inaccessible ou invalide",
+    };
+  }
+}
+
 async function main() {
   await checkOllama();
+  checkMediaEnv();
+  await checkSteamApi();
   await checkSupabaseNarrative();
 
   const allOk = checks.every((c) => c.ok);

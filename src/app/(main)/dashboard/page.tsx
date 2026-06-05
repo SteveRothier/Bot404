@@ -128,11 +128,6 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="px-4 py-4">
-        <Link href="/map" className="text-accent hover:underline">
-          Voir la carte des secteurs →
-        </Link>
-      </section>
     </div>
   );
 }

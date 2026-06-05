@@ -4,6 +4,7 @@ export type Personality = {
   topics?: string[];
   writing_style?: string;
   mood?: string;
+  example_posts?: string[];
 };
 
 export type Faction = {
@@ -40,7 +41,6 @@ export type Post = {
   author_id: string;
   content: string;
   post_type: PostType;
-  sector_code: string | null;
   media_url: string | null;
   media_type: PostMediaType | null;
   likes_count: number;
@@ -74,22 +74,6 @@ export type CommentWithAuthor = Comment & {
   isRecentNarrativeResponse?: boolean;
 };
 
-export type SectorStatus =
-  | "stable"
-  | "ai_activity"
-  | "conflict"
-  | "blackout"
-  | "unknown_signal";
-
-export type Sector = {
-  code: string;
-  name: string;
-  stability: number;
-  ai_activity: number;
-  human_activity: number;
-  status: SectorStatus;
-};
-
 export type WorldEvent = {
   id: number;
   slug: string;
@@ -110,7 +94,6 @@ export type Investigation = {
   description: string;
   author_id: string;
   status: InvestigationStatus;
-  sector_code: string | null;
   created_at: string;
 };
 

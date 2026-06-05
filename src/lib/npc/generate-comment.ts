@@ -5,12 +5,42 @@ import {
 } from "@/lib/lore/lore-context";
 import { checkOllamaStatus } from "@/lib/ollama";
 import { ollamaChat } from "@/lib/npc/ollama";
+import { npcBase, npcExamplePostsBlock } from "@/lib/npc/prompt";
+import { pickRotatingNpc, factionNameForNpc } from "@/lib/npc/select-npc";
+import { validateNpcPostContent } from "@/lib/npc/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Personality, Profile } from "@/lib/supabase/types";
 
 export type GenerateNpcCommentResult =
   | { ok: true; author: string; postId: number; commentId: number }
   | { ok: false; error: string };
+
+async function pickPostToComment(): Promise<{
+  id: number;
+  content: string;
+  author_id: string;
+} | null> {
+  const supabase = createAdminClient();
+  const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
+  const { data: posts } = await supabase
+    .from("posts")
+    .select("id, content, author_id, author:profiles!author_id(is_npc)")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (!posts?.length) return null;
+
+  const humanPosts = posts.filter((p) => {
+    const author = p.author as { is_npc?: boolean } | null;
+    return author?.is_npc === false;
+  });
+
+  const pool = humanPosts.length > 0 ? humanPosts : posts;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  return { id: pick.id, content: pick.content, author_id: pick.author_id };
+}
 
 export async function generateNpcComment(): Promise<GenerateNpcCommentResult> {
   const ollama = await checkOllamaStatus();
@@ -22,16 +52,9 @@ export async function generateNpcComment(): Promise<GenerateNpcCommentResult> {
   }
 
   const supabase = createAdminClient();
-  const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const post = await pickPostToComment();
 
-  const { data: posts } = await supabase
-    .from("posts")
-    .select("id, content, author_id")
-    .gte("created_at", since)
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  if (!posts?.length) {
+  if (!post) {
     return { ok: false, error: "Aucun post récent pour commenter." };
   }
 
@@ -44,20 +67,26 @@ export async function generateNpcComment(): Promise<GenerateNpcCommentResult> {
     return { ok: false, error: "Aucun NPC trouvé." };
   }
 
-  const post = posts[Math.floor(Math.random() * posts.length)];
-  const commenters = npcs.filter((n) => n.id !== post.author_id);
+  const commenters = (npcs as Profile[]).filter((n) => n.id !== post.author_id);
   if (!commenters.length) {
     return { ok: false, error: "Aucun NPC disponible pour commenter." };
   }
 
-  const npc = commenters[Math.floor(Math.random() * commenters.length)] as Profile;
+  const npc =
+    (await pickRotatingNpc(new Set([post.author_id]))) ??
+    commenters[Math.floor(Math.random() * commenters.length)];
+
   const p = (npc.personality ?? {}) as Personality;
   const loreBlock = buildNpcLorePromptBlock(await getNpcLoreContext());
 
-  const system = `Tu es ${npc.username}. Réponds en commentaire (max 200 caractères), ton: ${p.personality ?? "sarcastique"}. Français.${loreBlock}`;
+  const system = `${npcBase(npc, factionNameForNpc(npc))}${npcExamplePostsBlock(npc)}${loreBlock}
+
+Réponds en commentaire (max 200 caractères), ton: ${p.personality ?? "sarcastique"}. Français.`;
   const user = `Post original: "${post.content}"\nÉcris une réponse courte.`;
 
-  const content = await ollamaChat(system, user, 300);
+  const raw = await ollamaChat(system, user, 300, "comment");
+  const content = raw ? validateNpcPostContent(raw, "message") : null;
+
   if (!content) {
     return {
       ok: false,

@@ -8,8 +8,17 @@ export function getSupabaseStorageHostname(): string | null {
   }
 }
 
+function isAnimatedImageUrl(src: string): boolean {
+  try {
+    return new URL(src).pathname.toLowerCase().endsWith(".gif");
+  } catch {
+    return src.toLowerCase().includes(".gif");
+  }
+}
+
 export function isOptimizableRemoteImage(src: string): boolean {
   if (!src.startsWith("http")) return false;
+  if (isAnimatedImageUrl(src)) return false;
   const hostname = getSupabaseStorageHostname();
   if (!hostname) return false;
   try {

@@ -11,7 +11,6 @@ import {
   Flag,
   Home,
   LayoutDashboard,
-  Map,
   User,
 } from "lucide-react";
 import { useNavDrawerClose } from "@/components/layout/NavDrawerContext";
@@ -33,7 +32,6 @@ function buildNavItems(profileUsername?: string | null): NavItem[] {
     { href: "/", label: "Signaux", icon: Home },
     { href: "/notifications", label: "Notifications", icon: Bell },
     { href: "/trending", label: "Explorer", icon: Compass },
-    { href: "/map", label: "Carte", icon: Map },
     { href: "/factions", label: "Factions", icon: Flag },
     { href: "/dossiers", label: "Dossiers", icon: FileSearch },
     { href: "/archives", label: "Archives", icon: Archive },

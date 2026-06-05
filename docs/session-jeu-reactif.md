@@ -17,6 +17,7 @@ Checklist pour valider la boucle humain → signal → `npc:tick` → réponse b
    ```powershell
    npm run npc:ops:check
    npm run npc:tick
+   # ou démo rapide : npm run npc:tick:fast (jusqu'à 3 signaux)
    ```
 4. JSON attendu : `"mode":"emergent"`, `"handled":true`.
 5. Vérifier :

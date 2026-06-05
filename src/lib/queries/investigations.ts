@@ -12,7 +12,7 @@ export async function getOpenInvestigations(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("investigations")
-    .select("id, title, description, author_id, status, sector_code, created_at")
+    .select("id, title, description, author_id, status, created_at")
     .eq("status", "open")
     .order("created_at", { ascending: false })
     .limit(limit);

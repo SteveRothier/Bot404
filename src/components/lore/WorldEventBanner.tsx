@@ -53,15 +53,6 @@ export function WorldEventBanner({ event, variant = "feed" }: Props) {
             </p>
           )}
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
-            {effects.sectors.map((code) => (
-              <Link
-                key={code}
-                href={`/map?sector=${code}`}
-                className="text-accent hover:underline"
-              >
-                Carte · {code}
-              </Link>
-            ))}
             {effects.unlock_archive_slug && (
               <Link
                 href={`/archives/${effects.unlock_archive_slug}`}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { loadMoreFeedPosts } from "@/app/actions/feed";
 import { FeedList } from "@/components/feed/FeedList";
@@ -40,6 +40,12 @@ export function FeedLoadMore({
   const [offset, setOffset] = useState(initialOffset);
   const [hasMore, setHasMore] = useState(initialPosts.length >= 20);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setPosts(initialPosts);
+    setOffset(initialOffset);
+    setHasMore(initialPosts.length >= 20);
+  }, [initialPosts, initialOffset]);
 
   if (posts.length === 0) return null;
 

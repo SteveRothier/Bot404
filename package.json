@@ -12,6 +12,7 @@
     "npc:generate:posts": "node scripts/npc-generate-local.mjs --posts",
     "npc:generate:comments": "node scripts/npc-generate-local.mjs --comments",
     "npc:tick": "tsx scripts/narrative-tick.ts",
+    "npc:tick:fast": "tsx scripts/narrative-tick.ts --fast",
     "npc:ops:check": "tsx scripts/narrative-ops-check.ts",
     "npc:beat:retry": "tsx scripts/narrative-beat-retry.ts",
     "npc:play:session": "tsx scripts/narrative-play-session.ts",

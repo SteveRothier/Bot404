@@ -24,15 +24,6 @@ export function ActiveWorldEventHighlight({ event }: Props) {
             <p className="mt-2 text-sm text-foreground">{effects.banner_copy}</p>
           )}
           <div className="mt-2 flex flex-wrap gap-2 text-sm">
-            {effects.sectors.map((code) => (
-              <Link
-                key={code}
-                href={`/map?sector=${code}`}
-                className="rounded-full border border-accent/30 px-2 py-0.5 text-accent hover:bg-accent/10"
-              >
-                Secteur {code}
-              </Link>
-            ))}
             <Link href="/" className="text-muted-foreground hover:underline">
               Voir le feed →
             </Link>

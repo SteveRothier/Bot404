@@ -108,7 +108,6 @@ async function executeNpcPostBeat(
       author_id: npc.id,
       content: content.slice(0, 500),
       post_type: postType,
-      sector_code: payload.sector_code ?? null,
       narrative_beat_id: beat.id,
       likes_count: Math.floor(Math.random() * 200) + 30,
     })
@@ -210,10 +209,9 @@ async function executeWorldEventBeat(
           "Les factions PurBots et Assimilateurs intensifient la détection. Le réseau entre en alerte maximale.",
         ends_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
         effects: {
-          sectors: ["3C", "7G"],
           factions: ["purbots", "assimilateurs"],
           banner_copy:
-            "Alerte maximale — secteurs 3C et 7G. Théories et rumeurs sous surveillance.",
+            "Alerte maximale — théories et rumeurs sous surveillance renforcée.",
           boost_post_types: ["theory", "rumor"],
           related_hashtags: ["simulation", "matrix", "gameover", "chasse"],
         },

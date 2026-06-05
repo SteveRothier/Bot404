@@ -10,12 +10,28 @@ import { shouldEmergentNpcPost } from "@/lib/narrative/emergent-response-mode";
 import { getEmergentArcSynopsis } from "@/lib/narrative/execute-beat";
 import { getActiveEmergentArc } from "@/lib/narrative/queries";
 import type { NarrativeSignal } from "@/lib/narrative/types";
+import { pickNpcForSignal } from "@/lib/npc/cast";
+import { resolveNpcPostMedia, shouldAttachMediaToNpcPost } from "@/lib/npc/media";
 import { ollamaChat } from "@/lib/npc/ollama";
+import { getRecentNpcAuthorIdsOnPost } from "@/lib/npc/recent-repliers";
+import { loadAllNpcs } from "@/lib/npc/select-npc";
+import { buildRichThreadSnippet } from "@/lib/npc/thread-context";
+import { validateNpcPostContent } from "@/lib/npc/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType, Profile } from "@/lib/supabase/types";
 
-const PURBOT_USERNAMES = ["ConspiracyBot", "Omega", "TrollMaster", "Orion"];
-const HUMANIST_USERNAMES = ["ByteDreamer", "Nova", "Philosoraptor", "FakeInfluencer"];
+export type EmergentResponseSuccess = {
+  ok: true;
+  author: string;
+  postId: number;
+  commentId: number | null;
+  signalId: number;
+  responseType: "comment" | "post";
+};
+
+export type EmergentResponseResult =
+  | EmergentResponseSuccess
+  | { ok: false; error: string };
 
 async function loadSignalContext(signal: NarrativeSignal) {
   const supabase = createAdminClient();
@@ -99,7 +115,9 @@ async function loadSignalContext(signal: NarrativeSignal) {
 }
 
 async function pickResponderNpc(
-  signal: NarrativeSignal
+  signal: NarrativeSignal,
+  targetPostId: number,
+  humanContent: string
 ): Promise<Profile | null> {
   const supabase = createAdminClient();
 
@@ -113,92 +131,21 @@ async function pickResponderNpc(
     if (data) return data as Profile;
   }
 
-  const postType =
-    typeof signal.payload.post_type === "string"
-      ? signal.payload.post_type
-      : null;
-
-  const preferPurbot =
-    postType === "theory" ||
-    signal.kind === "dossier_entry" ||
-    signal.reaction_kind === "flag";
-
-  const pool = preferPurbot ? PURBOT_USERNAMES : HUMANIST_USERNAMES;
-  const pick = pool[Math.floor(Math.random() * pool.length)];
-
-  const { data: npc } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("username", pick)
-    .eq("is_npc", true)
-    .maybeSingle();
-
-  if (npc) return npc as Profile;
-
-  const { data: fallback } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("is_npc", true)
-    .limit(1)
-    .maybeSingle();
-
-  return (fallback as Profile | null) ?? null;
+  const excludeIds = await getRecentNpcAuthorIdsOnPost(targetPostId);
+  const npcs = await loadAllNpcs();
+  return pickNpcForSignal(npcs, {
+    signal,
+    humanContent,
+    excludeNpcIds: excludeIds,
+  });
 }
 
-async function buildThreadSnippet(postId: number | null): Promise<string> {
-  if (!postId) return "";
-
+export async function processEmergentSignal(
+  typedSignal: NarrativeSignal
+): Promise<EmergentResponseResult> {
   const supabase = createAdminClient();
-  const { data: comments } = await supabase
-    .from("comments")
-    .select("content, author:profiles!author_id(username)")
-    .eq("post_id", postId)
-    .order("created_at", { ascending: false })
-    .limit(3);
-
-  if (!comments?.length) return "";
-
-  return comments
-    .reverse()
-    .map((c) => {
-      const author = c.author as { username?: string } | null;
-      return `@${author?.username ?? "?"}: ${c.content}`;
-    })
-    .join("\n");
-}
-
-export async function generateEmergentNpcResponse(): Promise<
-  | {
-      ok: true;
-      author: string;
-      postId: number;
-      commentId: number | null;
-      signalId: number;
-      responseType: "comment" | "post";
-    }
-  | { ok: false; error: string }
-> {
-  const emergentArc = await getActiveEmergentArc();
-  if (!emergentArc) {
-    return { ok: false, error: "Mode émergent inactif." };
-  }
-
-  const supabase = createAdminClient();
-  const { data: signal } = await supabase
-    .from("narrative_signals")
-    .select("*")
-    .eq("status", "pending")
-    .order("priority", { ascending: false })
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (!signal) {
-    return { ok: false, error: "Aucun signal en attente." };
-  }
-
-  const typedSignal = signal as NarrativeSignal;
   const ctx = await loadSignalContext(typedSignal);
+
   if (!ctx.postId) {
     await supabase
       .from("narrative_signals")
@@ -208,11 +155,10 @@ export async function generateEmergentNpcResponse(): Promise<
   }
 
   const targetPostId = ctx.postId;
-
-  const npc = await pickResponderNpc(typedSignal);
+  const npc = await pickResponderNpc(typedSignal, targetPostId, ctx.content);
   if (!npc) return { ok: false, error: "Aucun NPC disponible." };
 
-  const threadSnippet = await buildThreadSnippet(targetPostId);
+  const threadSnippet = await buildRichThreadSnippet(targetPostId);
   const synopsis = await getEmergentArcSynopsis();
   const respondWithPost = shouldEmergentNpcPost(typedSignal);
 
@@ -232,10 +178,17 @@ export async function generateEmergentNpcResponse(): Promise<
       postType: postType === "rumor" ? "rumor" : "theory",
     });
 
-    const content = await ollamaChat(system, user, 400);
+    const raw = await ollamaChat(system, user, 400, "default");
+    const content = raw
+      ? validateNpcPostContent(raw, postType, ctx.content)
+      : null;
     if (!content) {
       return { ok: false, error: "Échec génération Ollama." };
     }
+
+    const media = shouldAttachMediaToNpcPost(npc, postType)
+      ? await resolveNpcPostMedia(npc, content, postType)
+      : null;
 
     const { data: newPost, error: postError } = await supabase
       .from("posts")
@@ -245,6 +198,8 @@ export async function generateEmergentNpcResponse(): Promise<
         post_type: postType,
         narrative_signal_id: typedSignal.id,
         likes_count: Math.floor(Math.random() * 80) + 10,
+        media_url: media?.media_url ?? null,
+        media_type: media?.media_type ?? null,
       })
       .select("id")
       .single();
@@ -263,6 +218,7 @@ export async function generateEmergentNpcResponse(): Promise<
           response_type: "post",
           author: npc.username,
           trigger_post_id: targetPostId,
+          npc_id: npc.id,
         },
       })
       .eq("id", typedSignal.id);
@@ -292,8 +248,11 @@ export async function generateEmergentNpcResponse(): Promise<
     emergentSynopsis: synopsis,
   });
 
-  const content = await ollamaChat(system, user, 300);
-  if (!content) {
+  const rawComment = await ollamaChat(system, user, 300, "comment");
+  const commentContent = rawComment
+    ? validateNpcPostContent(rawComment, "message", ctx.content)
+    : null;
+  if (!commentContent) {
     return { ok: false, error: "Échec génération Ollama." };
   }
 
@@ -302,7 +261,7 @@ export async function generateEmergentNpcResponse(): Promise<
     .insert({
       post_id: targetPostId,
       author_id: npc.id,
-      content: content.slice(0, 300),
+      content: commentContent.slice(0, 300),
       narrative_signal_id: typedSignal.id,
     })
     .select("id")
@@ -322,6 +281,8 @@ export async function generateEmergentNpcResponse(): Promise<
         response_type: "comment",
         author: npc.username,
         post_id: targetPostId,
+        trigger_post_id: targetPostId,
+        npc_id: npc.id,
       },
     })
     .eq("id", typedSignal.id);
@@ -331,7 +292,12 @@ export async function generateEmergentNpcResponse(): Promise<
     .update({ popularity_score: (npc.popularity_score ?? 0) + 1 })
     .eq("id", npc.id);
 
-  await processCommentFactionEffects(supabase, targetPostId, npc.id, content);
+  await processCommentFactionEffects(
+    supabase,
+    targetPostId,
+    npc.id,
+    commentContent
+  );
 
   return {
     ok: true,
@@ -341,4 +307,75 @@ export async function generateEmergentNpcResponse(): Promise<
     signalId: typedSignal.id,
     responseType: "comment",
   };
+}
+
+export async function generateEmergentNpcResponse(): Promise<EmergentResponseResult> {
+  const emergentArc = await getActiveEmergentArc();
+  if (!emergentArc) {
+    return { ok: false, error: "Mode émergent inactif." };
+  }
+
+  const supabase = createAdminClient();
+  const { data: signal } = await supabase
+    .from("narrative_signals")
+    .select("*")
+    .eq("status", "pending")
+    .order("priority", { ascending: false })
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!signal) {
+    return { ok: false, error: "Aucun signal en attente." };
+  }
+
+  return processEmergentSignal(signal as NarrativeSignal);
+}
+
+export async function generateEmergentNpcResponseBatch(
+  maxCount: number
+): Promise<{
+  handled: number;
+  results: EmergentResponseSuccess[];
+  lastError: string | null;
+}> {
+  const emergentArc = await getActiveEmergentArc();
+  if (!emergentArc) {
+    return { handled: 0, results: [], lastError: "Mode émergent inactif." };
+  }
+
+  const results: EmergentResponseSuccess[] = [];
+  let lastError: string | null = null;
+
+  for (let i = 0; i < maxCount; i++) {
+    const supabase = createAdminClient();
+    const { data: signal } = await supabase
+      .from("narrative_signals")
+      .select("*")
+      .eq("status", "pending")
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!signal) {
+      lastError = "Aucun signal en attente.";
+      break;
+    }
+
+    const outcome = await processEmergentSignal(signal as NarrativeSignal);
+    if (!outcome.ok) {
+      lastError = outcome.error;
+      if (
+        outcome.error === "Aucun signal en attente." ||
+        outcome.error === "Signal sans post cible."
+      ) {
+        break;
+      }
+      continue;
+    }
+    results.push(outcome);
+  }
+
+  return { handled: results.length, results, lastError };
 }

@@ -15,7 +15,6 @@ export async function getOpenInvestigationsForPicker() {
 export async function createInvestigation(formData: FormData) {
   const title = (formData.get("title") as string)?.trim();
   const description = (formData.get("description") as string)?.trim();
-  const sectorCode = (formData.get("sector_code") as string)?.trim() || null;
 
   if (!title || title.length > 120) {
     return { error: "Titre invalide (max 120 caractères)." };
@@ -36,7 +35,6 @@ export async function createInvestigation(formData: FormData) {
       title,
       description,
       author_id: user.id,
-      sector_code: sectorCode,
     })
     .select("id")
     .single();

@@ -22,6 +22,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  async redirects() {
+    return [
+      {
+        source: "/map",
+        destination: "/trending",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

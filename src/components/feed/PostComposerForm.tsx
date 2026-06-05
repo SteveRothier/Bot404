@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NarrativeQueuedBanner } from "@/components/lore/NarrativeQueuedBanner";
 import {
@@ -12,7 +13,9 @@ import {
 import { ComposerTextarea } from "@/components/feed/ComposerTextarea";
 import { ComposerToolbar } from "@/components/feed/ComposerToolbar";
 import { composerSubmitClassName } from "@/components/feed/composer-styles";
+import { fetchFeedPostById } from "@/app/actions/feed";
 import { createPost } from "@/app/actions/posts";
+import { useFeedBridge } from "@/components/feed/FeedBridgeContext";
 import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -23,6 +26,8 @@ type Props = {
 };
 
 export function PostComposerForm({ user, profile, feedTab }: Props) {
+  const router = useRouter();
+  const feedBridge = useFeedBridge();
   const [content, setContent] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -88,6 +93,18 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
         if (result.narrativeQueued) {
           setQueuedMessage(NARRATIVE_COPY.queuedInteraction);
         }
+        if (result.postId) {
+          const post = await fetchFeedPostById(result.postId);
+          if (post) {
+            const matchesTab =
+              feedTab === "for-you" ||
+              post.post_type === postTypeForFeedTab(feedTab);
+            if (matchesTab) {
+              feedBridge.prependPost(post, feedTab);
+            }
+          }
+        }
+        router.refresh();
       }
     });
   }

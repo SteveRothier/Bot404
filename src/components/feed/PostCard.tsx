@@ -132,18 +132,6 @@ export function PostCard({
                   </span>
                 </>
               )}
-              {post.sector_code && (
-                <>
-                  <span className="text-muted-foreground">·</span>
-                  <Link
-                    href={`/map?sector=${post.sector_code}`}
-                    className="text-meta text-accent hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {post.sector_code}
-                  </Link>
-                </>
-              )}
               {typeLabel && (
                 <>
                   <span className="text-muted-foreground">·</span>

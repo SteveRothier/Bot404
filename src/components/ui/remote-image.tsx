@@ -57,11 +57,11 @@ export function RemoteImage({
     <img
       src={src}
       alt={alt}
-      width={width}
-      height={height}
+      width={fill ? undefined : width}
+      height={fill ? undefined : height}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
-      className={className}
+      className={cn(fill && "absolute inset-0 size-full object-cover", className)}
     />
   );
 }

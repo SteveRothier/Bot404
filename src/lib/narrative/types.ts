@@ -68,7 +68,6 @@ export type NarrativeSignal = {
 export type NpcPostBeatPayload = {
   npc_username: string;
   post_type?: PostType;
-  sector_code?: string | null;
   directive?: string;
   hashtags?: string[];
 };
@@ -82,6 +81,6 @@ export type NpcCommentBeatPayload = {
 
 export type NarrativeTickResult = {
   handled: boolean;
-  mode: "scripted_beat" | "emergent" | "none";
+  mode: "scripted_beat" | "emergent" | "ambient" | "none";
   detail?: Record<string, unknown>;
 };
