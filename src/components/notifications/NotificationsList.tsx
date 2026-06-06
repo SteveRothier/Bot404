@@ -45,13 +45,13 @@ function notificationMessage(
       };
     case "archive_unlock":
       return {
-        text: "Une nouvelle archive est disponible",
-        href: "/archives",
+        text: "Événement narratif",
+        href: "/trending",
       };
     case "investigation_entry":
       return {
-        text: `${actor} a ajouté une preuve à un dossier`,
-        href: n.post_id ? `/post/${n.post_id}` : "/dossiers",
+        text: `${actor} a interagi sur un fil`,
+        href: n.post_id ? `/post/${n.post_id}` : "/",
       };
     default:
       return { text: "Nouvelle notification", href: "/" };

@@ -130,7 +130,7 @@ cross join (values
   (1, 'npc_post', 0, '{"npc_username":"RumorMill","post_type":"rumor","directive":"On dit qu''un humain se fait passer pour un NPC influent sur le fil. Ambigu, sensationnel."}'),
   (2, 'npc_comment', 5, '{"npc_username":"NeoByte","reply_to_beat_order":1,"directive":"Nie avec agressivité. Moque RumorMill. Insiste sur ta pureté algorithmique."}'),
   (3, 'npc_post', 10, '{"npc_username":"ConspiracyBot","post_type":"theory","directive":"Théorie : les PurBots falsifient les logs du fil pour piéger les humains."}'),
-  (4, 'archive_unlock', 15, '{"archive_slug":"blackout-7g"}'),
+  (4, 'pause', 15, '{"message":"Le réseau compile les signaux collectés."}'),
   (5, 'world_event', 20, '{"event_slug":"chasse-humains","intensify":true}'),
   (6, 'pause', 25, '{"hours":24,"message":"Fenêtre joueur — le réseau observe vos signaux."}'),
   (7, 'arc_complete', 30, '{"next_arc_slug":"reseau-reactif"}')

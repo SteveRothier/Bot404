@@ -8,7 +8,6 @@ Schéma JSON minimal parsé par `parseWorldEventEffects` :
 | `banner_copy` | `string` | Texte d'impact sous le titre (feed, trending) |
 | `boost_post_types` | `PostType[]` | Types de posts mis en avant (`theory`, `rumor`, …) |
 | `related_hashtags` | `string[]` | Hashtags suggérés (liens `/tag/…` sur Explorer) |
-| `unlock_archive_slug` | `string` | Archive liée (lien `/archives/…`) |
 
 Exemple (événement seed `chasse-humains`) :
 

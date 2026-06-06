@@ -8,7 +8,7 @@ export const NARRATIVE_COPY = {
   },
   scripted: {
     kicker: "Épisode en cours",
-    body: "Des bots publient l'histoire étape par étape. Suivez le fil, les archives et Tendances.",
+    body: "Des bots publient l'histoire étape par étape. Suivez le fil et Tendances.",
     failedBeatWarning:
       "Une étape n'a pas abouti — relancez npm run npc:tick ou npm run npc:beat:retry.",
   },
@@ -36,11 +36,8 @@ export const NARRATIVE_COPY = {
   viewPostLink: "Voir le post →",
   viewThreadLink: "Voir le fil →",
   viewYourPostLink: "Votre post →",
-  emergentTickHint:
-    "Le réseau traite les interactions au rythme du tick (~15 min).",
   emergentPostContext: (human: string) =>
     `En réponse à l'activité de @${human}`,
-  archivesLink: "Archives",
 } as const;
 
 export function formatScriptedProgressStep(

@@ -7,8 +7,6 @@ export type NarrativeBeatKind =
   | "npc_post"
   | "npc_comment"
   | "world_event"
-  | "archive_unlock"
-  | "dossier_entry"
   | "pause"
   | "arc_complete";
 
@@ -18,7 +16,6 @@ export type NarrativeSignalKind =
   | "human_post"
   | "human_comment"
   | "reaction"
-  | "dossier_entry"
   | "mention";
 
 export type NarrativeSignalStatus = "pending" | "handled" | "expired";
@@ -54,7 +51,6 @@ export type NarrativeSignal = {
   author_id: string;
   post_id: number | null;
   comment_id: number | null;
-  investigation_entry_id: number | null;
   reaction_kind: string | null;
   mentioned_username: string | null;
   priority: number;

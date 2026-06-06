@@ -71,35 +71,6 @@ async function loadSignalContext(signal: NarrativeSignal) {
       .maybeSingle();
     content = post?.content ?? "";
     actionLabel = `${signal.reaction_kind ?? "réagir à"} un post (${post?.post_type ?? "message"})`;
-  } else if (signal.kind === "dossier_entry") {
-    if (signal.investigation_entry_id) {
-      const { data: entry } = await supabase
-        .from("investigation_entries")
-        .select("post_id, content")
-        .eq("id", signal.investigation_entry_id)
-        .maybeSingle();
-      if (entry?.post_id) postId = entry.post_id;
-      if (entry?.content) content = entry.content;
-    }
-    if (!content) {
-      content =
-        typeof signal.payload.content === "string"
-          ? signal.payload.content
-          : "ajouter une preuve à un dossier";
-    }
-    if (!postId) {
-      const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
-      const { data: recentPost } = await supabase
-        .from("posts")
-        .select("id")
-        .eq("author_id", signal.author_id)
-        .gte("created_at", since)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      postId = recentPost?.id ?? postId;
-    }
-    actionLabel = "ajouter une preuve à un dossier";
   } else if (signal.kind === "mention") {
     content =
       typeof signal.payload.content === "string" ? signal.payload.content : "";

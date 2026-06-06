@@ -1,7 +1,6 @@
 import { maybePromoteRumorToEvent } from "@/lib/rumor-events";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const THEORY_DOSSIER_THRESHOLD = 3;
 const FLAG_ESCALATION_THRESHOLD = 5;
 
 /** Escalade lore après interactions humaines (complète rumor-events). */
@@ -50,36 +49,6 @@ export async function runNarrativeEscalation(postId: number) {
           source_post_id: postId,
         },
       });
-    }
-  }
-
-  if (post.post_type === "theory") {
-    const { count } = await supabase
-      .from("investigation_entries")
-      .select("*", { count: "exact", head: true })
-      .eq("post_id", postId);
-
-    if ((count ?? 0) >= THEORY_DOSSIER_THRESHOLD) {
-      const slug = `theory-hot-${postId}`;
-      const { data: existing } = await supabase
-        .from("world_events")
-        .select("id")
-        .eq("slug", slug)
-        .maybeSingle();
-
-      if (!existing) {
-        await supabase.from("world_events").insert({
-          slug,
-          title: "Théorie communautaire validée",
-          description: `La théorie #${postId} accumule des preuves dans les dossiers.`,
-          starts_at: new Date().toISOString(),
-          ends_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          effects: {
-            boost_post_types: ["theory", "rumor"],
-            source_post_id: postId,
-          },
-        });
-      }
     }
   }
 }

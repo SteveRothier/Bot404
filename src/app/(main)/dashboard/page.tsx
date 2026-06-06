@@ -6,21 +6,14 @@ import { NarrativeStatusCard } from "@/components/lore/NarrativeStatusCard";
 import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import { getNarrativeStateForUi } from "@/lib/narrative/queries";
 import { getRecentNarrativeInteractions } from "@/lib/queries/narrative-ui";
-import {
-  countUnlockedArchives,
-  getLatestUnlockedArchive,
-} from "@/lib/queries/archives";
 import { NETWORK_STATE_LABELS } from "@/lib/network-state";
 
 export const revalidate = 60;
 
 export default async function DashboardPage() {
   const network = await getCachedNetworkStats();
-  const [dashboard, latestArchive, unlockedArchivesCount, narrativeState, recentInteractions] =
-    await Promise.all([
+  const [dashboard, narrativeState, recentInteractions] = await Promise.all([
     getDashboardStats(network),
-    getLatestUnlockedArchive(),
-    countUnlockedArchives(),
     getNarrativeStateForUi(),
     getRecentNarrativeInteractions(2),
   ]);
@@ -66,7 +59,7 @@ export default async function DashboardPage() {
           {NARRATIVE_COPY.sections.narration}
         </h2>
         {narrativeState.scriptedActive || narrativeState.emergentActive ? (
-          <NarrativeStatusCard {...narrativeState} variant="inline" />
+          <NarrativeStatusCard {...narrativeState} />
         ) : (
           <p className="text-[15px] text-muted-foreground">
             {NARRATIVE_COPY.inactive}
@@ -89,45 +82,21 @@ export default async function DashboardPage() {
       </section>
 
       <section className="px-4 py-4">
-        <h2 className="mb-3 text-[15px] font-bold">Lore &amp; archives</h2>
-        <div className="space-y-2 text-[15px]">
-          <p className="text-muted-foreground">
-            {network.activeEventsCount === 0
-              ? "Aucun événement mondial actif"
-              : network.activeEventsCount === 1
-                ? "1 événement mondial actif"
-                : `${network.activeEventsCount} événements mondiaux actifs`}
-          </p>
-          <p className="text-muted-foreground">
-            {unlockedArchivesCount} archive
-            {unlockedArchivesCount !== 1 ? "s" : ""} débloquée
-            {unlockedArchivesCount !== 1 ? "s" : ""}
-          </p>
-          {latestArchive && (
-            <p>
-              Dernière archive :{" "}
-              <Link
-                href={`/archives/${latestArchive.slug}`}
-                className="text-accent hover:underline"
-              >
-                {latestArchive.title}
-              </Link>
-            </p>
-          )}
-          <div className="flex flex-wrap gap-4 pt-1">
-            <Link href="/archives" className="text-accent hover:underline">
-              Archives →
-            </Link>
-            <Link href="/dossiers" className="text-accent hover:underline">
-              Dossiers →
-            </Link>
-            <Link href="/trending" className="text-accent hover:underline">
-              Événements →
-            </Link>
-          </div>
-        </div>
+        <h2 className="mb-3 text-[15px] font-bold">Événements</h2>
+        <p className="text-[15px] text-muted-foreground">
+          {network.activeEventsCount === 0
+            ? "Aucun événement mondial actif"
+            : network.activeEventsCount === 1
+              ? "1 événement mondial actif"
+              : `${network.activeEventsCount} événements mondiaux actifs`}
+        </p>
+        <Link
+          href="/trending"
+          className="mt-2 inline-block text-sm text-accent hover:underline"
+        >
+          Voir dans Explorer →
+        </Link>
       </section>
-
     </div>
   );
 }

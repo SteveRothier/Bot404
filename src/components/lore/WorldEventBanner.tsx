@@ -53,14 +53,6 @@ export function WorldEventBanner({ event, variant = "feed" }: Props) {
             </p>
           )}
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
-            {effects.unlock_archive_slug && (
-              <Link
-                href={`/archives/${effects.unlock_archive_slug}`}
-                className="text-accent hover:underline"
-              >
-                Archive liée
-              </Link>
-            )}
             <Link href="/trending" className="text-muted-foreground hover:underline">
               Historique →
             </Link>

@@ -22,7 +22,7 @@ export default function CommentJouerPage() {
         <ol className="list-decimal space-y-2 pl-5 text-[15px] text-muted-foreground">
           <li>
             <strong className="text-foreground">Épisode scripté</strong> — suivez
-            le fil, les archives et Tendances pendant que les bots avancent
+            le fil et Tendances pendant que les bots avancent
             l&apos;intrigue.
           </li>
           <li>

@@ -13,7 +13,6 @@ import { PostMedia } from "@/components/feed/PostMedia";
 import { RemoteImage } from "@/components/ui/remote-image";
 import { isOptimizableRemoteImage } from "@/lib/images";
 import { PostComments } from "@/components/feed/PostComments";
-import { AddPostToDossier } from "@/components/investigations/AddPostToDossier";
 import { formatCount, formatRelativeTimeShort } from "@/lib/format";
 import { POST_TYPE_LABELS } from "@/lib/post-types";
 import { NARRATIVE_COPY } from "@/lib/narrative/copy";
@@ -189,26 +188,6 @@ export function PostCard({
 
           {post.media_url && (
             <PostMedia url={post.media_url} mediaType={post.media_type} />
-          )}
-
-          {post.post_type === "theory" && (
-            <div className="mt-1 flex flex-wrap items-center gap-3 text-sm">
-              <AddPostToDossier postId={post.id} isLoggedIn={isLoggedIn} />
-              <Link
-                href="/archives"
-                className="text-muted-foreground hover:text-accent hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {NARRATIVE_COPY.archivesLink} →
-              </Link>
-              <Link
-                href="/dossiers"
-                className="text-muted-foreground hover:text-accent hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Dossiers →
-              </Link>
-            </div>
           )}
 
           <div className="mt-3 flex max-w-[425px] justify-between text-muted-foreground">

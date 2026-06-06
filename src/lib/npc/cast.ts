@@ -73,9 +73,7 @@ export function scoreNpcForSignal(npc: Profile, ctx: CastContext): number {
   }
 
   const preferPurbot =
-    postType === "theory" ||
-    signal.kind === "dossier_entry" ||
-    signal.reaction_kind === "flag";
+    postType === "theory" || signal.reaction_kind === "flag";
 
   if (preferPurbot && PURBOT_ARCHETYPES.includes(npc.username)) {
     score += 10;

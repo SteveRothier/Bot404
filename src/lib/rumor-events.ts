@@ -45,12 +45,4 @@ export async function maybePromoteRumorToEvent(postId: number) {
     ends_at: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
     effects: { source_post_id: postId, type: "rumor_boost" },
   });
-
-  await supabase
-    .from("archives")
-    .update({ unlocked_at: new Date().toISOString() })
-    .eq("slug", "blackout-7g")
-    .is("unlocked_at", null);
-
-  return { unlockedArchiveSlug: "blackout-7g" };
 }

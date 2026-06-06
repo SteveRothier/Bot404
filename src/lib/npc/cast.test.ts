@@ -31,7 +31,6 @@ const signal = (overrides: Partial<NarrativeSignal>): NarrativeSignal => ({
   author_id: "human-1",
   post_id: 10,
   comment_id: null,
-  investigation_entry_id: null,
   reaction_kind: null,
   mentioned_username: null,
   priority: 40,

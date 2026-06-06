@@ -3,7 +3,6 @@ import { FeedPosts, FeedSection } from "@/components/feed/FeedSection";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
 import { getRequestAuth } from "@/lib/queries/auth";
 import { getHomeFeedBundle } from "@/lib/queries/feed";
-import { getNarrativeStateForUi } from "@/lib/narrative/queries";
 import { getCachedActiveWorldEvents } from "@/lib/queries/world-events";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -35,10 +34,9 @@ async function HomeFeedPosts({
 
 export default async function HomePage() {
   const referenceNowMs = Date.now();
-  const [{ user, profile }, activeEvents, narrativeState] = await Promise.all([
+  const [{ user, profile }, activeEvents] = await Promise.all([
     getRequestAuth(),
     getCachedActiveWorldEvents(),
-    getNarrativeStateForUi(),
   ]);
   const activeWorldEvent = activeEvents[0] ?? null;
 
@@ -48,7 +46,6 @@ export default async function HomePage() {
         user={user}
         profile={profile}
         activeWorldEvent={activeWorldEvent}
-        narrativeState={narrativeState}
       >
         <PostsSuspense>
           <HomeFeedPosts

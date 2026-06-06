@@ -3,7 +3,6 @@ import {
   NPC_COMMENT_INTERVAL_MINUTES,
   NPC_POST_INTERVAL_MINUTES,
 } from "@/lib/npc-schedule";
-import { getRecentlyUnlockedArchives } from "@/lib/queries/archives";
 import {
   getCachedFactions,
   getCachedNetworkStats,
@@ -14,11 +13,10 @@ import {
   getLastNpcPostTime,
 } from "@/lib/queries/npc-schedule";
 import { getCachedActiveWorldEvents } from "@/lib/queries/world-events";
-import type { Archive, WorldEvent } from "@/lib/supabase/types";
+import type { WorldEvent } from "@/lib/supabase/types";
 
 export type ShellLoreAlerts = {
   activeWorldEvent: WorldEvent | null;
-  recentArchive: Archive | null;
 };
 
 export type ShellNpcSchedule = {
@@ -36,7 +34,6 @@ export async function getShellData() {
     lastPostAt,
     lastCommentAt,
     activeEvents,
-    recentArchives,
   ] = await Promise.all([
     getCachedNetworkStats(),
     getCachedPopularHashtags(10),
@@ -44,7 +41,6 @@ export async function getShellData() {
     getLastNpcPostTime(),
     getLastNpcCommentTime(),
     getCachedActiveWorldEvents(),
-    getRecentlyUnlockedArchives(168),
   ]);
 
   const npcSchedule: ShellNpcSchedule = {
@@ -62,7 +58,6 @@ export async function getShellData() {
 
   const loreAlerts: ShellLoreAlerts = {
     activeWorldEvent: activeEvents[0] ?? null,
-    recentArchive: recentArchives[0] ?? null,
   };
 
   return {

@@ -85,45 +85,6 @@ export type WorldEvent = {
   created_at: string;
 };
 
-export type InvestigationStatus = "open" | "closed" | "verified";
-export type InvestigationVoteKind = "yes" | "no" | "uncertain";
-
-export type Investigation = {
-  id: number;
-  title: string;
-  description: string;
-  author_id: string;
-  status: InvestigationStatus;
-  created_at: string;
-};
-
-export type InvestigationWithAuthor = Investigation & {
-  author: Profile;
-};
-
-export type InvestigationEntry = {
-  id: number;
-  investigation_id: number;
-  author_id: string;
-  content: string;
-  post_id: number | null;
-  created_at: string;
-};
-
-export type InvestigationEntryWithAuthor = InvestigationEntry & {
-  author: Profile;
-};
-
-export type Archive = {
-  id: number;
-  slug: string;
-  title: string;
-  content: string;
-  unlocked_at: string | null;
-  related_tags: string[];
-  created_at: string;
-};
-
 export type TrendingHashtag = {
   tag: string;
   count: number;

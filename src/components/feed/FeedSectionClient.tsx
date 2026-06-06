@@ -21,8 +21,6 @@ import { PostComposerForm } from "@/components/feed/PostComposerForm";
 import { FeedTabs, type FeedTab } from "@/components/feed/FeedTabs";
 import { PostsSkeleton } from "@/components/feed/FeedSkeleton";
 import { ActiveWorldEventStrip } from "@/components/lore/ActiveWorldEventStrip";
-import { NarrativeModeStrip } from "@/components/lore/NarrativeModeStrip";
-import type { NarrativeUiState } from "@/lib/narrative/queries";
 import type {
   CommentWithAuthor,
   PostWithAuthor,
@@ -38,7 +36,6 @@ type ShellProps = {
   user: { id: string; email?: string } | null;
   profile: Profile | null;
   activeWorldEvent?: WorldEvent | null;
-  narrativeState?: NarrativeUiState;
   children: React.ReactNode;
 };
 
@@ -46,14 +43,6 @@ export function FeedSectionShell({
   user,
   profile,
   activeWorldEvent = null,
-  narrativeState = {
-    scriptedActive: false,
-    emergentActive: false,
-    actOneTitle: null,
-    pendingSignals: 0,
-    scriptedProgress: null,
-    failedBeatsCount: 0,
-  },
   children,
 }: ShellProps) {
   const [tab, setTab] = useState<FeedTab>("for-you");
@@ -63,7 +52,6 @@ export function FeedSectionShell({
       <FeedTabContext.Provider value={tab}>
         <div className="w-full">
           <FeedTabs value={tab} onChange={setTab} />
-          <NarrativeModeStrip {...narrativeState} />
           {activeWorldEvent && <ActiveWorldEventStrip event={activeWorldEvent} />}
           <PostComposerForm user={user} profile={profile} feedTab={tab} />
           {children}

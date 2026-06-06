@@ -26,7 +26,6 @@ async function enqueueSignal(input: {
   authorId: string;
   postId?: number | null;
   commentId?: number | null;
-  investigationEntryId?: number | null;
   reactionKind?: string | null;
   mentionedUsername?: string | null;
   priority: number;
@@ -40,7 +39,6 @@ async function enqueueSignal(input: {
     author_id: input.authorId,
     post_id: input.postId ?? null,
     comment_id: input.commentId ?? null,
-    investigation_entry_id: input.investigationEntryId ?? null,
     reaction_kind: input.reactionKind ?? null,
     mentioned_username: input.mentionedUsername ?? null,
     priority: input.priority,
@@ -95,22 +93,6 @@ export async function enqueueReactionSignal(
     reactionKind: kind,
     priority: priorityForReaction(kind),
     payload: { reaction: kind },
-  });
-}
-
-export async function enqueueDossierEntrySignal(
-  authorId: string,
-  investigationEntryId: number,
-  postId: number | null,
-  content: string
-) {
-  await enqueueSignal({
-    kind: "dossier_entry",
-    authorId,
-    investigationEntryId,
-    postId,
-    priority: 32,
-    payload: { content },
   });
 }
 

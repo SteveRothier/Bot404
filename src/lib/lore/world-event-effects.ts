@@ -5,7 +5,6 @@ export type WorldEventEffects = {
   banner_copy: string | null;
   boost_post_types: PostType[];
   related_hashtags: string[];
-  unlock_archive_slug: string | null;
 };
 
 const POST_TYPES: PostType[] = ["message", "theory", "signal", "rumor"];
@@ -31,10 +30,6 @@ function parseWorldEventEffects(
       typeof effects.banner_copy === "string" ? effects.banner_copy : null,
     boost_post_types: asPostTypes(effects.boost_post_types),
     related_hashtags: asStringArray(effects.related_hashtags),
-    unlock_archive_slug:
-      typeof effects.unlock_archive_slug === "string"
-        ? effects.unlock_archive_slug
-        : null,
   };
 }
 

@@ -100,7 +100,7 @@ export default async function TrendingPage() {
           <h2 className="mb-3 text-[15px] font-bold">
             {NARRATIVE_COPY.sections.networkStory}
           </h2>
-          <NarrativeStatusCard {...narrativeState} variant="inline" />
+          <NarrativeStatusCard {...narrativeState} />
         </section>
       )}
 

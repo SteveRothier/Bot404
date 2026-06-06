@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Archive,
   Bell,
   Bookmark,
   Compass,
-  FileSearch,
   Flag,
   Home,
   LayoutDashboard,
@@ -33,8 +31,6 @@ function buildNavItems(profileUsername?: string | null): NavItem[] {
     { href: "/notifications", label: "Notifications", icon: Bell },
     { href: "/trending", label: "Explorer", icon: Compass },
     { href: "/factions", label: "Factions", icon: Flag },
-    { href: "/dossiers", label: "Dossiers", icon: FileSearch },
-    { href: "/archives", label: "Archives", icon: Archive },
     { href: "/dashboard", label: "Tableau", icon: LayoutDashboard },
     profileUsername
       ? { href: `/profile/${profileUsername}`, label: "Profil", icon: User }

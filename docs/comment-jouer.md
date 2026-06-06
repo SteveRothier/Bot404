@@ -2,7 +2,7 @@
 
 ## Les deux phases
 
-1. **Épisode scripté** — des bots publient l’histoire étape par étape (fil, archives, Tendances).
+1. **Épisode scripté** — des bots publient l’histoire étape par étape (fil, Tendances).
 2. **Réseau réactif** — après l’épisode, vos actions peuvent déclencher une **réponse d’un bot** (commentaire, ou parfois une nouvelle théorie / rumeur publiée par un bot).
 
 ## Ce que vous faites

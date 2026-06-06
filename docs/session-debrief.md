@@ -19,7 +19,7 @@ Test auto : `npm run npc:play:session`
 | Surbrillance réponse récente | `recent-response.ts`, `PostCard`, `PostComments` |
 | Contexte page post | `NarrativeEmergentPostBanner`, `FeedServer` |
 | Dashboard dernières réponses | `dashboard/page.tsx` |
-| Liens Archives sur théories | `PostCard` |
+| Liens lore sur théories | retirés (`PostCard`) |
 
 ## Commandes
 

@@ -181,19 +181,6 @@ async function executeNpcCommentBeat(
   };
 }
 
-async function executeArchiveUnlock(
-  supabase: SupabaseClient,
-  slug: string
-): Promise<Record<string, unknown>> {
-  await supabase
-    .from("archives")
-    .update({ unlocked_at: new Date().toISOString() })
-    .eq("slug", slug)
-    .is("unlocked_at", null);
-
-  return { archive_slug: slug };
-}
-
 async function executeWorldEventBeat(
   supabase: SupabaseClient,
   payload: Record<string, unknown>
@@ -259,14 +246,6 @@ export async function executeBeat(
       case "npc_comment":
         result = await executeNpcCommentBeat(supabase, beat.arc, beat);
         break;
-      case "archive_unlock": {
-        const slug =
-          typeof beat.payload.archive_slug === "string"
-            ? beat.payload.archive_slug
-            : "blackout-7g";
-        result = await executeArchiveUnlock(supabase, slug);
-        break;
-      }
       case "world_event":
         result = await executeWorldEventBeat(supabase, beat.payload);
         break;
@@ -281,11 +260,14 @@ export async function executeBeat(
       case "arc_complete":
         result = await executeArcComplete(supabase, beat.arc, beat.payload);
         break;
-      case "dossier_entry":
-        result = { skipped: true, reason: "dossier_entry not scripted in MVP" };
-        break;
-      default:
+      default: {
+        const legacy = beat.kind as string;
+        if (legacy === "archive_unlock" || legacy === "dossier_entry") {
+          result = { skipped: true, reason: "legacy beat removed" };
+          break;
+        }
         return { ok: false, error: `Beat kind inconnu: ${beat.kind}` };
+      }
     }
 
     if (result === null) {
