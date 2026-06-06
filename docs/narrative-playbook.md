@@ -23,7 +23,18 @@ npm run dev
 
 **Session de validation** : [`session-jeu-reactif.md`](session-jeu-reactif.md) — checklist 15 min ; test auto : `npm run npc:play:session`.
 
-Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optionnel `OLLAMA_URL`, `OLLAMA_MODEL`, `NARRATIVE_SIGNALS_PER_TICK`, `NPC_AMBIENT_FALLBACK_CHANCE`, `IMAGE_API_*`, `TENOR_API_KEY` / `GIPHY_API_KEY`, `STEAM_WEB_API_KEY`.
+Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optionnel `OLLAMA_URL`, `OLLAMA_MODEL`, `NARRATIVE_SIGNALS_PER_TICK`, `NPC_AMBIENT_FALLBACK_CHANCE`, `NARRATIVE_CRON_SECRET` (prod Vercel), `IMAGE_API_*`, `TENOR_API_KEY` / `GIPHY_API_KEY`, `STEAM_WEB_API_KEY`.
+
+---
+
+## Modes d'exploitation (dev vs prod)
+
+| Mode | Tick narratif | Génération LLM (Ollama) |
+|------|----------------|-------------------------|
+| **Dev / démo riche** | `npm run npc:tick` ou tâches Windows (`npc:schedule:install`) | Ollama local (`ollama serve`) |
+| **Prod Vercel** | Cron Vercel → `GET /api/narrative/tick` (15 min, voir [`vercel.json`](../vercel.json)) | **Non disponible sur Vercel** — lancer `npm run npc:tick` sur un PC avec Ollama, ou worker dédié |
+
+Définir `NARRATIVE_CRON_SECRET` (ou `CRON_SECRET` côté Vercel) pour protéger l'endpoint en production.
 
 ---
 

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { runNarrativeTick } from "@/lib/narrative/tick";
 
-export async function POST(request: Request) {
-  const secret = process.env.NARRATIVE_CRON_SECRET;
+function tickSecret(): string | undefined {
+  return process.env.NARRATIVE_CRON_SECRET ?? process.env.CRON_SECRET;
+}
+
+async function handleTick(request: Request) {
+  const secret = tickSecret();
   if (secret) {
     const auth = request.headers.get("authorization");
     if (auth !== `Bearer ${secret}`) {
@@ -17,4 +21,13 @@ export async function POST(request: Request) {
     const message = e instanceof Error ? e.message : "Tick failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+/** Vercel Cron invoque GET ; scripts locaux peuvent utiliser POST. */
+export async function GET(request: Request) {
+  return handleTick(request);
+}
+
+export async function POST(request: Request) {
+  return handleTick(request);
 }

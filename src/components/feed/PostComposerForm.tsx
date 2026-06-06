@@ -60,12 +60,16 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      setError("Image trop volumineuse (max 2 Mo).");
+      setError("Média trop volumineux (max 2 Mo).");
       return;
     }
 
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setError("Format non supporté (JPEG, PNG ou WebP).");
+    if (
+      !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(
+        file.type
+      )
+    ) {
+      setError("Format non supporté (JPEG, PNG, WebP ou GIF).");
       return;
     }
 
@@ -138,7 +142,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
               <img
                 src={previewUrl}
                 alt="Aperçu"
-                className="max-h-64 w-full object-cover"
+                className="mx-auto block max-h-64 w-full object-contain"
               />
               <button
                 type="button"
@@ -170,7 +174,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,image/gif"
               className="hidden"
               onChange={handleMediaSelect}
               aria-hidden

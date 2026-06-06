@@ -51,11 +51,6 @@ export function ComposerToolbar({
       >
         <Image className="size-[18px]" strokeWidth={1.75} />
       </ComposerToolButton>
-      <ComposerToolButton label="GIF" soon>
-        <span className="flex size-[18px] items-center justify-center rounded border border-current text-[9px] font-bold leading-none">
-          GIF
-        </span>
-      </ComposerToolButton>
       <EmojiPicker onSelect={onEmojiSelect} disabled={disabled} />
     </div>
   );

@@ -11,7 +11,7 @@ Checklist pour valider la boucle humain → signal → `npc:tick` → réponse b
 
 ## Scénario A — Théorie (recommandé)
 
-1. Publier un post **Théorie** (3C, 7G, chasse aux humains…).
+1. Publier un post **Théorie** (chasse aux humains, simulation, @NPC…).
 2. Tableau de bord → **Histoire** : au moins `1 interaction en attente`.
 3. Terminal :
    ```powershell

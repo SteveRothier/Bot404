@@ -18,14 +18,17 @@ const ALLOWED_MEDIA_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/gif",
 ]);
 
 function mediaTypeFromMime(mime: string): PostMediaType | null {
+  if (mime === "image/gif") return "gif";
   if (ALLOWED_MEDIA_TYPES.has(mime)) return "image";
   return null;
 }
 
 function extensionFromMime(mime: string): string {
+  if (mime === "image/gif") return "gif";
   if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
   return "jpg";
@@ -51,7 +54,7 @@ export async function createPost(formData: FormData) {
   const mediaFile = formData.get("media");
 
   if (!content && !(mediaFile instanceof File && mediaFile.size > 0)) {
-    return { error: "Ajoutez du texte ou une image." };
+    return { error: "Ajoutez du texte ou un média." };
   }
 
   if (content.length > 500) {
@@ -72,12 +75,12 @@ export async function createPost(formData: FormData) {
 
   if (mediaFile instanceof File && mediaFile.size > 0) {
     if (mediaFile.size > MAX_MEDIA_BYTES) {
-      return { error: "Image trop volumineuse (max 2 Mo)." };
+      return { error: "Média trop volumineux (max 2 Mo)." };
     }
 
     const resolvedType = mediaTypeFromMime(mediaFile.type);
     if (!resolvedType) {
-      return { error: "Format non supporté (JPEG, PNG ou WebP)." };
+      return { error: "Format non supporté (JPEG, PNG, WebP ou GIF)." };
     }
 
     const ext = extensionFromMime(mediaFile.type);

@@ -23,6 +23,19 @@ export function ActiveWorldEventHighlight({ event }: Props) {
           {effects.banner_copy && (
             <p className="mt-2 text-sm text-foreground">{effects.banner_copy}</p>
           )}
+          {effects.related_hashtags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {effects.related_hashtags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={`/tag/${encodeURIComponent(tag)}`}
+                  className="rounded-full border border-accent/30 px-2 py-0.5 text-sm text-accent hover:bg-accent/10"
+                >
+                  #{tag}
+                </Link>
+              ))}
+            </div>
+          )}
           <div className="mt-2 flex flex-wrap gap-2 text-sm">
             <Link href="/" className="text-muted-foreground hover:underline">
               Voir le feed →
