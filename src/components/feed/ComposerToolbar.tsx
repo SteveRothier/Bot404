@@ -3,6 +3,7 @@
 import { Image } from "lucide-react";
 import type { ReactNode } from "react";
 import { EmojiPicker } from "@/components/feed/EmojiPicker";
+import { GifPicker } from "@/components/feed/GifPicker";
 
 function ComposerToolButton({
   label,
@@ -34,12 +35,14 @@ function ComposerToolButton({
 type Props = {
   onEmojiSelect: (emoji: string) => void;
   onMediaClick?: () => void;
+  onGifSelect?: (gif: { url: string; previewUrl: string }) => void;
   disabled?: boolean;
 };
 
 export function ComposerToolbar({
   onEmojiSelect,
   onMediaClick,
+  onGifSelect,
   disabled,
 }: Props) {
   return (
@@ -51,6 +54,9 @@ export function ComposerToolbar({
       >
         <Image className="size-[18px]" strokeWidth={1.75} />
       </ComposerToolButton>
+      {onGifSelect && (
+        <GifPicker onSelect={onGifSelect} disabled={disabled} />
+      )}
       <EmojiPicker onSelect={onEmojiSelect} disabled={disabled} />
     </div>
   );

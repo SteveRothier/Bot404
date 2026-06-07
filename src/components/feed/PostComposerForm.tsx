@@ -31,7 +31,9 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
   const feedBridge = useFeedBridge();
   const [content, setContent] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [remoteGifUrl, setRemoteGifUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewIsBlob, setPreviewIsBlob] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [queuedMessage, setQueuedMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -44,15 +46,29 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
   );
 
   const canSubmit =
-    !!user && (content.trim().length > 0 || !!mediaFile) && !pending;
+    !!user &&
+    (content.trim().length > 0 || !!mediaFile || !!remoteGifUrl) &&
+    !pending;
   const disabled = pending || !user;
   const placeholder = composerPlaceholderForFeedTab(feedTab);
 
   function clearMedia() {
     setMediaFile(null);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setRemoteGifUrl(null);
+    if (previewUrl && previewIsBlob) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
+    setPreviewIsBlob(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handleGifSelect(gif: { url: string; previewUrl: string }) {
+    setError(null);
+    setMediaFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (previewUrl && previewIsBlob) URL.revokeObjectURL(previewUrl);
+    setRemoteGifUrl(gif.url);
+    setPreviewUrl(gif.previewUrl);
+    setPreviewIsBlob(false);
   }
 
   function handleMediaSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -74,9 +90,11 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
     }
 
     setError(null);
+    setRemoteGifUrl(null);
     setMediaFile(file);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (previewUrl && previewIsBlob) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(URL.createObjectURL(file));
+    setPreviewIsBlob(true);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -87,6 +105,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
     fd.set("content", content);
     fd.set("post_type", postTypeForFeedTab(feedTab));
     if (mediaFile) fd.set("media", mediaFile);
+    else if (remoteGifUrl) fd.set("media_remote_url", remoteGifUrl);
 
     startTransition(async () => {
       const result = await createPost(fd);
@@ -169,6 +188,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
             <ComposerToolbar
               onEmojiSelect={appendEmoji}
               onMediaClick={() => fileInputRef.current?.click()}
+              onGifSelect={handleGifSelect}
               disabled={disabled}
             />
             <input

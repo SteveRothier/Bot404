@@ -1,0 +1,58 @@
+.bot404-gif-picker .bot404-gif-picker-search {
+  appearance: none;
+}
+
+.bot404-gif-picker .bot404-gif-picker-search::-webkit-search-cancel-button,
+.bot404-gif-picker .bot404-gif-picker-search::-webkit-search-decoration,
+.bot404-gif-picker .bot404-gif-picker-search::-webkit-search-results-button {
+  display: none;
+  appearance: none;
+}
+
+.bot404-gif-picker .bot404-gif-picker-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #a89ba3;
+  background: transparent;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.bot404-gif-picker .bot404-gif-picker-clear:hover {
+  color: #f4f4f5;
+  background: rgba(244, 63, 94, 0.14);
+}
+
+.bot404-gif-picker .bot404-gif-picker-clear:focus-visible {
+  outline: 1px solid rgba(244, 63, 94, 0.45);
+  outline-offset: 1px;
+}
+
+/* Scroll natif masqué — barre custom sans flèches (Windows) */
+.bot404-gif-picker .bot404-gif-picker-scroll-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.bot404-gif-picker .bot404-gif-picker-scroll-hidden::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.bot404-gif-picker .bot404-gif-picker-scrollbar-track {
+  background: #120c14;
+}
+
+.bot404-gif-picker .bot404-gif-picker-scrollbar-thumb {
+  background: linear-gradient(180deg, #6b1d3a 0%, #4d1730 100%);
+  border-radius: 0;
+  transition: background 0.15s ease;
+}
+
+.bot404-gif-picker .bot404-gif-picker-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8a2348 0%, #61203c 100%);
+}

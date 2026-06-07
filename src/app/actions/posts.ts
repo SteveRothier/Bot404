@@ -10,6 +10,7 @@ import {
 import { isEmergentModeActive } from "@/lib/narrative/queries";
 import { createMentionNotifications } from "@/lib/notifications";
 import { isValidPostType } from "@/lib/post-types";
+import { isAllowedGiphyUrl } from "@/lib/npc/gif-search";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { PostMediaType, PostType } from "@/lib/supabase/types";
@@ -35,6 +36,49 @@ function extensionFromMime(mime: string): string {
   return "jpg";
 }
 
+async function uploadRemoteGiphyGif(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  remoteUrl: string
+): Promise<{ media_url: string; media_type: "gif" } | { error: string }> {
+  if (!isAllowedGiphyUrl(remoteUrl)) {
+    return { error: "URL GIF non autorisée." };
+  }
+
+  let buffer: Buffer;
+  try {
+    const res = await fetch(remoteUrl, { signal: AbortSignal.timeout(30_000) });
+    if (!res.ok) {
+      return { error: "Impossible de télécharger le GIF." };
+    }
+    buffer = Buffer.from(await res.arrayBuffer());
+  } catch {
+    return { error: "Impossible de télécharger le GIF." };
+  }
+
+  if (buffer.byteLength > MAX_MEDIA_BYTES) {
+    return { error: "GIF trop volumineux (max 2 Mo)." };
+  }
+
+  const path = `${userId}/${Date.now()}.gif`;
+  const { error: uploadError } = await supabase.storage
+    .from("post-media")
+    .upload(path, buffer, {
+      contentType: "image/gif",
+      upsert: false,
+    });
+
+  if (uploadError) {
+    return { error: uploadError.message };
+  }
+
+  const { data: publicUrl } = supabase.storage
+    .from("post-media")
+    .getPublicUrl(path);
+
+  return { media_url: publicUrl.publicUrl, media_type: "gif" };
+}
+
 async function shouldNotifyNarrativeQueued(userId: string): Promise<boolean> {
   if (!(await isEmergentModeActive())) return false;
 
@@ -53,9 +97,17 @@ export async function createPost(formData: FormData) {
   const rawType = (formData.get("post_type") as string) ?? "message";
   const post_type: PostType = isValidPostType(rawType) ? rawType : "message";
   const mediaFile = formData.get("media");
+  const mediaRemoteUrl = (formData.get("media_remote_url") as string)?.trim() ?? "";
 
-  if (!content && !(mediaFile instanceof File && mediaFile.size > 0)) {
+  const hasMediaFile = mediaFile instanceof File && mediaFile.size > 0;
+  const hasRemoteGif = mediaRemoteUrl.length > 0;
+
+  if (!content && !hasMediaFile && !hasRemoteGif) {
     return { error: "Ajoutez du texte ou un média." };
+  }
+
+  if (hasMediaFile && hasRemoteGif) {
+    return { error: "Un seul média par post." };
   }
 
   if (content.length > 500) {
@@ -105,6 +157,13 @@ export async function createPost(formData: FormData) {
 
     media_url = publicUrl.publicUrl;
     media_type = resolvedType;
+  } else if (hasRemoteGif) {
+    const uploaded = await uploadRemoteGiphyGif(supabase, user.id, mediaRemoteUrl);
+    if ("error" in uploaded) {
+      return { error: uploaded.error };
+    }
+    media_url = uploaded.media_url;
+    media_type = uploaded.media_type;
   }
 
   const { data: post, error } = await supabase
