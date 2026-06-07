@@ -59,6 +59,19 @@ function prependUnique(post: PostWithAuthor, list: PostWithAuthor[]) {
   return [post, ...list.filter((p) => p.id !== post.id)];
 }
 
+function mergePostsPreservePolls(
+  incoming: PostWithAuthor[],
+  previous: PostWithAuthor[]
+): PostWithAuthor[] {
+  const pollById = new Map(
+    previous.filter((p) => p.poll).map((p) => [p.id, p.poll!])
+  );
+  return incoming.map((post) => ({
+    ...post,
+    poll: post.poll ?? pollById.get(post.id) ?? null,
+  }));
+}
+
 export function HomeFeedClient({
   recentPosts: initialRecentPosts,
   theoryPosts: initialTheoryPosts,
@@ -98,10 +111,12 @@ export function HomeFeedClient({
   );
 
   useEffect(() => {
-    setRecentPosts(initialRecentPosts);
-    setTheoryPosts(initialTheoryPosts);
-    setRumorPosts(initialRumorPosts);
-    setFollowingPosts(initialFollowingPosts);
+    setRecentPosts((prev) => mergePostsPreservePolls(initialRecentPosts, prev));
+    setTheoryPosts((prev) => mergePostsPreservePolls(initialTheoryPosts, prev));
+    setRumorPosts((prev) => mergePostsPreservePolls(initialRumorPosts, prev));
+    setFollowingPosts((prev) =>
+      mergePostsPreservePolls(initialFollowingPosts, prev)
+    );
     setSuggestedNpcs(initialSuggestedNpcs);
     setLikedPostIds(initialLikedPostIds);
     setBookmarkedPostIds(initialBookmarkedPostIds);

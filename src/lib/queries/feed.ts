@@ -70,6 +70,9 @@ export async function getFeedPosts(
   postType?: PostType
 ): Promise<PostWithAuthor[]> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   let query = supabase
     .from("posts")
@@ -84,11 +87,14 @@ export async function getFeedPosts(
 
   if (error || !posts) return [];
 
-  return attachCommentCountsToPosts(supabase, posts);
+  return attachCommentCountsToPosts(supabase, posts, user?.id);
 }
 
 export async function getPostById(id: number): Promise<PostWithAuthor | null> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: post, error } = await supabase
     .from("posts")
@@ -98,13 +104,16 @@ export async function getPostById(id: number): Promise<PostWithAuthor | null> {
 
   if (error || !post) return null;
 
-  const [enriched] = await attachCommentCountsToPosts(supabase, [post]);
+  const [enriched] = await attachCommentCountsToPosts(supabase, [post], user?.id);
   if (!enriched) return null;
   return markRecentNarrativePosts([enriched])[0] ?? null;
 }
 
 export async function getPopularPosts(limit = 50): Promise<PostWithAuthor[]> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: posts, error } = await supabase
     .from("posts")
@@ -114,7 +123,7 @@ export async function getPopularPosts(limit = 50): Promise<PostWithAuthor[]> {
 
   if (error || !posts) return [];
 
-  return attachCommentCountsToPosts(supabase, posts);
+  return attachCommentCountsToPosts(supabase, posts, user?.id);
 }
 
 export type HomeFeedTab = "for-you" | "theory" | "rumor" | "following";

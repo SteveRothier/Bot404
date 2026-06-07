@@ -74,7 +74,7 @@ export async function getPostsFromFollowing(
 
   if (error || !posts) return [];
 
-  return attachCommentCountsToPosts(supabase, posts);
+  return attachCommentCountsToPosts(supabase, posts, user.id);
 }
 
 export async function getSuggestedNpcs(limit = 3): Promise<Profile[]> {

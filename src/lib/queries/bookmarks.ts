@@ -67,5 +67,5 @@ export async function getBookmarkedPosts(userId?: string): Promise<PostWithAutho
     (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)
   );
 
-  return attachCommentCountsToPosts(supabase, sorted);
+  return attachCommentCountsToPosts(supabase, sorted, id);
 }

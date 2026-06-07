@@ -10,6 +10,7 @@ import { PostCardMenu } from "@/components/feed/PostCardMenu";
 import { PostContent } from "@/components/feed/PostContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PostMedia } from "@/components/feed/PostMedia";
+import { PostPoll } from "@/components/feed/PostPoll";
 import dynamic from "next/dynamic";
 
 const PostComments = dynamic(
@@ -19,6 +20,7 @@ const PostComments = dynamic(
 );
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { formatCount, formatRelativeTimeShort } from "@/lib/format";
+import { isPollExpired } from "@/lib/polls";
 import { POST_TYPE_LABELS } from "@/lib/post-types";
 import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import { cn } from "@/lib/utils";
@@ -60,6 +62,11 @@ export function PostCard({
   const handle = `@${author.username.toLowerCase()}`;
   const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
   const canDelete = isLoggedIn && userId === post.author_id;
+  const canClosePoll =
+    canDelete &&
+    !!post.poll &&
+    post.poll.options.length > 0 &&
+    !isPollExpired(post.poll.ends_at, referenceNowMs);
 
   function handleCommentsClick() {
     if (defaultCommentsOpen) {
@@ -148,7 +155,11 @@ export function PostCard({
                 {formatRelativeTimeShort(post.created_at, referenceNowMs)}
               </Link>
             </div>
-            <PostCardMenu postId={post.id} canDelete={canDelete} />
+            <PostCardMenu
+              postId={post.id}
+              canDelete={canDelete}
+              canClosePoll={canClosePoll}
+            />
           </div>
 
           {defaultCommentsOpen ? (
@@ -182,6 +193,15 @@ export function PostCard({
 
           {post.media_url && (
             <PostMedia url={post.media_url} mediaType={post.media_type} />
+          )}
+
+          {post.poll && post.poll.options.length > 0 && (
+            <PostPoll
+              poll={post.poll}
+              postId={post.id}
+              isLoggedIn={isLoggedIn}
+              referenceNowMs={referenceNowMs}
+            />
           )}
 
           <div className="mt-3 flex max-w-[425px] justify-between text-muted-foreground">

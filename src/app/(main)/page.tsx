@@ -5,7 +5,7 @@ import { PostsSuspense } from "@/components/feed/FeedSkeleton";
 import { getRequestAuth } from "@/lib/queries/auth";
 import { getCachedActiveWorldEvents } from "@/lib/queries/cached";
 
-export const revalidate = 60;
+export const revalidate = 0;
 
 export default async function HomePage() {
   const referenceNowMs = Date.now();

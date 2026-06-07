@@ -14,6 +14,7 @@ import type {
   NpcPostBeatPayload,
 } from "@/lib/narrative/types";
 import { ollamaChat } from "@/lib/npc/ollama";
+import { maybeAttachNpcPoll } from "@/lib/npc/poll-create";
 import { isValidPostType, pickRandomNpcPostType } from "@/lib/post-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType, Profile } from "@/lib/supabase/types";
@@ -122,6 +123,16 @@ async function executeNpcPostBeat(
     .eq("id", npc.id);
 
   await processPostFactionEffects(supabase, post.id);
+
+  await maybeAttachNpcPoll({
+    supabase,
+    postId: post.id,
+    npc,
+    content: content.slice(0, 500),
+    postType,
+    hasMedia: false,
+    context: "beat",
+  });
 
   return { post_id: post.id, author: npc.username, post_type: postType };
 }

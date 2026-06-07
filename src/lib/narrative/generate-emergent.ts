@@ -11,6 +11,8 @@ import { getEmergentArcSynopsis } from "@/lib/narrative/execute-beat";
 import { getActiveEmergentArc } from "@/lib/narrative/queries";
 import type { NarrativeSignal } from "@/lib/narrative/types";
 import { pickNpcForSignal } from "@/lib/npc/cast";
+import { maybeNpcVoteOnPoll } from "@/lib/npc/poll-vote";
+import { maybeAttachNpcPoll } from "@/lib/npc/poll-create";
 import { resolveNpcPostMedia, shouldAttachMediaToNpcPost } from "@/lib/npc/media";
 import { ollamaChat } from "@/lib/npc/ollama";
 import { getRecentNpcAuthorIdsOnPost } from "@/lib/npc/recent-repliers";
@@ -45,6 +47,7 @@ async function loadSignalContext(signal: NarrativeSignal) {
   let content = "";
   let postId = signal.post_id;
   let actionLabel = "interagir sur le réseau";
+  let pollLabels: string[] = [];
 
   if (signal.kind === "human_post" && signal.post_id) {
     const { data: post } = await supabase
@@ -54,6 +57,21 @@ async function loadSignalContext(signal: NarrativeSignal) {
       .maybeSingle();
     content = post?.content ?? "";
     actionLabel = `publier un ${post?.post_type ?? "post"}`;
+
+    const { data: poll } = await supabase
+      .from("post_polls")
+      .select("ends_at")
+      .eq("post_id", signal.post_id)
+      .maybeSingle();
+
+    if (poll && new Date(poll.ends_at).getTime() > Date.now()) {
+      const { data: options } = await supabase
+        .from("post_poll_options")
+        .select("label")
+        .eq("post_id", signal.post_id)
+        .order("position", { ascending: true });
+      pollLabels = options?.map((o) => o.label) ?? [];
+    }
   } else if (signal.kind === "human_comment" && signal.comment_id) {
     const { data: comment } = await supabase
       .from("comments")
@@ -82,6 +100,7 @@ async function loadSignalContext(signal: NarrativeSignal) {
     content,
     postId,
     actionLabel,
+    pollLabels,
   };
 }
 
@@ -128,6 +147,13 @@ export async function processEmergentSignal(
   const targetPostId = ctx.postId;
   const npc = await pickResponderNpc(typedSignal, targetPostId, ctx.content);
   if (!npc) return { ok: false, error: "Aucun NPC disponible." };
+
+  if (
+    typedSignal.kind === "human_post" &&
+    ctx.pollLabels.length > 0
+  ) {
+    await maybeNpcVoteOnPoll(targetPostId, npc, ctx.content);
+  }
 
   const threadSnippet = await buildRichThreadSnippet(targetPostId);
   const synopsis = await getEmergentArcSynopsis();
@@ -201,6 +227,16 @@ export async function processEmergentSignal(
 
     await processPostFactionEffects(supabase, newPost.id);
 
+    await maybeAttachNpcPoll({
+      supabase,
+      postId: newPost.id,
+      npc,
+      content: content.slice(0, 500),
+      postType,
+      hasMedia: !!media,
+      context: "emergent",
+    });
+
     return {
       ok: true,
       author: npc.username,
@@ -214,7 +250,10 @@ export async function processEmergentSignal(
   const { system, user } = await buildEmergentPrompt(npc, {
     humanUsername: ctx.humanUsername,
     actionLabel: ctx.actionLabel,
-    content: ctx.content,
+    content:
+      ctx.pollLabels.length > 0
+        ? `${ctx.content}\n\nSondage : ${ctx.pollLabels.join(" | ")}`
+        : ctx.content,
     threadSnippet,
     emergentSynopsis: synopsis,
   });

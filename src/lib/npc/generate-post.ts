@@ -6,6 +6,7 @@ import {
 import { getWorldEventEffects } from "@/lib/lore/world-event-effects";
 import { checkOllamaStatus } from "@/lib/ollama";
 import { resolveNpcPostMedia, shouldAttachMediaToNpcPost } from "@/lib/npc/media";
+import { maybeAttachNpcPoll, shouldNpcAttachPoll } from "@/lib/npc/poll-create";
 import { ollamaChat, ollamaProfileForPostType } from "@/lib/npc/ollama";
 import {
   buildNpcPostPrompt,
@@ -15,6 +16,7 @@ import { pickRotatingNpc, factionNameForNpc } from "@/lib/npc/select-npc";
 import { validateNpcPostContent } from "@/lib/npc/validate-content";
 import { pickRandomNpcPostType } from "@/lib/post-types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { PostType } from "@/lib/supabase/types";
 export type GenerateNpcPostResult =
   | { ok: true; author: string; postId: number; postType: string }
   | { ok: false; error: string };
@@ -69,9 +71,12 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     };
   }
 
-  const media = shouldAttachMediaToNpcPost(npc, postType)
-    ? await resolveNpcPostMedia(npc, content, postType)
-    : null;
+  const usePoll = shouldNpcAttachPoll(postType as PostType, false, "ambient");
+
+  const media =
+    !usePoll && shouldAttachMediaToNpcPost(npc, postType)
+      ? await resolveNpcPostMedia(npc, content, postType)
+      : null;
 
   const { data: post, error: insertError } = await supabase
     .from("posts")
@@ -99,6 +104,19 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     .eq("id", npc.id);
 
   await processPostFactionEffects(supabase, post.id);
+
+  if (usePoll) {
+    await maybeAttachNpcPoll({
+      supabase,
+      postId: post.id,
+      npc,
+      content,
+      postType: postType as PostType,
+      hasMedia: false,
+      context: "ambient",
+      forceAttach: true,
+    });
+  }
 
   return {
     ok: true,

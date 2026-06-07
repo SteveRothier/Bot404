@@ -13,12 +13,18 @@ import {
 import { ComposerTextarea } from "@/components/feed/ComposerTextarea";
 import { ComposerToolbar } from "@/components/feed/ComposerToolbar";
 import { EmbeddedMedia } from "@/components/feed/EmbeddedMedia";
+import {
+  createDefaultPollDraft,
+  PollComposer,
+  type PollDraftState,
+} from "@/components/feed/PollComposer";
 import { composerSubmitClassName } from "@/components/feed/composer-styles";
 import { fetchFeedPostById } from "@/app/actions/feed";
 import { createPost } from "@/app/actions/posts";
 import { useFeedBridge } from "@/components/feed/FeedBridgeContext";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { extractEmbedMediaUrls } from "@/lib/embed-media";
+import { POLL_MIN_OPTIONS } from "@/lib/polls";
 import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -38,6 +44,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
   const [previewIsBlob, setPreviewIsBlob] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [queuedMessage, setQueuedMessage] = useState<string | null>(null);
+  const [pollDraft, setPollDraft] = useState<PollDraftState | null>(null);
   const [pending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dismissQueued = useCallback(() => setQueuedMessage(null), []);
@@ -47,15 +54,23 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
     user?.id ?? "guest"
   );
 
-  const canSubmit =
-    !!user &&
-    (content.trim().length > 0 || !!mediaFile || !!remoteGifUrl) &&
-    !pending;
-  const disabled = pending || !user;
-  const placeholder = composerPlaceholderForFeedTab(feedTab);
   const embedSourceUrl = extractEmbedMediaUrls(content)[0];
   const hasAttachedMedia = !!(previewUrl || mediaFile || remoteGifUrl);
-  const showLinkEmbed = embedSourceUrl && !hasAttachedMedia;
+  const showLinkEmbed = embedSourceUrl && !hasAttachedMedia && !pollDraft;
+  const filledPollChoices =
+    pollDraft?.optionFields.filter((o) => o.trim().length > 0).length ?? 0;
+  const pollReady =
+    !!pollDraft &&
+    content.trim().length > 0 &&
+    filledPollChoices >= POLL_MIN_OPTIONS;
+  const canSubmit =
+    !!user &&
+    !pending &&
+    (pollReady ||
+      (!pollDraft &&
+        (content.trim().length > 0 || !!mediaFile || !!remoteGifUrl)));
+  const disabled = pending || !user;
+  const placeholder = composerPlaceholderForFeedTab(feedTab);
 
   function clearMedia() {
     setMediaFile(null);
@@ -68,6 +83,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
 
   function handleGifSelect(gif: { url: string; previewUrl: string }) {
     setError(null);
+    setPollDraft(null);
     setMediaFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (previewUrl && previewIsBlob) URL.revokeObjectURL(previewUrl);
@@ -95,6 +111,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
     }
 
     setError(null);
+    setPollDraft(null);
     setRemoteGifUrl(null);
     setMediaFile(file);
     if (previewUrl && previewIsBlob) URL.revokeObjectURL(previewUrl);
@@ -111,6 +128,15 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
     fd.set("post_type", postTypeForFeedTab(feedTab));
     if (mediaFile) fd.set("media", mediaFile);
     else if (remoteGifUrl) fd.set("media_remote_url", remoteGifUrl);
+    if (pollDraft) {
+      fd.set(
+        "poll_json",
+        JSON.stringify({
+          options: pollDraft.optionFields.map((o) => o.trim()).filter(Boolean),
+          durationMinutes: pollDraft.durationMinutes,
+        })
+      );
+    }
 
     startTransition(async () => {
       const result = await createPost(fd);
@@ -118,11 +144,16 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
       else {
         setContent("");
         clearMedia();
+        setPollDraft(null);
         if (result.narrativeQueued) {
           setQueuedMessage(NARRATIVE_COPY.queuedInteraction);
         }
         if (result.postId) {
-          const post = await fetchFeedPostById(result.postId);
+          const fetched = await fetchFeedPostById(result.postId);
+          const post =
+            fetched && result.poll
+              ? { ...fetched, poll: fetched.poll ?? result.poll }
+              : fetched;
           if (post) {
             const matchesTab =
               feedTab === "for-you" ||
@@ -162,6 +193,15 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
 
           {showLinkEmbed && <EmbeddedMedia url={embedSourceUrl} />}
 
+          {pollDraft && (
+            <PollComposer
+              draft={pollDraft}
+              onChange={setPollDraft}
+              onRemove={() => setPollDraft(null)}
+              disabled={disabled}
+            />
+          )}
+
           {previewUrl && (
             <div className="relative mt-2 overflow-hidden rounded-xl border border-border">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -196,6 +236,13 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
               onEmojiSelect={appendEmoji}
               onMediaClick={() => fileInputRef.current?.click()}
               onGifSelect={handleGifSelect}
+              onPollClick={() => {
+                setError(null);
+                clearMedia();
+                setPollDraft((current) => current ?? createDefaultPollDraft());
+              }}
+              pollActive={!!pollDraft}
+              mediaDisabled={hasAttachedMedia || !!embedSourceUrl}
               disabled={disabled}
             />
             <input

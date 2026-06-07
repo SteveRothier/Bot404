@@ -15,6 +15,9 @@ export async function searchNetwork(query: string): Promise<SearchResults> {
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const isHashtag = q.startsWith("#");
   const searchTerm = isHashtag ? q.slice(1) : q;
   const pattern = `%${searchTerm.replace(/%/g, "\\%")}%`;
@@ -29,7 +32,7 @@ export async function searchNetwork(query: string): Promise<SearchResults> {
           .order("popularity_score", { ascending: false })
           .limit(10),
     isHashtag
-      ? getPostsByHashtagPattern(hashtagSearchPattern(searchTerm), 20)
+      ? getPostsByHashtagPattern(hashtagSearchPattern(searchTerm), 20, user?.id)
       : supabase
           .from("posts")
           .select(POST_WITH_AUTHOR_BASIC)
@@ -38,7 +41,7 @@ export async function searchNetwork(query: string): Promise<SearchResults> {
           .limit(20)
           .then(async ({ data, error }) => {
             if (error || !data) return [];
-            return attachCommentCountsToPosts(supabase, data);
+            return attachCommentCountsToPosts(supabase, data, user?.id);
           }),
   ]);
 

@@ -11,7 +11,8 @@ export function hashtagSearchPattern(tagSlug: string): string {
 
 export async function getPostsByHashtagPattern(
   pattern: string,
-  limit = 30
+  limit = 30,
+  userId?: string | null
 ): Promise<PostWithAuthor[]> {
   const supabase = await createClient();
   const { data: posts, error } = await supabase
@@ -22,5 +23,5 @@ export async function getPostsByHashtagPattern(
     .limit(limit);
 
   if (error || !posts) return [];
-  return attachCommentCountsToPosts(supabase, posts);
+  return attachCommentCountsToPosts(supabase, posts, userId);
 }

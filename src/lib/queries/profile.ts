@@ -22,6 +22,9 @@ export async function getPostsByProfileId(
   limit = 30
 ): Promise<PostWithAuthor[]> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: posts, error } = await supabase
     .from("posts")
@@ -32,7 +35,7 @@ export async function getPostsByProfileId(
 
   if (error || !posts) return [];
 
-  return attachCommentCountsToPosts(supabase, posts);
+  return attachCommentCountsToPosts(supabase, posts, user?.id);
 }
 
 export async function getPostsByUsername(

@@ -52,9 +52,24 @@ export type Post = {
   created_at: string;
 };
 
+export type PostPollOption = {
+  id: number;
+  label: string;
+  votes_count: number;
+  position: number;
+};
+
+export type PostPoll = {
+  post_id: number;
+  ends_at: string;
+  options: PostPollOption[];
+  user_vote_option_id?: number | null;
+};
+
 export type PostWithAuthor = Post & {
   author: Profile;
   comment_count?: number;
+  poll?: PostPoll | null;
   /** Réponse NPC émergente publiée récemment (surbrillance fil). */
   isRecentNarrativeResponse?: boolean;
 };

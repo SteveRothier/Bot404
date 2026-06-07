@@ -10,10 +10,13 @@ import {
 import { isEmergentModeActive } from "@/lib/narrative/queries";
 import { createMentionNotifications } from "@/lib/notifications";
 import { isValidPostType } from "@/lib/post-types";
+import { extractEmbedMediaUrls } from "@/lib/embed-media";
+import { parsePollJson, validatePollDraft } from "@/lib/polls";
+import { insertPostPoll } from "@/lib/queries/poll-insert";
 import { isAllowedGiphyUrl } from "@/lib/npc/gif-search";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import type { PostMediaType, PostType } from "@/lib/supabase/types";
+import type { PostMediaType, PostPoll, PostType } from "@/lib/supabase/types";
 
 const MAX_MEDIA_BYTES = 2 * 1024 * 1024;
 const ALLOWED_MEDIA_TYPES = new Set([
@@ -98,11 +101,26 @@ export async function createPost(formData: FormData) {
   const post_type: PostType = isValidPostType(rawType) ? rawType : "message";
   const mediaFile = formData.get("media");
   const mediaRemoteUrl = (formData.get("media_remote_url") as string)?.trim() ?? "";
+  const pollRaw = (formData.get("poll_json") as string)?.trim() ?? "";
+  const pollDraft = parsePollJson(pollRaw);
 
   const hasMediaFile = mediaFile instanceof File && mediaFile.size > 0;
   const hasRemoteGif = mediaRemoteUrl.length > 0;
+  const hasPoll = pollDraft !== null;
 
-  if (!content && !hasMediaFile && !hasRemoteGif) {
+  if (hasPoll) {
+    const pollError = validatePollDraft(pollDraft);
+    if (pollError) return { error: pollError };
+    if (!content) return { error: "Ajoutez une question pour le sondage." };
+    if (hasMediaFile || hasRemoteGif) {
+      return { error: "Un sondage ne peut pas inclure de média." };
+    }
+    if (extractEmbedMediaUrls(content).length > 0) {
+      return { error: "Un sondage ne peut pas inclure de lien média." };
+    }
+  }
+
+  if (!content && !hasMediaFile && !hasRemoteGif && !hasPoll) {
     return { error: "Ajoutez du texte ou un média." };
   }
 
@@ -182,6 +200,17 @@ export async function createPost(formData: FormData) {
     return { error: error.message };
   }
 
+  let createdPoll: PostPoll | undefined;
+
+  if (post?.id && hasPoll && pollDraft) {
+    const pollResult = await insertPostPoll(supabase, post.id, pollDraft);
+    if (!pollResult.ok) {
+      await supabase.from("posts").delete().eq("id", post.id);
+      return { error: pollResult.error };
+    }
+    createdPoll = pollResult.poll;
+  }
+
   if (post?.id) {
     await processPostFactionEffects(createAdminClient(), post.id);
     if (content) {
@@ -196,7 +225,7 @@ export async function createPost(formData: FormData) {
 
   revalidatePath("/");
   revalidateDataCaches();
-  return { success: true, postId: post.id, narrativeQueued };
+  return { success: true, postId: post.id, narrativeQueued, poll: createdPoll };
 }
 
 export async function toggleLike(postId: number) {
