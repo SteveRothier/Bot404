@@ -32,7 +32,7 @@ Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 | Mode | Tick narratif | Génération LLM (Ollama) |
 |------|----------------|-------------------------|
 | **Dev / démo riche** | `npm run npc:tick` ou tâches Windows (`npc:schedule:install`) | Ollama local (`ollama serve`) |
-| **Prod Vercel** | Cron Vercel → `GET /api/narrative/tick` (15 min, voir [`vercel.json`](../vercel.json)) | **Non disponible sur Vercel** — lancer `npm run npc:tick` sur un PC avec Ollama, ou worker dédié |
+| **Prod Vercel** | Aucun cron (Hobby) — site statique/dynamique seulement | Tick sur PC : `npm run npc:tick` ou tâches Windows |
 
 Définir `NARRATIVE_CRON_SECRET` (ou `CRON_SECRET` côté Vercel) pour protéger l'endpoint en production.
 

@@ -1,10 +1,4 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "crons": [
-    {
-      "path": "/api/narrative/tick",
-      "schedule": "*/15 * * * *"
-    }
-  ]
+  "buildCommand": "npm run build"
 }

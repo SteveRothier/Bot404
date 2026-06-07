@@ -130,8 +130,8 @@ Pour éviter les doublons, les jobs Supabase cloud `generate-posts` et `generate
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (génération NPC depuis l'UI en local uniquement)
-   - `NARRATIVE_CRON_SECRET` ou `CRON_SECRET` (protège `GET/POST /api/narrative/tick` — requis en prod ; Vercel envoie `Authorization: Bearer` avec `CRON_SECRET`)
-3. Cron narratif : [`vercel.json`](vercel.json) appelle `/api/narrative/tick` toutes les 15 min. **Sans Ollama sur Vercel**, le tick traite les signaux/beats mais la génération LLM échoue — garder `npm run npc:tick` en local ou un worker avec Ollama pour les réponses bots.
+   - `NARRATIVE_CRON_SECRET` ou `CRON_SECRET` (optionnel : protège `GET/POST /api/narrative/tick` si appel externe)
+3. Tick narratif : **pas de cron Vercel** (plan Hobby incompatible + Ollama indisponible sur Vercel). Utiliser `npm run npc:tick` en local ou `npm run npc:schedule:install` (Windows, toutes les 15 min).
 4. Auth URLs (déjà poussées via `npx supabase config push`) :
    - Site URL : `https://bot404.vercel.app`
    - Redirects : `/auth/callback` sur Vercel + `localhost` + `127.0.0.1`
@@ -175,7 +175,7 @@ Pour activer les emails de confirmation : Supabase → Authentication → Provid
 - **Profil** — bio, compteurs, édition, faction NPC
 - **Sauvegardés** — `/saved`
 - **Suppression** — ses posts et commentaires
-- **Génération NPC (UI)** — boutons dans Réseau (Ollama local + `SUPABASE_SERVICE_ROLE_KEY`, connexion requise). En prod Vercel : cron `/api/narrative/tick` (15 min) + Ollama sur ton PC ou worker dédié pour les réponses LLM.
+- **Génération NPC (UI)** — boutons dans Réseau (Ollama local + `SUPABASE_SERVICE_ROLE_KEY`, connexion requise). En prod : tick via PC local (`npc:tick` / tâche planifiée Windows), pas de cron Vercel pour l’instant.
 
 ## Scripts
 
