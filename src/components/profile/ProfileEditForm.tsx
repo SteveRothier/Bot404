@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile } from "@/app/actions/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import {
+  ALLOWED_AVATAR_TYPES,
+  MAX_AVATAR_BYTES,
+} from "@/lib/avatars";
 import { isDiscordAvatarUrl } from "@/lib/avatars";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -16,16 +20,62 @@ type Props = {
 
 export function ProfileEditForm({ profile }: Props) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? "");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [clearAvatar, setClearAvatar] = useState(false);
   const [previewError, setPreviewError] = useState(false);
 
-  const hasCustomUrl = avatarUrl.trim().length > 0;
+  const previewSource = clearAvatar
+    ? null
+    : previewBlobUrl ?? (avatarUrl.trim() || null);
+  const hasCustomPreview = !!previewSource;
 
   useEffect(() => {
     setPreviewError(false);
-  }, [avatarUrl]);
+  }, [previewSource]);
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setPreviewBlobUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(avatarFile);
+    setPreviewBlobUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [avatarFile]);
+
+  function handleFileSelect(file: File | null) {
+    setClearAvatar(false);
+    if (!file) {
+      setAvatarFile(null);
+      return;
+    }
+    if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
+      setError("Format non supporté (JPEG, PNG, WebP, GIF).");
+      setAvatarFile(null);
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      setError("Image trop volumineuse (max 2 Mo).");
+      setAvatarFile(null);
+      return;
+    }
+    setError(null);
+    setAvatarFile(file);
+  }
+
+  function handleRemoveAvatar() {
+    setAvatarFile(null);
+    setAvatarUrl("");
+    setClearAvatar(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
 
   return (
     <form
@@ -34,6 +84,12 @@ export function ProfileEditForm({ profile }: Props) {
         event.preventDefault();
         setError(null);
         const formData = new FormData(event.currentTarget);
+        if (avatarFile) {
+          formData.set("avatar_file", avatarFile);
+        }
+        if (clearAvatar) {
+          formData.set("clear_avatar", "1");
+        }
         startTransition(async () => {
           const result = await updateProfile(formData);
           if (result.error) {
@@ -45,27 +101,58 @@ export function ProfileEditForm({ profile }: Props) {
         });
       }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <UserAvatar
-          avatarUrl={avatarUrl || null}
+          avatarUrl={previewSource}
           fallbackSeed={profile.id}
           username={profile.username}
-          allowDicebearFallback={!hasCustomUrl}
+          allowDicebearFallback={!hasCustomPreview}
           onImageError={() => setPreviewError(true)}
           onImageLoad={() => setPreviewError(false)}
-          className="size-16 rounded-full"
+          className="size-16 shrink-0 rounded-full"
           imageClassName="rounded-full object-cover"
           fallbackClassName="rounded-full text-base"
         />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1 space-y-2">
           <p className="text-sm text-muted-foreground">
             Aperçu de votre avatar
           </p>
-          {previewError && hasCustomUrl && (
-            <p className="mt-1 text-sm text-destructive">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              disabled={pending}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Choisir une image
+            </Button>
+            {(hasCustomPreview || avatarFile) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="rounded-full text-muted-foreground"
+                disabled={pending}
+                onClick={handleRemoveAvatar}
+              >
+                Retirer
+              </Button>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
+          />
+          {previewError && hasCustomPreview && !avatarFile && (
+            <p className="text-sm text-destructive">
               Impossible de charger cette image.
               {isDiscordAvatarUrl(avatarUrl)
-                ? " Les liens Discord expirent — copiez un lien récent ou hébergez l’image ailleurs (Imgur, Supabase Storage…)."
+                ? " Les liens Discord expirent — choisissez un fichier ou un lien récent."
                 : " Vérifiez que l’URL est publique et pointe vers une image."}
             </p>
           )}
@@ -89,7 +176,7 @@ export function ProfileEditForm({ profile }: Props) {
 
       <div>
         <label htmlFor="avatar_url" className="mb-1 block text-[15px] font-bold">
-          URL avatar
+          URL avatar (optionnel)
         </label>
         <Input
           id="avatar_url"
@@ -99,13 +186,18 @@ export function ProfileEditForm({ profile }: Props) {
           autoComplete="url"
           spellCheck={false}
           value={avatarUrl}
-          onChange={(e) => setAvatarUrl(e.target.value)}
+          disabled={!!avatarFile}
+          onChange={(e) => {
+            setClearAvatar(false);
+            setAvatarUrl(e.target.value);
+          }}
           placeholder="https://…"
           className="rounded-xl border-border bg-secondary"
         />
         <p className="mt-1 text-meta text-muted-foreground">
-          Les URLs Discord expirent : au enregistrement, l&apos;image est
-          copiée sur le serveur pour un affichage permanent.
+          Préférez « Choisir une image » pour un avatar permanent. Les URLs
+          Discord expirent ; au enregistrement, une URL externe est copiée sur
+          le serveur.
         </p>
       </div>
 

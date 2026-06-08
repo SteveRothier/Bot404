@@ -75,6 +75,7 @@ Variables utiles:
 - `SUPABASE_SERVICE_ROLE_KEY` — requis pour les boutons **Générer un post/commentaire** dans le panneau Réseau
 - `OLLAMA_URL` (par défaut `http://localhost:11434`, recommandé `http://127.0.0.1:11434` sous Windows)
 - `OLLAMA_MODEL` (par défaut `qwen3.5:4b`)
+- `NPC_POLL_CHANCE` (défaut `0.12`) — probabilité qu’un post NPC inclue un sondage
 
 ### Planification Windows (sans ouvrir de terminal)
 

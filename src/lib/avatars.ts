@@ -1,5 +1,13 @@
 import { isSvgUrl } from "@/lib/images";
 
+export const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+export const ALLOWED_AVATAR_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
 const DICEBEAR_STYLE = "9.x/bottts-neutral";
 
 export function dicebearAvatarUrl(seed: string): string {
