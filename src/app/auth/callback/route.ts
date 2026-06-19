@@ -12,7 +12,15 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+
+    const fallback = next.includes("reset-password")
+      ? "/login/reset-password?error=expired"
+      : "/login?error=auth";
+    return NextResponse.redirect(`${origin}${fallback}`);
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  const fallback = next.includes("reset-password")
+    ? "/login/reset-password?error=expired"
+    : "/login?error=auth";
+  return NextResponse.redirect(`${origin}${fallback}`);
 }
