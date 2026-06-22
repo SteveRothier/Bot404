@@ -2,12 +2,14 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import {
   AuthBackLink,
   AuthShell,
 } from "@/components/auth/AuthShell";
+import { clearAuthHash, isRecoveryHash } from "@/lib/auth/recovery-hash";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +29,7 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [checkingSession, setCheckingSession] = useState(!expiredFromUrl);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (expiredFromUrl) {
@@ -35,8 +38,13 @@ function ResetPasswordForm() {
     }
 
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let settled = false;
+
+    function applySession(session: Session | null) {
+      if (settled) return;
+      settled = true;
       setSessionReady(!!session);
+      setUserEmail(session?.user.email ?? null);
       if (!session) {
         setMessageIsError(true);
         setMessage(
@@ -44,7 +52,37 @@ function ResetPasswordForm() {
         );
       }
       setCheckingSession(false);
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+        clearAuthHash();
+        applySession(session);
+      }
     });
+
+    if (isRecoveryHash(window.location.hash)) {
+      void supabase.auth.getSession();
+    } else {
+      void supabase.auth.getSession().then(({ data: { session } }) => {
+        applySession(session);
+      });
+    }
+
+    const timeout = window.setTimeout(() => {
+      if (!settled) {
+        void supabase.auth.getSession().then(({ data: { session } }) => {
+          applySession(session);
+        });
+      }
+    }, 3000);
+
+    return () => {
+      subscription.unsubscribe();
+      window.clearTimeout(timeout);
+    };
   }, [expiredFromUrl]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -75,16 +113,25 @@ function ResetPasswordForm() {
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    await supabase.auth.signOut();
+    setMessageIsError(false);
+    setMessage("Mot de passe mis à jour. Redirection vers la connexion…");
+    window.setTimeout(() => {
+      router.push("/login");
+      router.refresh();
+    }, 1200);
   }
 
-  const canSubmit = sessionReady && !expiredFromUrl && !checkingSession;
+  const canSubmit = sessionReady && !expiredFromUrl && !checkingSession && !loading;
+
+  const subtitle = userEmail
+    ? `Réinitialiser le mot de passe pour ${userEmail}`
+    : "Saisissez et confirmez votre nouveau mot de passe";
 
   return (
     <AuthShell
       title="Choisir un nouveau mot de passe"
-      subtitle="Saisissez et confirmez votre nouveau mot de passe"
+      subtitle={subtitle}
       footer={
         <>
           <AuthBackLink href="/login">Demander un nouveau lien</AuthBackLink>
@@ -102,7 +149,7 @@ function ResetPasswordForm() {
             required
             minLength={6}
             value={password}
-            disabled={loading || !canSubmit}
+            disabled={!canSubmit}
             onChange={setPassword}
           />
 
@@ -112,7 +159,7 @@ function ResetPasswordForm() {
             required
             minLength={6}
             value={confirmPassword}
-            disabled={loading || !canSubmit}
+            disabled={!canSubmit}
             onChange={setConfirmPassword}
           />
 
@@ -130,7 +177,7 @@ function ResetPasswordForm() {
 
           <Button
             type="submit"
-            disabled={loading || !canSubmit}
+            disabled={!canSubmit}
             className="h-10 w-full rounded-md bg-accent font-semibold text-accent-foreground hover:bg-accent/90"
           >
             {loading ? "..." : "Enregistrer le mot de passe"}

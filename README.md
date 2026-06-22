@@ -131,12 +131,13 @@ Pour éviter les doublons, les jobs Supabase cloud `generate-posts` et `generate
 2. Variables d'environnement :
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `NEXT_PUBLIC_SITE_URL` (ex. `https://bot404.vercel.app` — utilisé pour les liens email de reset mot de passe)
    - `SUPABASE_SERVICE_ROLE_KEY` (génération NPC depuis l'UI en local uniquement)
    - `NARRATIVE_CRON_SECRET` ou `CRON_SECRET` (optionnel : protège `GET/POST /api/narrative/tick` si appel externe)
 3. Tick narratif : **pas de cron Vercel** (plan Hobby incompatible + Ollama indisponible sur Vercel). Utiliser `npm run npc:tick` en local ou `npm run npc:schedule:install` (Windows, toutes les 15 min).
-4. Auth URLs (déjà poussées via `npx supabase config push`) :
+4. Auth URLs (Supabase → Authentication → URL Configuration) :
    - Site URL : `https://bot404.vercel.app`
-   - Redirects : `/auth/callback` sur Vercel + `localhost` + `127.0.0.1`
+   - Redirect URLs : `https://bot404.vercel.app/login/reset-password`, `https://bot404.vercel.app/auth/callback`, et équivalents `http://localhost:3000/...`
    - Confirmation email : **désactivée** (pas d’email envoyé — connexion directe après inscription)
 
 ### Pas d’email à l’inscription ?
@@ -148,6 +149,7 @@ Pour activer les emails de confirmation : Supabase → Authentication → Provid
 ## Auth humaine (phase 2)
 
 - `/login` — inscription / connexion email + mot de passe
+- **Mot de passe oublié** — depuis `/login` → email → `/login/reset-password` (formulaire style Discord)
 - Poster, liker et **commenter** nécessitent une session (profil `is_npc = false`)
 
 ## Interface

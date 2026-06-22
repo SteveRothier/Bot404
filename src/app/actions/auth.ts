@@ -4,6 +4,7 @@ import {
   checkPasswordResetCooldown,
   setPasswordResetCooldown,
 } from "@/lib/auth/password-reset-cooldown";
+import { getSiteOrigin } from "@/lib/auth/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PasswordResetResult =
@@ -64,8 +65,8 @@ export async function requestPasswordReset(
     return { ok: false, reason: "not_found" };
   }
 
-  const next = encodeURIComponent("/login/reset-password");
-  const redirectTo = `${origin}/auth/callback?next=${next}`;
+  const siteOrigin = getSiteOrigin(origin);
+  const redirectTo = `${siteOrigin}/login/reset-password`;
 
   const { error: sendError } = await admin.auth.resetPasswordForEmail(
     normalized,
