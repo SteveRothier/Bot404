@@ -23,6 +23,8 @@ function ResetPasswordForm() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(
     expiredFromUrl
       ? "Lien expiré ou déjà utilisé. Demandez un nouveau lien."
@@ -73,11 +75,7 @@ function ResetPasswordForm() {
           finish(session);
           return;
         }
-        finish(
-          null,
-          error?.message ??
-            "Lien invalide ou expiré. Demandez un nouveau lien."
-        );
+        finish(null, "Lien invalide ou expiré. Demandez un nouveau lien.");
         return;
       }
 
@@ -94,16 +92,16 @@ function ResetPasswordForm() {
     e.preventDefault();
     setMessage(null);
     setMessageIsError(false);
+    setPasswordError(null);
+    setConfirmError(null);
 
     if (password.length < 6) {
-      setMessageIsError(true);
-      setMessage("Le mot de passe doit contenir au moins 6 caractères.");
+      setPasswordError("Le mot de passe doit contenir au moins 6 caractères.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessageIsError(true);
-      setMessage("Les mots de passe ne correspondent pas.");
+      setConfirmError("Les mots de passe ne correspondent pas.");
       return;
     }
 
@@ -114,13 +112,19 @@ function ResetPasswordForm() {
 
     if (error) {
       setMessageIsError(true);
-      setMessage(error.message);
+      setMessage(
+        error.code === "same_password"
+          ? "Le nouveau mot de passe doit être différent de l'ancien."
+          : "Une erreur est survenue. Réessayez."
+      );
       return;
     }
 
     await supabase.auth.signOut();
     setMessageIsError(false);
-    setMessage("Mot de passe mis à jour. Redirection vers la connexion…");
+    setMessage(
+      "Mot de passe mis à jour. Connectez-vous avec votre nouveau mot de passe…"
+    );
     window.setTimeout(() => {
       router.push("/login");
       router.refresh();
@@ -147,25 +151,29 @@ function ResetPasswordForm() {
       {checkingSession ? (
         <p className="text-sm text-muted-foreground">Vérification du lien…</p>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <PasswordInput
             id="password"
             label="Nouveau mot de passe"
-            required
-            minLength={6}
             value={password}
             disabled={!canSubmit}
-            onChange={setPassword}
+            error={passwordError}
+            onChange={(value) => {
+              setPassword(value);
+              if (passwordError) setPasswordError(null);
+            }}
           />
 
           <PasswordInput
             id="confirm-password"
             label="Confirmer le mot de passe"
-            required
-            minLength={6}
             value={confirmPassword}
             disabled={!canSubmit}
-            onChange={setConfirmPassword}
+            error={confirmError}
+            onChange={(value) => {
+              setConfirmPassword(value);
+              if (confirmError) setConfirmError(null);
+            }}
           />
 
           {message && (

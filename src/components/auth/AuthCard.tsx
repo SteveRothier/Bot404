@@ -1,9 +1,9 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { AuthFieldError } from "@/components/auth/AuthFieldError";
 import {
   AuthBackLink,
   AuthShell,
@@ -22,6 +22,7 @@ type Props = {
   messageIsError: boolean;
   loading: boolean;
   emailError: string | null;
+  passwordError: string | null;
   forgotLoading: boolean;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
@@ -55,6 +56,7 @@ export function AuthCard({
   messageIsError,
   loading,
   emailError,
+  passwordError,
   forgotLoading,
   onEmailChange,
   onPasswordChange,
@@ -83,7 +85,7 @@ export function AuthCard({
         </>
       }
     >
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-4">
         {mode === "signup" && (
           <div className="space-y-2">
             <label
@@ -110,7 +112,6 @@ export function AuthCard({
           <Input
             id="email"
             type="email"
-            required
             value={email}
             disabled={loading || forgotLoading}
             aria-invalid={!!emailError}
@@ -120,25 +121,16 @@ export function AuthCard({
               emailError && "border-destructive focus-visible:border-destructive"
             )}
           />
-          {emailError && (
-            <p
-              className="flex items-center gap-1.5 text-sm text-destructive"
-              role="alert"
-            >
-              <AlertCircle className="size-4 shrink-0" strokeWidth={1.75} />
-              {emailError}
-            </p>
-          )}
+          {emailError && <AuthFieldError message={emailError} />}
         </div>
 
         <div className="space-y-2">
           <PasswordInput
             id="password"
             label="Mot de passe"
-            required
-            minLength={6}
             value={password}
             disabled={loading || forgotLoading}
+            error={passwordError}
             onChange={onPasswordChange}
           />
           {mode === "login" && (

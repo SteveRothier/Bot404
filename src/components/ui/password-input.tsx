@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { AuthFieldError } from "@/components/auth/AuthFieldError";
 import { Input } from "@/components/ui/input";
 import { authInputClassName } from "@/components/auth/AuthShell";
 import { cn } from "@/lib/utils";
@@ -12,9 +13,8 @@ type Props = {
   placeholder?: string;
   value: string;
   onChange: (value: string) => void;
-  required?: boolean;
-  minLength?: number;
   disabled?: boolean;
+  error?: string | null;
 };
 
 export function PasswordInput({
@@ -23,9 +23,8 @@ export function PasswordInput({
   placeholder,
   value,
   onChange,
-  required,
-  minLength,
   disabled,
+  error,
 }: Props) {
   const [visible, setVisible] = useState(false);
 
@@ -39,12 +38,15 @@ export function PasswordInput({
           id={id}
           type={visible ? "text" : "password"}
           placeholder={placeholder}
-          required={required}
-          minLength={minLength}
           value={value}
           disabled={disabled}
+          aria-invalid={!!error}
           onChange={(e) => onChange(e.target.value)}
-          className={cn(authInputClassName, "pr-10")}
+          className={cn(
+            authInputClassName,
+            "pr-10",
+            error && "border-destructive focus-visible:border-destructive"
+          )}
         />
         <button
           type="button"
@@ -64,6 +66,7 @@ export function PasswordInput({
           )}
         </button>
       </div>
+      {error && <AuthFieldError message={error} />}
     </div>
   );
 }

@@ -17,8 +17,9 @@ export type PasswordResetResult =
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function isRateLimitError(message: string): boolean {
-  const lower = message.toLowerCase();
+function isRateLimitError(error: { code?: string; message?: string }): boolean {
+  if (error.code === "over_request_rate_limit") return true;
+  const lower = (error.message ?? "").toLowerCase();
   return (
     lower.includes("security purposes") ||
     lower.includes("only request this after") ||
@@ -74,14 +75,18 @@ export async function requestPasswordReset(
   );
 
   if (sendError) {
-    if (isRateLimitError(sendError.message)) {
+    if (isRateLimitError(sendError)) {
       return {
         ok: false,
         reason: "error",
         message: "Trop de demandes. Réessayez dans quelques instants.",
       };
     }
-    return { ok: false, reason: "error", message: sendError.message };
+    return {
+      ok: false,
+      reason: "error",
+      message: "Impossible d'envoyer l'email. Réessayez.",
+    };
   }
 
   await setPasswordResetCooldown(normalized);
