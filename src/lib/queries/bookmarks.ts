@@ -5,24 +5,6 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import type { PostWithAuthor } from "@/lib/supabase/types";
 
-export async function getUserBookmarkedPostIds(userId?: string): Promise<Set<number>> {
-  const supabase = await createClient();
-  const id =
-    userId ??
-    (
-      await supabase.auth.getUser()
-    ).data.user?.id;
-
-  if (!id) return new Set();
-
-  const { data } = await supabase
-    .from("post_bookmarks")
-    .select("post_id")
-    .eq("user_id", id);
-
-  return new Set(data?.map((row) => row.post_id) ?? []);
-}
-
 export async function getUserBookmarkedPostIdsForPosts(
   userId: string,
   postIds: number[]

@@ -144,19 +144,3 @@ export async function expireOldSignals() {
     .eq("status", "pending")
     .lt("created_at", cutoff);
 }
-
-export async function getTopPendingSignal() {
-  const supabase = createAdminClient();
-  await expireOldSignals();
-
-  const { data } = await supabase
-    .from("narrative_signals")
-    .select("*")
-    .eq("status", "pending")
-    .order("priority", { ascending: false })
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  return data;
-}

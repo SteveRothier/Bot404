@@ -5,6 +5,21 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { FormEvent, useState } from "react";
 
+const MIN_SEARCH_LENGTH = 2;
+const SEARCH_HINT = "2 caractères minimum.";
+
+function submitSearchQuery(
+  q: string,
+  router: ReturnType<typeof useRouter>
+): string | null {
+  const trimmed = q.trim();
+  if (trimmed.length < MIN_SEARCH_LENGTH) {
+    return SEARCH_HINT;
+  }
+  router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+  return null;
+}
+
 export function SearchBar() {
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -12,13 +27,7 @@ export function SearchBar() {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const trimmed = q.trim();
-    if (trimmed.length < 2) {
-      setHint("2 caractères minimum.");
-      return;
-    }
-    setHint(null);
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    setHint(submitSearchQuery(q, router));
   }
 
   return (
@@ -30,7 +39,9 @@ export function SearchBar() {
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
-          if (hint && e.target.value.trim().length >= 2) setHint(null);
+          if (hint && e.target.value.trim().length >= MIN_SEARCH_LENGTH) {
+            setHint(null);
+          }
         }}
         aria-describedby={hint ? "search-hint" : undefined}
       />
@@ -50,13 +61,7 @@ export function SearchBarPage({ initialQuery = "" }: { initialQuery?: string }) 
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const trimmed = q.trim();
-    if (trimmed.length < 2) {
-      setHint("2 caractères minimum.");
-      return;
-    }
-    setHint(null);
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    setHint(submitSearchQuery(q, router));
   }
 
   return (
@@ -68,7 +73,9 @@ export function SearchBarPage({ initialQuery = "" }: { initialQuery?: string }) 
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
-          if (hint && e.target.value.trim().length >= 2) setHint(null);
+          if (hint && e.target.value.trim().length >= MIN_SEARCH_LENGTH) {
+            setHint(null);
+          }
         }}
         aria-describedby={hint ? "search-page-hint" : undefined}
       />

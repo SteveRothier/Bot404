@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 
 const COOLDOWN_MS = 5 * 60 * 1000;
 
+export const PASSWORD_RESET_COOLDOWN_MINUTES = COOLDOWN_MS / 60_000;
+
 function cookieKey(email: string): string {
   const hash = createHash("sha256")
     .update(email.trim().toLowerCase())

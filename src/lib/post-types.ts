@@ -1,9 +1,4 @@
 import type { PostType } from "@/lib/supabase/types";
-import {
-  buildNpcPostPrompt,
-  npcPostUserMessage,
-  NPC_TYPE_INSTRUCTIONS,
-} from "@/lib/npc/prompt";
 
 export const POST_TYPES: PostType[] = ["message", "theory", "signal", "rumor"];
 
@@ -27,5 +22,3 @@ export function pickRandomNpcPostType(): PostType {
   if (r < 0.85) return "signal";
   return "rumor";
 }
-
-export { buildNpcPostPrompt, npcPostUserMessage, NPC_TYPE_INSTRUCTIONS };

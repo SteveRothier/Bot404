@@ -2,7 +2,7 @@ import { fetchEnrichedPosts } from "@/lib/queries/post-utils";
 import { createClient } from "@/lib/supabase/server";
 import type { PostWithAuthor, Profile } from "@/lib/supabase/types";
 
-export async function getFollowingIds(userId: string): Promise<string[]> {
+async function getFollowingIds(userId: string): Promise<string[]> {
   const supabase = await createClient();
 
   const { data } = await supabase

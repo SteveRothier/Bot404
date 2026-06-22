@@ -3,34 +3,29 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { AuthFormMessage } from "@/components/auth/AuthFormMessage";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
-import {
-  AuthBackLink,
-  AuthShell,
-} from "@/components/auth/AuthShell";
+import { AuthBackLink, AuthShell } from "@/components/auth/AuthShell";
+import { AUTH_MESSAGES, validatePassword } from "@/lib/auth/constants";
 import {
   establishRecoverySession,
   isRecoveryHash,
 } from "@/lib/auth/recovery-hash";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const expiredFromUrl = searchParams.get("error") === "expired";
+  const urlExpiredMessage = expiredFromUrl ? AUTH_MESSAGES.recoveryExpired : null;
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(
-    expiredFromUrl
-      ? "Lien expiré ou déjà utilisé. Demandez un nouveau lien."
-      : null
-  );
-  const [messageIsError, setMessageIsError] = useState(expiredFromUrl);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageIsError, setMessageIsError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [checkingSession, setCheckingSession] = useState(!expiredFromUrl);
@@ -52,10 +47,7 @@ function ResetPasswordForm() {
       setUserEmail(session?.user.email ?? null);
       if (!session) {
         setMessageIsError(true);
-        setMessage(
-          errorMessage ??
-            "Session invalide. Utilisez le lien reçu par email ou demandez-en un nouveau."
-        );
+        setMessage(errorMessage ?? AUTH_MESSAGES.sessionInvalid);
       }
       setCheckingSession(false);
     }
@@ -70,16 +62,18 @@ function ResetPasswordForm() {
 
     async function resolveSession() {
       if (isRecoveryHash(window.location.hash)) {
-        const { session, error } = await establishRecoverySession(supabase);
+        const { session } = await establishRecoverySession(supabase);
         if (session) {
           finish(session);
           return;
         }
-        finish(null, "Lien invalide ou expiré. Demandez un nouveau lien.");
+        finish(null, AUTH_MESSAGES.recoveryInvalid);
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       finish(session);
     }
 
@@ -95,13 +89,14 @@ function ResetPasswordForm() {
     setPasswordError(null);
     setConfirmError(null);
 
-    if (password.length < 6) {
-      setPasswordError("Le mot de passe doit contenir au moins 6 caractères.");
+    const passwordValidation = validatePassword(password);
+    if (passwordValidation) {
+      setPasswordError(passwordValidation);
       return;
     }
 
     if (password !== confirmPassword) {
-      setConfirmError("Les mots de passe ne correspondent pas.");
+      setConfirmError(AUTH_MESSAGES.passwordMismatch);
       return;
     }
 
@@ -114,24 +109,25 @@ function ResetPasswordForm() {
       setMessageIsError(true);
       setMessage(
         error.code === "same_password"
-          ? "Le nouveau mot de passe doit être différent de l'ancien."
-          : "Une erreur est survenue. Réessayez."
+          ? AUTH_MESSAGES.samePassword
+          : AUTH_MESSAGES.genericError
       );
       return;
     }
 
     await supabase.auth.signOut();
     setMessageIsError(false);
-    setMessage(
-      "Mot de passe mis à jour. Connectez-vous avec votre nouveau mot de passe…"
-    );
+    setMessage(AUTH_MESSAGES.passwordUpdated);
     window.setTimeout(() => {
       router.push("/login");
       router.refresh();
     }, 1200);
   }
 
-  const canSubmit = sessionReady && !expiredFromUrl && !checkingSession && !loading;
+  const displayMessage = message ?? urlExpiredMessage;
+  const displayIsError = messageIsError || !!urlExpiredMessage;
+  const canSubmit =
+    sessionReady && !expiredFromUrl && !checkingSession && !loading;
 
   const subtitle = userEmail
     ? `Réinitialiser le mot de passe pour ${userEmail}`
@@ -142,10 +138,7 @@ function ResetPasswordForm() {
       title="Choisir un nouveau mot de passe"
       subtitle={subtitle}
       footer={
-        <>
-          <AuthBackLink href="/login">Demander un nouveau lien</AuthBackLink>
-          <AuthBackLink href="/login">Retour à la connexion</AuthBackLink>
-        </>
+        <AuthBackLink href="/login">Demander un nouveau lien</AuthBackLink>
       }
     >
       {checkingSession ? (
@@ -176,16 +169,8 @@ function ResetPasswordForm() {
             }}
           />
 
-          {message && (
-            <p
-              className={cn(
-                "text-sm",
-                messageIsError ? "text-destructive" : "text-muted-foreground"
-              )}
-              role={messageIsError ? "alert" : "status"}
-            >
-              {message}
-            </p>
+          {displayMessage && (
+            <AuthFormMessage message={displayMessage} isError={displayIsError} />
           )}
 
           <Button

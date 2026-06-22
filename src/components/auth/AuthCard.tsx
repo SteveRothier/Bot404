@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { AuthFieldError } from "@/components/auth/AuthFieldError";
+import { AuthFormMessage } from "@/components/auth/AuthFormMessage";
 import {
   AuthBackLink,
   AuthShell,
@@ -11,7 +12,7 @@ import {
 } from "@/components/auth/AuthShell";
 import { cn } from "@/lib/utils";
 
-export type AuthMode = "login" | "signup";
+type AuthMode = "login" | "signup";
 
 type Props = {
   mode: AuthMode;
@@ -146,15 +147,7 @@ export function AuthCard({
         </div>
 
         {message && (
-          <p
-            className={cn(
-              "text-sm",
-              messageIsError ? "text-destructive" : "text-muted-foreground"
-            )}
-            role={messageIsError ? "alert" : "status"}
-          >
-            {message}
-          </p>
+          <AuthFormMessage message={message} isError={messageIsError} />
         )}
 
         <Button

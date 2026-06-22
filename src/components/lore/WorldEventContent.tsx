@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Radio } from "lucide-react";
 import { WorldEventCountdown } from "@/components/lore/WorldEventCountdown";
+import { hashtagTagHref } from "@/lib/hashtags";
 import {
   formatBoostedTypesLabel,
   getWorldEventEffects,
@@ -85,7 +86,7 @@ export function WorldEventContent({ event, variant = "compact" }: Props) {
               {effects.related_hashtags.map((tag) => (
                 <Link
                   key={tag}
-                  href={`/tag/${encodeURIComponent(tag)}`}
+                  href={hashtagTagHref(tag)}
                   className="rounded-full border border-accent/30 px-2 py-0.5 text-sm text-accent hover:bg-accent/10"
                 >
                   #{tag}

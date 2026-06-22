@@ -1,4 +1,4 @@
-import { MENTION_REGEX } from "@/lib/mentions";
+import { extractMentionUsernames } from "@/lib/mentions";
 import type { PostType, ReactionKind } from "@/lib/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -42,16 +42,6 @@ async function getFactionIdBySlug(
 ): Promise<string | null> {
   const factions = await getFactions(supabase);
   return factions.find((f) => f.slug === slug)?.id ?? null;
-}
-
-function extractMentionUsernames(content: string): string[] {
-  const names = new Set<string>();
-  const re = new RegExp(MENTION_REGEX.source, MENTION_REGEX.flags);
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(content)) !== null) {
-    if (m[1]) names.add(m[1].toLowerCase());
-  }
-  return [...names];
 }
 
 /** Un NPC rejoint la faction du recruteur (auteur du post/commentaire). */

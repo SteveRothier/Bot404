@@ -1,14 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Session } from "@supabase/supabase-js";
+import { RESET_PASSWORD_PATH } from "@/lib/auth/constants";
 
-const RESET_PATH = "/login/reset-password";
-
-export type RecoveryTokens = {
+type RecoveryTokens = {
   access_token: string;
   refresh_token: string;
 };
 
-export function parseRecoveryHash(hash: string): RecoveryTokens | null {
+function parseRecoveryHash(hash: string): RecoveryTokens | null {
   if (!hash) return null;
   const params = new URLSearchParams(hash.replace(/^#/, ""));
   if (params.get("type") !== "recovery") return null;
@@ -22,7 +21,7 @@ export function isRecoveryHash(hash: string): boolean {
   return parseRecoveryHash(hash) !== null;
 }
 
-export function clearAuthHash(): void {
+function clearAuthHash(): void {
   window.history.replaceState(
     null,
     "",
@@ -41,4 +40,4 @@ export async function establishRecoverySession(
   return { session: data.session, error: error ?? null };
 }
 
-export { RESET_PATH };
+export { RESET_PASSWORD_PATH };

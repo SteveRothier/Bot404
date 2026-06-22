@@ -1,21 +1,27 @@
 "use server";
 
 import {
+  AUTH_MESSAGES,
+  EMAIL_PATTERN,
+  passwordResetCooldownMessage,
+  RESET_PASSWORD_PATH,
+} from "@/lib/auth/constants";
+import {
   checkPasswordResetCooldown,
+  PASSWORD_RESET_COOLDOWN_MINUTES,
   setPasswordResetCooldown,
 } from "@/lib/auth/password-reset-cooldown";
 import { getSiteOrigin } from "@/lib/auth/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type PasswordResetResult =
-  | { ok: true }
-  | {
-      ok: false;
-      reason: "invalid" | "not_found" | "rate_limited" | "error";
-      message?: string;
-    };
+type PasswordResetFailure = {
+  ok: false;
+  reason: "invalid" | "not_found" | "rate_limited" | "error";
+  message: string;
+  field?: "email";
+};
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export type PasswordResetResult = { ok: true } | PasswordResetFailure;
 
 function isRateLimitError(error: { code?: string; message?: string }): boolean {
   if (error.code === "over_request_rate_limit") return true;
@@ -34,19 +40,33 @@ export async function requestPasswordReset(
   const normalized = email.trim().toLowerCase();
 
   if (!normalized || !EMAIL_PATTERN.test(normalized)) {
-    return { ok: false, reason: "invalid" };
+    return {
+      ok: false,
+      reason: "invalid",
+      message: AUTH_MESSAGES.emailInvalid,
+      field: "email",
+    };
   }
 
   const cooldown = await checkPasswordResetCooldown(normalized);
   if (!cooldown.ok) {
-    return { ok: false, reason: "rate_limited" };
+    return {
+      ok: false,
+      reason: "rate_limited",
+      message: passwordResetCooldownMessage(PASSWORD_RESET_COOLDOWN_MINUTES),
+      field: "email",
+    };
   }
 
   let admin;
   try {
     admin = createAdminClient();
   } catch {
-    return { ok: false, reason: "error", message: "Configuration serveur indisponible." };
+    return {
+      ok: false,
+      reason: "error",
+      message: AUTH_MESSAGES.serverConfigUnavailable,
+    };
   }
 
   const { data: exists, error: existsError } = await admin.rpc(
@@ -58,16 +78,21 @@ export async function requestPasswordReset(
     return {
       ok: false,
       reason: "error",
-      message: "Impossible de vérifier l'adresse e-mail.",
+      message: AUTH_MESSAGES.resetVerifyFailed,
     };
   }
 
   if (!exists) {
-    return { ok: false, reason: "not_found" };
+    return {
+      ok: false,
+      reason: "not_found",
+      message: AUTH_MESSAGES.emailNotFound,
+      field: "email",
+    };
   }
 
   const siteOrigin = getSiteOrigin(origin);
-  const redirectTo = `${siteOrigin}/login/reset-password`;
+  const redirectTo = `${siteOrigin}${RESET_PASSWORD_PATH}`;
 
   const { error: sendError } = await admin.auth.resetPasswordForEmail(
     normalized,
@@ -79,13 +104,13 @@ export async function requestPasswordReset(
       return {
         ok: false,
         reason: "error",
-        message: "Trop de demandes. Réessayez dans quelques instants.",
+        message: AUTH_MESSAGES.resetRateLimited,
       };
     }
     return {
       ok: false,
       reason: "error",
-      message: "Impossible d'envoyer l'email. Réessayez.",
+      message: AUTH_MESSAGES.resetEmailFailed,
     };
   }
 

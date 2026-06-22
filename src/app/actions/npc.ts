@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { revalidateDataCaches } from "@/lib/queries/cache-tags";
+import { requireAuthUser } from "@/lib/queries/auth";
 import { checkNpcCooldown, setNpcCooldown } from "@/lib/npc/cooldown";
 import { generateNpcComment } from "@/lib/npc/generate-comment";
 import { generateNpcPost } from "@/lib/npc/generate-post";
 import { getNpcMediaStatus } from "@/lib/npc/media";
 import { runNarrativeTick } from "@/lib/narrative/tick";
-import { createClient } from "@/lib/supabase/server";
 
 export async function getNpcMediaStatusAction() {
   return getNpcMediaStatus();
@@ -39,19 +39,17 @@ function tickPostFromDetail(detail: Record<string, unknown> | undefined): {
   return null;
 }
 
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: "Connectez-vous pour utiliser la génération NPC." as const };
-  }
-  return { user };
+async function revalidateAfterNpcAction(postId?: number) {
+  revalidatePath("/");
+  if (postId) revalidatePath(`/post/${postId}`);
+  revalidatePath("/trending");
+  revalidateDataCaches();
 }
 
 export async function generateNpcPostAction() {
-  const auth = await requireUser();
+  const auth = await requireAuthUser(
+    "Connectez-vous pour utiliser la génération NPC."
+  );
   if ("error" in auth) return { error: auth.error };
 
   const cooldown = await checkNpcCooldown(auth.user.id, "post");
@@ -65,9 +63,7 @@ export async function generateNpcPostAction() {
           ?.result;
         if (inner?.post_id) {
           await setNpcCooldown(auth.user.id, "post");
-          revalidatePath("/");
-          revalidatePath("/trending");
-          revalidateDataCaches();
+          await revalidateAfterNpcAction();
           return {
             success: true,
             author: inner.author ?? "NPC",
@@ -80,9 +76,7 @@ export async function generateNpcPostAction() {
         );
         if (extracted?.postId) {
           await setNpcCooldown(auth.user.id, "post");
-          revalidatePath("/");
-          revalidatePath("/trending");
-          revalidateDataCaches();
+          await revalidateAfterNpcAction();
           return {
             success: true,
             author: extracted.author ?? "NPC",
@@ -98,10 +92,7 @@ export async function generateNpcPostAction() {
     }
 
     await setNpcCooldown(auth.user.id, "post");
-
-    revalidatePath("/");
-    revalidatePath("/trending");
-    revalidateDataCaches();
+    await revalidateAfterNpcAction();
     return {
       success: true,
       author: result.author,
@@ -115,7 +106,9 @@ export async function generateNpcPostAction() {
 }
 
 export async function generateNpcCommentAction() {
-  const auth = await requireUser();
+  const auth = await requireAuthUser(
+    "Connectez-vous pour utiliser la génération NPC."
+  );
   if ("error" in auth) return { error: auth.error };
 
   const cooldown = await checkNpcCooldown(auth.user.id, "comment");
@@ -130,10 +123,7 @@ export async function generateNpcCommentAction() {
         })?.result;
         if (inner?.comment_id && inner?.post_id) {
           await setNpcCooldown(auth.user.id, "comment");
-          revalidatePath("/");
-          revalidatePath(`/post/${inner.post_id}`);
-          revalidatePath("/trending");
-          revalidateDataCaches();
+          await revalidateAfterNpcAction(inner.post_id);
           return {
             success: true,
             author: inner.author ?? "NPC",
@@ -152,10 +142,7 @@ export async function generateNpcCommentAction() {
 
       if (commentId && postId) {
         await setNpcCooldown(auth.user.id, "comment");
-        revalidatePath("/");
-        revalidatePath(`/post/${postId}`);
-        revalidatePath("/trending");
-        revalidateDataCaches();
+        await revalidateAfterNpcAction(postId);
         return {
           success: true,
           author,
@@ -171,11 +158,7 @@ export async function generateNpcCommentAction() {
     }
 
     await setNpcCooldown(auth.user.id, "comment");
-
-    revalidatePath("/");
-    revalidatePath(`/post/${result.postId}`);
-    revalidatePath("/trending");
-    revalidateDataCaches();
+    await revalidateAfterNpcAction(result.postId);
     return {
       success: true,
       author: result.author,

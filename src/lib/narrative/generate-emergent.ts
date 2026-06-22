@@ -319,14 +319,9 @@ export async function processEmergentSignal(
   };
 }
 
-export async function generateEmergentNpcResponse(): Promise<EmergentResponseResult> {
-  const emergentArc = await getActiveEmergentArc();
-  if (!emergentArc) {
-    return { ok: false, error: "Mode émergent inactif." };
-  }
-
+async function fetchTopPendingSignal() {
   const supabase = createAdminClient();
-  const { data: signal } = await supabase
+  const { data } = await supabase
     .from("narrative_signals")
     .select("*")
     .eq("status", "pending")
@@ -335,11 +330,7 @@ export async function generateEmergentNpcResponse(): Promise<EmergentResponseRes
     .limit(1)
     .maybeSingle();
 
-  if (!signal) {
-    return { ok: false, error: "Aucun signal en attente." };
-  }
-
-  return processEmergentSignal(signal as NarrativeSignal);
+  return data;
 }
 
 export async function generateEmergentNpcResponseBatch(
@@ -358,15 +349,7 @@ export async function generateEmergentNpcResponseBatch(
   let lastError: string | null = null;
 
   for (let i = 0; i < maxCount; i++) {
-    const supabase = createAdminClient();
-    const { data: signal } = await supabase
-      .from("narrative_signals")
-      .select("*")
-      .eq("status", "pending")
-      .order("priority", { ascending: false })
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
+    const signal = await fetchTopPendingSignal();
 
     if (!signal) {
       lastError = "Aucun signal en attente.";

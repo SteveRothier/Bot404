@@ -1,4 +1,5 @@
 import type { PostType, WorldEvent } from "@/lib/supabase/types";
+import { POST_TYPES } from "@/lib/post-types";
 
 export type WorldEventEffects = {
   factions: string[];
@@ -6,8 +7,6 @@ export type WorldEventEffects = {
   boost_post_types: PostType[];
   related_hashtags: string[];
 };
-
-const POST_TYPES: PostType[] = ["message", "theory", "signal", "rumor"];
 
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];

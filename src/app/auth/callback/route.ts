@@ -1,5 +1,12 @@
+import { RESET_PASSWORD_PATH } from "@/lib/auth/constants";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+
+function authCallbackFallback(next: string): string {
+  return next.includes("reset-password")
+    ? `${RESET_PASSWORD_PATH}?error=expired`
+    : "/login?error=auth";
+}
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -13,14 +20,8 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${next}`);
     }
 
-    const fallback = next.includes("reset-password")
-      ? "/login/reset-password?error=expired"
-      : "/login?error=auth";
-    return NextResponse.redirect(`${origin}${fallback}`);
+    return NextResponse.redirect(`${origin}${authCallbackFallback(next)}`);
   }
 
-  const fallback = next.includes("reset-password")
-    ? "/login/reset-password?error=expired"
-    : "/login?error=auth";
-  return NextResponse.redirect(`${origin}${fallback}`);
+  return NextResponse.redirect(`${origin}${authCallbackFallback(next)}`);
 }
