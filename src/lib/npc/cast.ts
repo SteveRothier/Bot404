@@ -93,6 +93,16 @@ export function scoreNpcForSignal(npc: Profile, ctx: CastContext): number {
     score += 3;
   }
 
+  if (signal.kind === "reaction") {
+    const reaction = signal.reaction_kind;
+    if (reaction === "amplify" && postType === "rumor") {
+      if (RUMOR_ARCHETYPES.includes(npc.username)) score += 12;
+    }
+    if (reaction === "flag") {
+      if (PURBOT_ARCHETYPES.includes(npc.username)) score += 8;
+    }
+  }
+
   if (ctx.huntContent) {
     if (PURBOT_ARCHETYPES.includes(npc.username)) score += 8;
     if (npc.username === "ConspiracyBot") score += 4;

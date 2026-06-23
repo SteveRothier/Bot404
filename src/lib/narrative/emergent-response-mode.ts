@@ -34,5 +34,16 @@ export function shouldEmergentNpcPost(
     return false;
   }
 
+  if (signal.kind === "reaction") {
+    const reaction = signal.reaction_kind;
+    if (reaction === "amplify" && postType === "rumor") {
+      return random() < 0.2;
+    }
+    if (reaction === "flag" && postType === "theory") {
+      return random() < 0.15;
+    }
+    return false;
+  }
+
   return false;
 }

@@ -13,6 +13,22 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { ReactionKind } from "@/lib/supabase/types";
 
+async function applyNarrativeReactionEffects(
+  postId: number,
+  userId: string,
+  kind: ReactionKind
+) {
+  if (kind === "relay") return;
+
+  if (kind === "amplify") {
+    await createReactionNotification(postId, userId, "amplify");
+    await maybePromoteRumorToEvent(postId);
+    await runNarrativeEscalation(postId);
+  }
+
+  await enqueueReactionSignal(userId, postId, kind);
+}
+
 export async function toggleReaction(postId: number, kind: string) {
   if (!isReactionKind(kind)) {
     return { error: "Réaction invalide." };
@@ -24,6 +40,7 @@ export async function toggleReaction(postId: number, kind: string) {
   const supabase = await createClient();
   const admin = createAdminClient();
   const { user } = auth;
+  const reactionKind = kind as ReactionKind;
 
   const { data: existing } = await supabase
     .from("post_reactions")
@@ -39,12 +56,7 @@ export async function toggleReaction(postId: number, kind: string) {
       .eq("user_id", user.id)
       .eq("post_id", postId);
     if (error) return { error: error.message };
-    await processReactionFactionEffects(
-      admin,
-      postId,
-      kind as ReactionKind,
-      -1
-    );
+    await processReactionFactionEffects(admin, postId, reactionKind, -1);
     revalidatePath("/");
     revalidateDataCaches();
     return { success: true, kind: null };
@@ -59,7 +71,11 @@ export async function toggleReaction(postId: number, kind: string) {
       .eq("post_id", postId);
     if (error) return { error: error.message };
     await processReactionFactionEffects(admin, postId, oldKind, -1);
-    await processReactionFactionEffects(admin, postId, kind as ReactionKind, 1);
+    await processReactionFactionEffects(admin, postId, reactionKind, 1);
+    await applyNarrativeReactionEffects(postId, user.id, reactionKind);
+    if (reactionKind === "relay") {
+      await createReactionNotification(postId, user.id, "relay");
+    }
   } else {
     const { error } = await supabase.from("post_reactions").insert({
       user_id: user.id,
@@ -67,14 +83,13 @@ export async function toggleReaction(postId: number, kind: string) {
       kind,
     });
     if (error) return { error: error.message };
-    await processReactionFactionEffects(admin, postId, kind as ReactionKind, 1);
+    await processReactionFactionEffects(admin, postId, reactionKind, 1);
 
-    if (kind === "relay" || kind === "amplify") {
-      await createReactionNotification(postId, user.id, kind);
-      await maybePromoteRumorToEvent(postId);
-      await runNarrativeEscalation(postId);
+    if (reactionKind === "relay") {
+      await createReactionNotification(postId, user.id, "relay");
+    } else {
+      await applyNarrativeReactionEffects(postId, user.id, reactionKind);
     }
-    await enqueueReactionSignal(user.id, postId, kind as ReactionKind);
   }
 
   revalidatePath("/");

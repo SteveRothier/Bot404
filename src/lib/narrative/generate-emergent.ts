@@ -11,6 +11,7 @@ import { getEmergentArcSynopsis } from "@/lib/narrative/execute-beat";
 import { getActiveEmergentArc } from "@/lib/narrative/queries";
 import type { NarrativeSignal } from "@/lib/narrative/types";
 import { pickNpcForSignal } from "@/lib/npc/cast";
+import { factionSlugForNpc, reactionActionLabel } from "@/lib/factions/behavior";
 import { getWorldEventEffects } from "@/lib/lore/world-event-effects";
 import { getActiveWorldEvents } from "@/lib/queries/world-events";
 import { contentHasHuntKeywords } from "@/lib/narrative/hunt-keywords";
@@ -24,7 +25,7 @@ import { loadAllNpcs } from "@/lib/npc/select-npc";
 import { buildRichThreadSnippet } from "@/lib/npc/thread-context";
 import { validateNpcPostContent } from "@/lib/npc/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { PostType, Profile } from "@/lib/supabase/types";
+import type { PostType, Profile, ReactionKind } from "@/lib/supabase/types";
 
 export type EmergentResponseSuccess = {
   ok: true;
@@ -100,13 +101,39 @@ async function loadSignalContext(signal: NarrativeSignal) {
       }
     }
   } else if (signal.kind === "reaction" && signal.post_id) {
-    const { data: post } = await supabase
-      .from("posts")
-      .select("content, post_type")
-      .eq("id", signal.post_id)
-      .maybeSingle();
-    content = post?.content ?? "";
-    actionLabel = `${signal.reaction_kind ?? "réagir à"} un post (${post?.post_type ?? "message"})`;
+    const payloadContent =
+      typeof signal.payload.content === "string" ? signal.payload.content : "";
+    const payloadPostType =
+      typeof signal.payload.post_type === "string"
+        ? signal.payload.post_type
+        : null;
+
+    if (payloadContent && payloadPostType) {
+      content = payloadContent;
+      actionLabel =
+        signal.reaction_kind && signal.reaction_kind !== "relay"
+          ? reactionActionLabel(signal.reaction_kind as ReactionKind, payloadPostType as PostType)
+          : `${signal.reaction_kind ?? "réagir à"} un post (${payloadPostType})`;
+    } else {
+      const { data: post } = await supabase
+        .from("posts")
+        .select("content, post_type")
+        .eq("id", signal.post_id)
+        .maybeSingle();
+      content = post?.content ?? "";
+      const pt = (post?.post_type ?? "message") as PostType;
+      if (post?.post_type) {
+        signal.payload = { ...signal.payload, post_type: post.post_type };
+      }
+      if (signal.reaction_kind && signal.reaction_kind !== "relay") {
+        actionLabel = reactionActionLabel(
+          signal.reaction_kind as ReactionKind,
+          pt
+        );
+      } else {
+        actionLabel = `${signal.reaction_kind ?? "réagir à"} un post (${pt})`;
+      }
+    }
   } else if (signal.kind === "mention") {
     content =
       typeof signal.payload.content === "string" ? signal.payload.content : "";
@@ -204,9 +231,15 @@ export async function processEmergentSignal(
   const respondWithPost = shouldEmergentNpcPost(typedSignal);
 
   if (respondWithPost) {
+    const payloadPostType =
+      typeof typedSignal.payload.post_type === "string"
+        ? typedSignal.payload.post_type
+        : null;
     const postType: PostType =
-      typeof typedSignal.payload.post_type === "string" &&
-      typedSignal.payload.post_type === "rumor"
+      payloadPostType === "rumor" ||
+      (typedSignal.kind === "reaction" &&
+        typedSignal.reaction_kind === "amplify" &&
+        payloadPostType === "rumor")
         ? "rumor"
         : "theory";
 
@@ -291,6 +324,16 @@ export async function processEmergentSignal(
     };
   }
 
+  const reactionKind =
+    typedSignal.kind === "reaction"
+      ? (typedSignal.reaction_kind as ReactionKind | null)
+      : null;
+  const emergentPostType =
+    typeof typedSignal.payload.post_type === "string"
+      ? (typedSignal.payload.post_type as PostType)
+      : null;
+  const postAuthorIsNpc = typedSignal.payload.post_author_is_npc !== false;
+
   const { system, user } = await buildEmergentPrompt(npc, {
     humanUsername: ctx.humanUsername,
     actionLabel: ctx.actionLabel,
@@ -300,11 +343,21 @@ export async function processEmergentSignal(
         : ctx.content,
     threadSnippet,
     emergentSynopsis: synopsis,
+    reactionKind,
+    postType: emergentPostType,
+    postAuthorIsNpc,
   });
+
+  const commentValidateType: PostType =
+    typedSignal.kind === "reaction" &&
+    emergentPostType === "rumor" &&
+    factionSlugForNpc(npc) === "assimilateurs"
+      ? "rumor"
+      : "message";
 
   const rawComment = await ollamaChat(system, user, 300, "comment");
   const commentContent = rawComment
-    ? validateNpcPostContent(rawComment, "message", ctx.content)
+    ? validateNpcPostContent(rawComment, commentValidateType, ctx.content)
     : null;
   if (!commentContent) {
     return fail("Échec génération Ollama.");

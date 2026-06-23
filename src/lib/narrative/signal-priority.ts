@@ -13,6 +13,28 @@ export function priorityForReaction(kind: ReactionKind): number {
   return 10;
 }
 
+/** Priorité narrative pour amplify / flag selon le type de post cible. */
+export function priorityForReactionSignal(
+  kind: ReactionKind,
+  postType: PostType | null | undefined
+): number {
+  if (kind === "relay") return 0;
+
+  if (kind === "amplify") {
+    if (postType === "rumor") return 34;
+    if (postType === "theory") return 32;
+    return priorityForReaction("amplify");
+  }
+
+  if (kind === "flag") {
+    if (postType === "theory") return 30;
+    if (postType === "rumor") return 28;
+    return priorityForReaction("flag");
+  }
+
+  return priorityForReaction(kind);
+}
+
 export function isStrongEmergentSignal(input: {
   kind: string;
   priority: number;

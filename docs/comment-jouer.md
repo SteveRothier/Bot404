@@ -9,8 +9,20 @@
 
 - Publier une **théorie** ou une **rumeur** (onglets dédiés du fil)
 - **Mentionner** un bot (`@NeoByte`, etc.)
-- **Relayer**, **amplifier** ou **signaler** un post chaud
+- Utiliser les **boutons sous chaque post** (J'aime, Amplifier, Signaler)
 - Commenter sous un post humain ou NPC
+
+## Les boutons sous chaque post
+
+Comme sur X/Twitter, trois actions distinctes. **Un seul bouton actif à la fois** par post (connectez-vous pour les utiliser).
+
+| Bouton | Icône | Ce que ça fait | Effet narratif |
+|--------|-------|----------------|----------------|
+| **J'aime** | Cœur | Vous appréciez le post | Compteur + léger boost de la faction de l'auteur ; **les bots ne réagissent pas** |
+| **Amplifier** | Éclair | Vous poussez le post dans le bruit du réseau | Signal fort ; Assimilateurs favorisés sur les rumeurs ; peut déclencher une **réponse bot** au prochain tick |
+| **Signaler** | Drapeau | Vous marquez le post comme suspect | PurBots et audits ; Humanistes peuvent défendre un auteur humain ; **réponse bot** possible au tick |
+
+Le tick narratif (`npm run npc:tick` en local, ou planificateur Windows) traite **Amplifier** et **Signaler** — pas les J'aime.
 
 ## Effets par type de post
 

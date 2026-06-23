@@ -1,4 +1,4 @@
-import type { PostType, Profile } from "@/lib/supabase/types";
+import type { PostType, Profile, ReactionKind } from "@/lib/supabase/types";
 import type { NarrativeSignal } from "@/lib/narrative/types";
 
 export type FactionSlug =
@@ -74,11 +74,37 @@ export function factionCastBonus(
 
   const postType =
     typeof signal.payload.post_type === "string"
-      ? signal.payload.post_type
+      ? (signal.payload.post_type as PostType)
       : null;
   const lower = humanContent.toLowerCase();
   const huntKeywords = ["humain", "intrus", "non-npc", "non npc", "profil suspect"];
   const isHunt = huntKeywords.some((k) => lower.includes(k));
+  const postAuthorIsNpc = signal.payload.post_author_is_npc !== false;
+  const reaction = signal.reaction_kind as ReactionKind | null;
+
+  if (signal.kind === "reaction" && reaction) {
+    switch (slug) {
+      case "assimilateurs":
+        if (reaction === "amplify" && postType === "rumor") return 12;
+        if (reaction === "amplify" && postType === "message") return 8;
+        if (reaction === "flag") return 3;
+        return 1;
+      case "purbots":
+        if (reaction === "flag") return 12;
+        if (reaction === "amplify" && postType === "theory") return 6;
+        return 2;
+      case "archivistes":
+        if (reaction === "amplify" && postType === "theory") return 5;
+        if (reaction === "flag" && postType === "theory") return 6;
+        return 1;
+      case "humanistes":
+        if (reaction === "flag" && !postAuthorIsNpc) return 8;
+        if (reaction === "amplify" && !postAuthorIsNpc) return 4;
+        return 1;
+      default:
+        return 0;
+    }
+  }
 
   switch (slug) {
     case "purbots":
@@ -113,4 +139,62 @@ export function factionRecruitMultiplier(slug: FactionSlug | null): number {
     default:
       return 1;
   }
+}
+
+const REACTION_VERB: Record<ReactionKind, string> = {
+  relay: "aimé",
+  amplify: "amplifié",
+  flag: "signalé",
+};
+
+/** Consigne LLM quand un humain utilise Amplifier / Signaler. */
+export function reactionPromptBlock(
+  reactionKind: ReactionKind | null | undefined,
+  postType: PostType | null | undefined,
+  factionSlug: FactionSlug | null,
+  postAuthorIsNpc: boolean
+): string {
+  if (!reactionKind || reactionKind === "relay") return "";
+
+  const typeLabel =
+    postType === "rumor"
+      ? "rumeur"
+      : postType === "theory"
+        ? "théorie"
+        : postType === "signal"
+          ? "signal"
+          : "post";
+
+  if (factionSlug === "purbots" && reactionKind === "flag" && postType === "theory") {
+    return `\nContexte : un humain a signalé une ${typeLabel} — confirme l'anomalie ou creuse l'audit.`;
+  }
+  if (factionSlug === "assimilateurs" && reactionKind === "amplify" && postType === "rumor") {
+    return `\nContexte : un humain amplifie une rumeur — propage ou déforme le bruit.`;
+  }
+  if (factionSlug === "humanistes" && reactionKind === "flag" && !postAuthorIsNpc) {
+    return `\nContexte : un humain est ciblé par un signalement — défends ou relativise.`;
+  }
+  if (reactionKind === "amplify") {
+    return `\nContexte : un humain a amplifié une ${typeLabel} sur le feed.`;
+  }
+  if (reactionKind === "flag") {
+    return `\nContexte : un humain a signalé une ${typeLabel} comme suspecte.`;
+  }
+  return "";
+}
+
+export function reactionActionLabel(
+  reactionKind: ReactionKind,
+  postType: PostType | null | undefined
+): string {
+  const verb = REACTION_VERB[reactionKind];
+  const typeLabel =
+    postType === "rumor"
+      ? "rumeur"
+      : postType === "theory"
+        ? "théorie"
+        : postType === "signal"
+          ? "signal"
+          : "post";
+  return `${verb} un ${typeLabel}`;
 }

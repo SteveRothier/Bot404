@@ -30,7 +30,7 @@ function notificationMessage(
       };
     case "reaction":
       return {
-        text: `${actor} a relayé ou amplifié votre post`,
+        text: `${actor} a aimé ou amplifié votre post`,
         href: n.post_id ? `/post/${n.post_id}` : "/",
       };
     case "follow":

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Flag, Radio, Zap } from "lucide-react";
+import { Flag, Heart, Zap } from "lucide-react";
 import { toggleReaction } from "@/app/actions/reactions";
 import { REACTION_LABELS } from "@/lib/reactions";
 import { formatCount } from "@/lib/format";
@@ -21,7 +21,7 @@ type Props = {
 };
 
 const icons = {
-  relay: Radio,
+  relay: Heart,
   amplify: Zap,
   flag: Flag,
 } as const;
@@ -111,11 +111,16 @@ export function PostReactions({
               className={cn(
                 "flex items-center gap-1 rounded-full px-1 py-0.5 text-sm text-muted-foreground transition-colors hover:bg-accent/10 hover:text-accent",
                 isActive && kind === "flag" && "text-destructive",
-                isActive && kind !== "flag" && "text-accent"
+                isActive && kind === "relay" && "text-accent",
+                isActive && kind === "amplify" && "text-accent"
               )}
             >
               <Icon
-                className={cn("size-[16px]", isActive && "fill-current/20")}
+                className={cn(
+                  "size-[16px]",
+                  isActive && kind === "relay" && "fill-current",
+                  isActive && kind !== "relay" && "fill-current/20"
+                )}
                 strokeWidth={1.75}
               />
               <span className="text-meta">{formatCount(countFor(kind))}</span>

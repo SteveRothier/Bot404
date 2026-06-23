@@ -4,7 +4,7 @@ import { suspicionScoreForContent } from "@/lib/narrative/hunt-keywords";
 import type { NarrativeSignalKind } from "@/lib/narrative/types";
 import {
   priorityForPost,
-  priorityForReaction,
+  priorityForReactionSignal,
 } from "@/lib/narrative/signal-priority";
 import type { PostType, ReactionKind } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -92,13 +92,41 @@ export async function enqueueReactionSignal(
   postId: number,
   kind: ReactionKind
 ) {
+  if (kind === "relay") return;
+
+  const supabase = createAdminClient();
+  const { data: post } = await supabase
+    .from("posts")
+    .select(
+      "content, post_type, author:profiles!author_id(is_npc, username)"
+    )
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (!post) return;
+
+  const authorRaw = post.author;
+  const postAuthor = (
+    Array.isArray(authorRaw) ? authorRaw[0] : authorRaw
+  ) as { is_npc: boolean; username: string } | null;
+
+  const postType = post.post_type as PostType;
+  const content = (post.content ?? "").slice(0, 500);
+
   await enqueueSignal({
     kind: "reaction",
     authorId,
     postId,
     reactionKind: kind,
-    priority: priorityForReaction(kind),
-    payload: { reaction: kind },
+    priority: priorityForReactionSignal(kind, postType),
+    payload: {
+      reaction: kind,
+      post_type: postType,
+      content,
+      post_author_is_npc: postAuthor?.is_npc ?? true,
+      post_author_username: postAuthor?.username ?? null,
+      suspicion_score: suspicionScoreForContent(content),
+    },
   });
 }
 

@@ -61,6 +61,20 @@ describe("scoreNpcForSignal", () => {
     const other = scoreNpcForSignal(npc("Nova", "n1"), { signal: s });
     assert.ok(pur > other);
   });
+
+  it("favorise RumorMill pour amplify sur rumeur", () => {
+    const s = signal({
+      kind: "reaction",
+      reaction_kind: "amplify",
+      payload: { post_type: "rumor" },
+    });
+    const rumor = scoreNpcForSignal(npc("RumorMill", "r1"), {
+      signal: s,
+      humanContent: "on dit que",
+    });
+    const other = scoreNpcForSignal(npc("Nova", "n1"), { signal: s });
+    assert.ok(rumor > other);
+  });
 });
 
 describe("pickNpcForSignal", () => {

@@ -4,6 +4,7 @@ import {
   isStrongEmergentSignal,
   priorityForPost,
   priorityForReaction,
+  priorityForReactionSignal,
 } from "@/lib/narrative/signal-priority";
 import { shouldEmergentNpcPost } from "@/lib/narrative/emergent-response-mode";
 import type { NarrativeSignal } from "@/lib/narrative/types";
@@ -19,6 +20,21 @@ describe("priorityForReaction", () => {
   it("priorise amplify et relay", () => {
     assert.ok(priorityForReaction("amplify") > priorityForReaction("relay"));
     assert.ok(priorityForReaction("relay") > priorityForReaction("flag"));
+  });
+});
+
+describe("priorityForReactionSignal", () => {
+  it("ignore relay (like)", () => {
+    assert.equal(priorityForReactionSignal("relay", "rumor"), 0);
+  });
+
+  it("priorise amplify rumeur et flag théorie", () => {
+    assert.ok(
+      priorityForReactionSignal("amplify", "rumor") >
+        priorityForReactionSignal("flag", "rumor")
+    );
+    assert.equal(priorityForReactionSignal("amplify", "rumor"), 34);
+    assert.equal(priorityForReactionSignal("flag", "theory"), 30);
   });
 });
 
@@ -68,6 +84,17 @@ describe("shouldEmergentNpcPost", () => {
       kind: "human_comment",
       priority: 28,
       payload: { post_type: "theory" },
+    } as unknown as NarrativeSignal;
+    assert.equal(shouldEmergentNpcPost(signal, () => 0.1), true);
+    assert.equal(shouldEmergentNpcPost(signal, () => 0.9), false);
+  });
+
+  it("peut poster après amplify sur rumeur", () => {
+    const signal = {
+      kind: "reaction",
+      reaction_kind: "amplify",
+      priority: 34,
+      payload: { post_type: "rumor" },
     } as unknown as NarrativeSignal;
     assert.equal(shouldEmergentNpcPost(signal, () => 0.1), true);
     assert.equal(shouldEmergentNpcPost(signal, () => 0.9), false);

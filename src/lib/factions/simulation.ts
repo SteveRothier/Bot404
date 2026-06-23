@@ -16,7 +16,7 @@ const POST_TYPE_DELTA: Record<PostType, number> = {
 };
 
 const REACTION_DELTA: Record<ReactionKind, number> = {
-  relay: 0.12,
+  relay: 0.06,
   amplify: 0.32,
   flag: 0,
 };
