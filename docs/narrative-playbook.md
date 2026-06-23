@@ -32,9 +32,12 @@ Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 | Mode | Tick narratif | Génération LLM (Ollama) |
 |------|----------------|-------------------------|
 | **Dev / démo riche** | `npm run npc:tick` ou tâches Windows (`npc:schedule:install`) | Ollama local (`ollama serve`) |
-| **Prod Vercel** | Aucun cron (Hobby) — site statique/dynamique seulement | Tick sur PC : `npm run npc:tick` ou tâches Windows |
+| **Prod Vercel** | Cron externe → `GET /api/narrative/tick` (Bearer secret) ou PC Windows | Ollama local requis pour génération LLM |
+
+Les anciens crons Supabase `generate-posts` / `generate-comments` (Edge OpenAI) sont **désactivés** par migration `20260621000001` — une seule pipeline via tick narratif.
 
 Définir `NARRATIVE_CRON_SECRET` (ou `CRON_SECRET` côté Vercel) pour protéger l'endpoint en production.
+Optionnel : `NARRATIVE_ADMIN=1` affiche le panneau ops sur `/dashboard`.
 
 ---
 

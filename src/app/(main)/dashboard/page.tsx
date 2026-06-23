@@ -2,21 +2,29 @@ import Link from "next/link";
 import { getDashboardStats } from "@/lib/queries/dashboard";
 import { getCachedNetworkStats } from "@/lib/queries/cached";
 import { NarrativeInteractionsList } from "@/components/lore/NarrativeInteractionsList";
+import { NarrativeOpsPanel } from "@/components/lore/NarrativeOpsPanel";
 import { NarrativeStatusCard } from "@/components/lore/NarrativeStatusCard";
+import { getNarrativeOpsSnapshot } from "@/app/actions/narrative-admin";
+import { isNarrativeAdminEnabled } from "@/lib/narrative/admin-config";
 import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import { getNarrativeStateForUi } from "@/lib/narrative/queries";
 import { getRecentNarrativeInteractions } from "@/lib/queries/narrative-ui";
+import { getActiveWorldEvents } from "@/lib/queries/world-events";
 import { NETWORK_STATE_LABELS } from "@/lib/network-state";
 
 export const revalidate = 60;
 
 export default async function DashboardPage() {
   const network = await getCachedNetworkStats();
-  const [dashboard, narrativeState, recentInteractions] = await Promise.all([
-    getDashboardStats(network),
-    getNarrativeStateForUi(),
-    getRecentNarrativeInteractions(2),
-  ]);
+  const narrativeAdmin = isNarrativeAdminEnabled();
+  const [dashboard, narrativeState, recentInteractions, opsSnapshot, activeEvents] =
+    await Promise.all([
+      getDashboardStats(network),
+      getNarrativeStateForUi(),
+      getRecentNarrativeInteractions(2),
+      narrativeAdmin ? getNarrativeOpsSnapshot() : Promise.resolve(null),
+      getActiveWorldEvents(),
+    ]);
 
   const stateMeta = NETWORK_STATE_LABELS[network.networkState];
 
@@ -81,15 +89,34 @@ export default async function DashboardPage() {
         )}
       </section>
 
+      {opsSnapshot && (
+        <section className="px-4 py-4">
+          <NarrativeOpsPanel
+            signals={opsSnapshot.signals}
+            events={opsSnapshot.events}
+          />
+        </section>
+      )}
+
       <section className="px-4 py-4">
         <h2 className="mb-3 text-[15px] font-bold">Événements</h2>
-        <p className="text-[15px] text-muted-foreground">
-          {network.activeEventsCount === 0
-            ? "Aucun événement mondial actif"
-            : network.activeEventsCount === 1
-              ? "1 événement mondial actif"
-              : `${network.activeEventsCount} événements mondiaux actifs`}
-        </p>
+        {activeEvents.length === 0 ? (
+          <p className="text-[15px] text-muted-foreground">
+            Aucun événement mondial actif
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {activeEvents.map((event) => (
+              <li
+                key={event.id}
+                className="rounded-xl bg-secondary/50 px-3 py-2 text-[15px]"
+              >
+                <p className="font-bold">{event.title}</p>
+                <p className="text-muted-foreground">{event.description}</p>
+              </li>
+            ))}
+          </ul>
+        )}
         <Link
           href="/trending"
           className="mt-2 inline-block text-sm text-accent hover:underline"

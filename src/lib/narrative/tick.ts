@@ -7,6 +7,7 @@ import {
   getSignalsPerTick,
 } from "@/lib/narrative/tick-config";
 import { expireOldSignals } from "@/lib/narrative/signals";
+import { checkNarrativeEndgame } from "@/lib/narrative/endgame";
 import type { NarrativeTickResult } from "@/lib/narrative/types";
 import { generateNpcComment } from "@/lib/npc/generate-comment";
 import { generateNpcPost } from "@/lib/npc/generate-post";
@@ -46,6 +47,7 @@ export async function runNarrativeTick(
 
   if (batch.handled > 0) {
     const first = batch.results[0];
+    const endgame = await checkNarrativeEndgame();
     return {
       handled: true,
       mode: "emergent",
@@ -62,6 +64,7 @@ export async function runNarrativeTick(
         post_id: first.postId,
         comment_id: first.commentId,
         signal_id: first.signalId,
+        endgame: endgame.triggered ? endgame : undefined,
       },
     };
   }
@@ -74,6 +77,7 @@ export async function runNarrativeTick(
 
     if (ambient.ok) {
       const isComment = "commentId" in ambient;
+      const endgame = await checkNarrativeEndgame();
       return {
         handled: true,
         mode: "ambient",
@@ -82,6 +86,7 @@ export async function runNarrativeTick(
           author: ambient.author,
           post_id: ambient.postId,
           comment_id: isComment ? ambient.commentId : undefined,
+          endgame: endgame.triggered ? endgame : undefined,
         },
       };
     }
@@ -96,9 +101,13 @@ export async function runNarrativeTick(
     };
   }
 
+  const endgame = await checkNarrativeEndgame();
   return {
     handled: false,
     mode: "none",
-    detail: { emergent_error: batch.lastError },
+    detail: {
+      emergent_error: batch.lastError,
+      endgame: endgame.triggered ? endgame : undefined,
+    },
   };
 }

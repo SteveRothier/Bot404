@@ -1,5 +1,6 @@
 import { extractMentionUsernames } from "@/lib/mentions";
 import { maybeTriggerMentionDrama } from "@/lib/narrative/escalation";
+import { suspicionScoreForContent } from "@/lib/narrative/hunt-keywords";
 import type { NarrativeSignalKind } from "@/lib/narrative/types";
 import {
   priorityForPost,
@@ -9,6 +10,7 @@ import type { PostType, ReactionKind } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const SIGNAL_TTL_MS = 48 * 60 * 60 * 1000;
+export const MAX_SIGNAL_ATTEMPTS = 3;
 
 async function isHumanUser(userId: string): Promise<boolean> {
   const supabase = createAdminClient();
@@ -57,7 +59,11 @@ export async function enqueueHumanPostSignal(
     authorId,
     postId,
     priority: priorityForPost(postType),
-    payload: { content, post_type: postType },
+    payload: {
+      content,
+      post_type: postType,
+      suspicion_score: suspicionScoreForContent(content),
+    },
   });
 
   await enqueueMentionSignals(authorId, content, postId, null);
@@ -75,7 +81,7 @@ export async function enqueueHumanCommentSignal(
     postId,
     commentId,
     priority: 28,
-    payload: { content },
+    payload: { content, suspicion_score: suspicionScoreForContent(content) },
   });
 
   await enqueueMentionSignals(authorId, content, postId, commentId);
@@ -143,4 +149,50 @@ export async function expireOldSignals() {
     .update({ status: "expired" })
     .eq("status", "pending")
     .lt("created_at", cutoff);
+}
+
+export async function recordSignalFailure(signalId: number): Promise<boolean> {
+  const supabase = createAdminClient();
+  const { data: row } = await supabase
+    .from("narrative_signals")
+    .select("attempt_count")
+    .eq("id", signalId)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (!row) return false;
+
+  const nextAttempt = (row.attempt_count ?? 0) + 1;
+  if (nextAttempt >= MAX_SIGNAL_ATTEMPTS) {
+    await supabase
+      .from("narrative_signals")
+      .update({
+        status: "failed",
+        attempt_count: nextAttempt,
+        result: { error: "max_attempts" },
+      })
+      .eq("id", signalId);
+    return true;
+  }
+
+  await supabase
+    .from("narrative_signals")
+    .update({ attempt_count: nextAttempt })
+    .eq("id", signalId);
+  return false;
+}
+
+export async function getPendingSignals(limit = 10) {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("narrative_signals")
+    .select(
+      "id, kind, priority, status, attempt_count, created_at, payload, post_id"
+    )
+    .eq("status", "pending")
+    .order("priority", { ascending: false })
+    .order("created_at", { ascending: true })
+    .limit(limit);
+
+  return data ?? [];
 }

@@ -29,6 +29,12 @@ export const NARRATIVE_COPY = {
   commentBadge: "Réponse du réseau",
   queuedInteraction:
     "Le réseau a enregistré votre interaction. Une réponse de bot peut arriver sous peu (tick auto ~15 min).",
+  queuedTheory:
+    "Théorie enregistrée — les PurBots et archivistes du réseau vont probablement réagir.",
+  queuedRumor:
+    "Rumeur enregistrée — propagation accélérée, les Assimilateurs adorent ça.",
+  queuedComment:
+    "Commentaire enregistré — un bot peut répondre sur ce fil.",
   interactionKind: {
     post: "post",
     comment: "commentaire",
@@ -56,4 +62,12 @@ export function formatPendingInteractions(count: number): string {
     return "1 interaction en attente";
   }
   return `${count} interactions en attente`;
+}
+
+export function queuedMessageForPostType(
+  postType: "message" | "theory" | "signal" | "rumor"
+): string {
+  if (postType === "theory") return NARRATIVE_COPY.queuedTheory;
+  if (postType === "rumor") return NARRATIVE_COPY.queuedRumor;
+  return NARRATIVE_COPY.queuedInteraction;
 }

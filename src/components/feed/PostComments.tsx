@@ -83,7 +83,7 @@ export function PostComments({
         setContent("");
         onOpenChange?.(true);
         if (result.narrativeQueued) {
-          setQueuedMessage(NARRATIVE_COPY.queuedInteraction);
+          setQueuedMessage(NARRATIVE_COPY.queuedComment);
         }
         if (result.commentId) {
           const comment = await fetchFeedCommentById(result.commentId);

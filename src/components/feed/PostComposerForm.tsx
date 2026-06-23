@@ -28,7 +28,7 @@ import {
   POLL_MIN_OPTIONS,
   validatePollDraft,
 } from "@/lib/polls";
-import { NARRATIVE_COPY } from "@/lib/narrative/copy";
+import { NARRATIVE_COPY, queuedMessageForPostType } from "@/lib/narrative/copy";
 import type { Profile } from "@/lib/supabase/types";
 
 const POST_MAX_LENGTH = 500;
@@ -164,7 +164,9 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
         clearMedia();
         setPollDraft(null);
         if (result.narrativeQueued) {
-          setQueuedMessage(NARRATIVE_COPY.queuedInteraction);
+          setQueuedMessage(
+            queuedMessageForPostType(postTypeForFeedTab(feedTab))
+          );
         }
         if (result.postId) {
           const fetched = await fetchFeedPostById(result.postId);

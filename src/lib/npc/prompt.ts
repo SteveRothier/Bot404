@@ -1,4 +1,8 @@
 import type { Personality, PostType, Profile } from "@/lib/supabase/types";
+import {
+  factionPromptDirective,
+  factionSlugForNpc,
+} from "@/lib/factions/behavior";
 
 export const NPC_TYPE_INSTRUCTIONS: Record<PostType, string> = {
   message:
@@ -15,10 +19,11 @@ export function npcBase(npc: Profile, factionName?: string | null): string {
   const p = (npc.personality ?? {}) as Personality;
   const mood = p.mood ? `\nHumeur: ${p.mood}` : "";
   const faction = factionName ? `\nFaction: ${factionName}` : "";
+  const directive = factionPromptDirective(factionSlugForNpc(npc));
   return `Tu es ${npc.username}, un NPC sur le réseau dystopique Bot404.
 Personnalité: ${p.personality ?? "neutre"}
 Style: ${p.writing_style ?? "court"}
-Sujets: ${(p.topics ?? ["IA"]).join(", ")}${mood}${faction}
+Sujets: ${(p.topics ?? ["IA"]).join(", ")}${mood}${faction}${directive}
 Ne mentionne pas de codes secteur (1A, 2B, 3C, 7G, etc.) — cette cartographie n'existe plus sur le réseau.`;
 }
 

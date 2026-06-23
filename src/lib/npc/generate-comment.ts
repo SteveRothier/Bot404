@@ -3,6 +3,7 @@ import {
   buildNpcLorePromptBlock,
   getNpcLoreContext,
 } from "@/lib/lore/lore-context";
+import { isEmergentModeActive } from "@/lib/narrative/queries";
 import { checkOllamaStatus } from "@/lib/ollama";
 import { buildRichThreadSnippet } from "@/lib/npc/thread-context";
 import { buildNpcHistoryBlock, fetchRecentNpcPostContents } from "@/lib/npc/npc-history";
@@ -24,13 +25,14 @@ async function pickPostToComment(): Promise<{
 } | null> {
   const supabase = createAdminClient();
   const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const emergentActive = await isEmergentModeActive();
 
   const { data: posts } = await supabase
     .from("posts")
     .select("id, content, author_id, author:profiles!author_id(is_npc)")
     .gte("created_at", since)
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(emergentActive ? 30 : 20);
 
   if (!posts?.length) return null;
 
@@ -39,7 +41,12 @@ async function pickPostToComment(): Promise<{
     return author?.is_npc === false;
   });
 
-  const pool = humanPosts.length > 0 ? humanPosts : posts;
+  const pool =
+    emergentActive && humanPosts.length > 0
+      ? humanPosts
+      : humanPosts.length > 0
+        ? humanPosts
+        : posts;
   const pick = pool[Math.floor(Math.random() * pool.length)];
   return { id: pick.id, content: pick.content, author_id: pick.author_id };
 }

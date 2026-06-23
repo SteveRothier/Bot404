@@ -14,11 +14,14 @@ import {
 } from "@/lib/npc/prompt";
 import { pickRotatingNpc, factionNameForNpc } from "@/lib/npc/select-npc";
 import {
+  factionSlugForNpc,
+  pickPostTypeForFaction,
+} from "@/lib/factions/behavior";
+import {
   buildNpcHistoryBlock,
   fetchRecentNpcPostContents,
 } from "@/lib/npc/npc-history";
 import { validateNpcPostContent } from "@/lib/npc/validate-content";
-import { pickRandomNpcPostType } from "@/lib/post-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType } from "@/lib/supabase/types";
 export type GenerateNpcPostResult =
@@ -49,7 +52,7 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     ? getWorldEventEffects(loreContext.activeEvent)
     : null;
 
-  let postType = pickRandomNpcPostType();
+  let postType = pickPostTypeForFaction(factionSlugForNpc(npc));
   if (
     eventEffects &&
     eventEffects.boost_post_types.length > 0 &&

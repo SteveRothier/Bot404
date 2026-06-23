@@ -1,4 +1,8 @@
 import type { NarrativeSignal } from "@/lib/narrative/types";
+import {
+  factionCastBonus,
+  factionSlugForNpc,
+} from "@/lib/factions/behavior";
 import type { Personality, Profile } from "@/lib/supabase/types";
 
 const PURBOT_ARCHETYPES = [
@@ -40,6 +44,9 @@ export type CastContext = {
   signal: NarrativeSignal;
   humanContent?: string;
   excludeNpcIds?: Set<string>;
+  huntContent?: boolean;
+  /** Slugs de factions boostées par un world event actif */
+  eventFactionBoost?: string[];
 };
 
 function topicOverlapScore(npc: Profile, text: string): number {
@@ -84,6 +91,30 @@ export function scoreNpcForSignal(npc: Profile, ctx: CastContext): number {
   if (postType === "theory" && npc.username === "ConspiracyBot") score += 4;
   if (signal.kind === "human_comment" && MEME_ARCHETYPES.includes(npc.username)) {
     score += 3;
+  }
+
+  if (ctx.huntContent) {
+    if (PURBOT_ARCHETYPES.includes(npc.username)) score += 8;
+    if (npc.username === "ConspiracyBot") score += 4;
+  }
+
+  const suspicion =
+    typeof signal.payload.suspicion_score === "number"
+      ? signal.payload.suspicion_score
+      : 0;
+  if (suspicion >= 2 && PURBOT_ARCHETYPES.includes(npc.username)) {
+    score += suspicion * 2;
+  }
+
+  score += factionCastBonus(
+    factionSlugForNpc(npc),
+    signal,
+    text
+  );
+
+  const slug = factionSlugForNpc(npc);
+  if (slug && ctx.eventFactionBoost?.includes(slug)) {
+    score += 6;
   }
 
   score += topicOverlapScore(npc, text);

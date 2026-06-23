@@ -1,4 +1,8 @@
 import { extractMentionUsernames } from "@/lib/mentions";
+import {
+  factionRecruitMultiplier,
+  type FactionSlug,
+} from "@/lib/factions/behavior";
 import type { PostType, ReactionKind } from "@/lib/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -44,6 +48,24 @@ async function getFactionIdBySlug(
   return factions.find((f) => f.slug === slug)?.id ?? null;
 }
 
+async function getFactionSlugById(
+  supabase: SupabaseClient,
+  factionId: string | null | undefined
+): Promise<FactionSlug | null> {
+  if (!factionId) return null;
+  const factions = await getFactions(supabase);
+  const slug = factions.find((f) => f.id === factionId)?.slug;
+  if (
+    slug === "purbots" ||
+    slug === "humanistes" ||
+    slug === "assimilateurs" ||
+    slug === "archivistes"
+  ) {
+    return slug;
+  }
+  return null;
+}
+
 /** Un NPC rejoint la faction du recruteur (auteur du post/commentaire). */
 async function tryRecruitNpc(
   supabase: SupabaseClient,
@@ -54,7 +76,10 @@ async function tryRecruitNpc(
   if (recruiter.id === target.id) return;
   if (!recruiter.faction_id) return;
   if (target.faction_id === recruiter.faction_id) return;
-  if (Math.random() > chance) return;
+
+  const slug = await getFactionSlugById(supabase, recruiter.faction_id);
+  const effectiveChance = chance * factionRecruitMultiplier(slug);
+  if (Math.random() > effectiveChance) return;
 
   await supabase
     .from("profiles")

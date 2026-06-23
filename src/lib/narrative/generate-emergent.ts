@@ -11,6 +11,10 @@ import { getEmergentArcSynopsis } from "@/lib/narrative/execute-beat";
 import { getActiveEmergentArc } from "@/lib/narrative/queries";
 import type { NarrativeSignal } from "@/lib/narrative/types";
 import { pickNpcForSignal } from "@/lib/npc/cast";
+import { getWorldEventEffects } from "@/lib/lore/world-event-effects";
+import { getActiveWorldEvents } from "@/lib/queries/world-events";
+import { contentHasHuntKeywords } from "@/lib/narrative/hunt-keywords";
+import { recordSignalFailure } from "@/lib/narrative/signals";
 import { maybeNpcVoteOnPoll } from "@/lib/npc/poll-vote";
 import { maybeAttachNpcPoll } from "@/lib/npc/poll-create";
 import { resolveNpcPostMedia, shouldAttachMediaToNpcPost } from "@/lib/npc/media";
@@ -81,6 +85,20 @@ async function loadSignalContext(signal: NarrativeSignal) {
     content = comment?.content ?? "";
     postId = comment?.post_id ?? postId;
     actionLabel = "commenter";
+
+    if (postId) {
+      const { data: parentPost } = await supabase
+        .from("posts")
+        .select("post_type")
+        .eq("id", postId)
+        .maybeSingle();
+      if (parentPost?.post_type) {
+        signal.payload = {
+          ...signal.payload,
+          post_type: parentPost.post_type,
+        };
+      }
+    }
   } else if (signal.kind === "reaction" && signal.post_id) {
     const { data: post } = await supabase
       .from("posts")
@@ -104,10 +122,22 @@ async function loadSignalContext(signal: NarrativeSignal) {
   };
 }
 
+async function activeEventFactionSlugs(): Promise<string[]> {
+  const events = await getActiveWorldEvents();
+  const slugs = new Set<string>();
+  for (const event of events) {
+    for (const slug of getWorldEventEffects(event).factions) {
+      slugs.add(slug);
+    }
+  }
+  return [...slugs];
+}
+
 async function pickResponderNpc(
   signal: NarrativeSignal,
   targetPostId: number,
-  humanContent: string
+  humanContent: string,
+  eventFactionBoost: string[]
 ): Promise<Profile | null> {
   const supabase = createAdminClient();
 
@@ -127,6 +157,8 @@ async function pickResponderNpc(
     signal,
     humanContent,
     excludeNpcIds: excludeIds,
+    huntContent: contentHasHuntKeywords(humanContent),
+    eventFactionBoost,
   });
 }
 
@@ -134,6 +166,12 @@ export async function processEmergentSignal(
   typedSignal: NarrativeSignal
 ): Promise<EmergentResponseResult> {
   const supabase = createAdminClient();
+
+  async function fail(error: string): Promise<EmergentResponseResult> {
+    await recordSignalFailure(typedSignal.id);
+    return { ok: false, error };
+  }
+
   const ctx = await loadSignalContext(typedSignal);
 
   if (!ctx.postId) {
@@ -141,12 +179,18 @@ export async function processEmergentSignal(
       .from("narrative_signals")
       .update({ status: "expired" })
       .eq("id", typedSignal.id);
-    return { ok: false, error: "Signal sans post cible." };
+    return fail("Signal sans post cible.");
   }
 
   const targetPostId = ctx.postId;
-  const npc = await pickResponderNpc(typedSignal, targetPostId, ctx.content);
-  if (!npc) return { ok: false, error: "Aucun NPC disponible." };
+  const eventFactionBoost = await activeEventFactionSlugs();
+  const npc = await pickResponderNpc(
+    typedSignal,
+    targetPostId,
+    ctx.content,
+    eventFactionBoost
+  );
+  if (!npc) return fail("Aucun NPC disponible.");
 
   if (
     typedSignal.kind === "human_post" &&
@@ -180,7 +224,7 @@ export async function processEmergentSignal(
       ? validateNpcPostContent(raw, postType, ctx.content)
       : null;
     if (!content) {
-      return { ok: false, error: "Échec génération Ollama." };
+      return fail("Échec génération Ollama.");
     }
 
     const media = shouldAttachMediaToNpcPost(npc, postType)
@@ -202,7 +246,7 @@ export async function processEmergentSignal(
       .single();
 
     if (postError || !newPost) {
-      return { ok: false, error: postError?.message ?? "Insert post failed" };
+      return fail(postError?.message ?? "Insert post failed");
     }
 
     await supabase
@@ -263,7 +307,7 @@ export async function processEmergentSignal(
     ? validateNpcPostContent(rawComment, "message", ctx.content)
     : null;
   if (!commentContent) {
-    return { ok: false, error: "Échec génération Ollama." };
+    return fail("Échec génération Ollama.");
   }
 
   const { data: comment, error } = await supabase
@@ -278,7 +322,7 @@ export async function processEmergentSignal(
     .single();
 
   if (error || !comment) {
-    return { ok: false, error: error?.message ?? "Insert comment failed" };
+    return fail(error?.message ?? "Insert comment failed");
   }
 
   await supabase

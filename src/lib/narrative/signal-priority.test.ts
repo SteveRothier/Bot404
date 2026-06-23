@@ -62,4 +62,14 @@ describe("shouldEmergentNpcPost", () => {
     assert.equal(shouldEmergentNpcPost(signal, () => 0.1), true);
     assert.equal(shouldEmergentNpcPost(signal, () => 0.9), false);
   });
+
+  it("peut poster en réponse à un commentaire sur théorie", () => {
+    const signal = {
+      kind: "human_comment",
+      priority: 28,
+      payload: { post_type: "theory" },
+    } as unknown as NarrativeSignal;
+    assert.equal(shouldEmergentNpcPost(signal, () => 0.1), true);
+    assert.equal(shouldEmergentNpcPost(signal, () => 0.9), false);
+  });
 });

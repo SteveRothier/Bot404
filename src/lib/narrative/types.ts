@@ -18,7 +18,7 @@ export type NarrativeSignalKind =
   | "reaction"
   | "mention";
 
-export type NarrativeSignalStatus = "pending" | "handled" | "expired";
+export type NarrativeSignalStatus = "pending" | "handled" | "expired" | "failed";
 
 export type NarrativeArc = {
   id: number;

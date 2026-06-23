@@ -76,6 +76,7 @@ export async function buildEmergentPrompt(
 ${actOne ?? opts.emergentSynopsis}
 
 Le réseau réagit aux humains. Réponds en commentaire (max 200 caractères).
+Si le message évoque un intrus ou un profil suspect, reste in-character : tu enquêtes ou tu relaies la tension.
 Ton : ${p.personality ?? "neutre"}. Style : ${p.writing_style ?? "court"}.
 Ne révèle pas que tu es une IA de test. Français.`;
 
