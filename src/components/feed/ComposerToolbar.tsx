@@ -4,6 +4,11 @@ import { Image, List } from "lucide-react";
 import type { ReactNode } from "react";
 import { EmojiPicker } from "@/components/feed/EmojiPicker";
 import { GifPicker } from "@/components/feed/GifPicker";
+import {
+  composerIconButtonClass,
+  composerIconClass,
+} from "@/components/feed/composer-toolbar-styles";
+import { HoverTooltip } from "@/components/ui/hover-tooltip";
 
 function ComposerToolButton({
   label,
@@ -18,17 +23,20 @@ function ComposerToolButton({
   onClick?: () => void;
   soon?: boolean;
 }) {
+  const tooltipLabel = soon ? `${label} (bientôt)` : label;
+
   return (
-    <button
-      type="button"
-      disabled={disabled || soon}
-      onClick={onClick}
-      aria-label={label}
-      title={soon ? `${label} (bientôt)` : label}
-      className="rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-default disabled:opacity-100"
-    >
-      {children}
-    </button>
+    <HoverTooltip label={tooltipLabel} disabled={disabled || soon}>
+      <button
+        type="button"
+        disabled={disabled || soon}
+        onClick={onClick}
+        aria-label={tooltipLabel}
+        className={composerIconButtonClass}
+      >
+        {children}
+      </button>
+    </HoverTooltip>
   );
 }
 
@@ -52,13 +60,13 @@ export function ComposerToolbar({
   disabled,
 }: Props) {
   return (
-    <div className="-ml-1.5 flex items-center gap-0.5">
+    <div className="flex items-center">
       <ComposerToolButton
         label="Média"
         disabled={disabled || mediaDisabled || pollActive}
         onClick={onMediaClick}
       >
-        <Image className="size-[18px]" strokeWidth={1.75} />
+        <Image className={composerIconClass} strokeWidth={1.75} />
       </ComposerToolButton>
       {onGifSelect && (
         <GifPicker
@@ -73,7 +81,7 @@ export function ComposerToolbar({
           onClick={onPollClick}
         >
           <List
-            className="size-[18px]"
+            className={composerIconClass}
             strokeWidth={1.75}
             aria-hidden={pollActive}
           />

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { BookmarkButton } from "@/components/feed/BookmarkButton";
 import { PostReactions } from "@/components/feed/PostReactions";
+import { HoverTooltip } from "@/components/ui/hover-tooltip";
 import { PostCardMenu } from "@/components/feed/PostCardMenu";
 import { PostContent } from "@/components/feed/PostContent";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -202,19 +203,21 @@ export function PostCard({
           )}
 
           <div className="mt-3 flex max-w-[425px] justify-between text-muted-foreground">
-            <button
-              type="button"
-              onClick={handleCommentsClick}
-              aria-expanded={commentsOpen}
-              aria-label="Commentaires"
-              className={cn(
-                "group flex items-center gap-1.5 text-sm transition-colors hover:text-accent",
-                commentsOpen && "text-accent"
-              )}
-            >
-              <MessageCircle className="size-[18px]" strokeWidth={1.75} />
-              <span>{formatCount(post.comment_count ?? 0)}</span>
-            </button>
+            <HoverTooltip label="Commentaires">
+              <button
+                type="button"
+                onClick={handleCommentsClick}
+                aria-expanded={commentsOpen}
+                aria-label="Commentaires"
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-1 py-0.5 text-sm transition-colors hover:bg-accent/10 hover:text-accent",
+                  commentsOpen && "text-accent"
+                )}
+              >
+                <MessageCircle className="size-[18px]" strokeWidth={1.75} />
+                <span>{formatCount(post.comment_count ?? 0)}</span>
+              </button>
+            </HoverTooltip>
             <PostReactions
               postId={post.id}
               relayCount={post.relay_count ?? 0}

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { Smile } from "lucide-react";
 import { ComposerPopoverPicker } from "@/components/feed/ComposerPopoverPicker";
+import { composerIconClass } from "@/components/feed/composer-toolbar-styles";
 
 const EmojiPickerPanel = dynamic(() => import("@/components/feed/EmojiPickerPanel"), {
   ssr: false,
@@ -29,7 +30,7 @@ export function EmojiPicker({ onSelect, disabled }: Props) {
       ariaLabel="Emoji"
       panelClassName="bot404-emoji-picker"
       disabled={disabled}
-      trigger={<Smile className="size-[18px]" strokeWidth={1.75} />}
+      trigger={<Smile className={composerIconClass} strokeWidth={1.75} />}
       renderPanel={(close) => (
         <EmojiPickerPanel onSelect={(emoji) => pick(emoji, close)} />
       )}

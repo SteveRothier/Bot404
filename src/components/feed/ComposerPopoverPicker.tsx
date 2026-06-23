@@ -7,6 +7,8 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { HoverTooltip } from "@/components/ui/hover-tooltip";
+import { composerIconButtonClass } from "@/components/feed/composer-toolbar-styles";
 import { cn } from "@/lib/utils";
 
 const PANEL_WIDTH = 340;
@@ -79,21 +81,20 @@ export function ComposerPopoverPicker({
   }
 
   return (
-    <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        disabled={disabled}
-        aria-label={ariaLabel}
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-        className={cn(
-          "rounded-full p-1.5 text-muted-foreground transition-colors hover:text-foreground",
-          disabled && "cursor-not-allowed opacity-50"
-        )}
-      >
-        {trigger}
-      </button>
+    <div className="inline-flex items-center">
+      <HoverTooltip label={ariaLabel} disabled={disabled}>
+        <button
+          ref={buttonRef}
+          type="button"
+          disabled={disabled}
+          aria-label={ariaLabel}
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+          className={cn(composerIconButtonClass, disabled && "opacity-50")}
+        >
+          {trigger}
+        </button>
+      </HoverTooltip>
 
       {open && (
         <>

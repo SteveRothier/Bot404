@@ -7,6 +7,7 @@ import { toggleReaction } from "@/app/actions/reactions";
 import { REACTION_LABELS } from "@/lib/reactions";
 import { formatCount } from "@/lib/format";
 import { toast } from "@/stores/toast-store";
+import { HoverTooltip } from "@/components/ui/hover-tooltip";
 import { cn } from "@/lib/utils";
 import type { ReactionKind } from "@/lib/supabase/types";
 
@@ -59,16 +60,17 @@ export function PostReactions({
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
         {kinds.map((kind) => {
           const Icon = icons[kind];
+          const label = REACTION_LABELS[kind].label;
           return (
-            <Link
-              key={kind}
-              href="/login"
-              className="flex items-center gap-1 hover:text-accent"
-              title={REACTION_LABELS[kind].label}
-            >
-              <Icon className="size-[16px]" strokeWidth={1.75} />
-              <span>{formatCount(countFor(kind))}</span>
-            </Link>
+            <HoverTooltip key={kind} label={label}>
+              <Link
+                href="/login"
+                className="flex items-center gap-1 rounded-full px-1 py-0.5 text-sm text-muted-foreground transition-colors hover:bg-accent/10 hover:text-accent"
+              >
+                <Icon className="size-[16px]" strokeWidth={1.75} />
+                <span>{formatCount(countFor(kind))}</span>
+              </Link>
+            </HoverTooltip>
           );
         })}
       </div>
@@ -80,43 +82,45 @@ export function PostReactions({
       {kinds.map((kind) => {
         const Icon = icons[kind];
         const isActive = active === kind;
+        const label = REACTION_LABELS[kind].label;
         return (
-          <button
-            key={kind}
-            type="button"
-            disabled={pending}
-            title={REACTION_LABELS[kind].label}
-            onClick={() => {
-              startTransition(async () => {
-                const prev = active;
-                const result = await toggleReaction(postId, kind);
-                if (!("success" in result) || !result.success) {
-                  toast("Impossible d'enregistrer la réaction.");
-                  return;
-                }
+          <HoverTooltip key={kind} label={label} disabled={pending}>
+            <button
+              type="button"
+              disabled={pending}
+              aria-label={label}
+              onClick={() => {
+                startTransition(async () => {
+                  const prev = active;
+                  const result = await toggleReaction(postId, kind);
+                  if (!("success" in result) || !result.success) {
+                    toast("Impossible d'enregistrer la réaction.");
+                    return;
+                  }
 
-                if (prev === kind) {
-                  bump(kind, -1);
-                  setActive(null);
-                } else {
-                  if (prev) bump(prev, -1);
-                  bump(kind, 1);
-                  setActive(kind);
-                }
-              });
-            }}
-            className={cn(
-              "flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-accent",
-              isActive && kind === "flag" && "text-destructive",
-              isActive && kind !== "flag" && "text-accent"
-            )}
-          >
-            <Icon
-              className={cn("size-[16px]", isActive && "fill-current/20")}
-              strokeWidth={1.75}
-            />
-            <span className="text-meta">{formatCount(countFor(kind))}</span>
-          </button>
+                  if (prev === kind) {
+                    bump(kind, -1);
+                    setActive(null);
+                  } else {
+                    if (prev) bump(prev, -1);
+                    bump(kind, 1);
+                    setActive(kind);
+                  }
+                });
+              }}
+              className={cn(
+                "flex items-center gap-1 rounded-full px-1 py-0.5 text-sm text-muted-foreground transition-colors hover:bg-accent/10 hover:text-accent",
+                isActive && kind === "flag" && "text-destructive",
+                isActive && kind !== "flag" && "text-accent"
+              )}
+            >
+              <Icon
+                className={cn("size-[16px]", isActive && "fill-current/20")}
+                strokeWidth={1.75}
+              />
+              <span className="text-meta">{formatCount(countFor(kind))}</span>
+            </button>
+          </HoverTooltip>
         );
       })}
     </div>

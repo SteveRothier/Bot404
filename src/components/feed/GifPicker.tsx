@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { ComposerPopoverPicker } from "@/components/feed/ComposerPopoverPicker";
+import { composerGifBadgeClass } from "@/components/feed/composer-toolbar-styles";
 
 const GifPickerPanel = dynamic(() => import("@/components/feed/GifPickerPanel"), {
   ssr: false,
@@ -31,11 +32,7 @@ export function GifPicker({ onSelect, disabled }: Props) {
       ariaLabel="GIF"
       panelClassName="bot404-gif-picker"
       disabled={disabled}
-      trigger={
-        <span className="flex size-[18px] items-center justify-center rounded border border-current text-[9px] font-bold leading-none tracking-tight">
-          GIF
-        </span>
-      }
+      trigger={<span className={composerGifBadgeClass}>GIF</span>}
       renderPanel={(close) => (
         <GifPickerPanel onSelect={(gif) => pick(gif, close)} />
       )}
