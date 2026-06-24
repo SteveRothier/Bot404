@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { FactionsHydratorLoader } from "@/components/layout/FactionsHydratorLoader";
 import { LeftSidebar } from "@/components/layout/LeftSidebar";
 import { RightSidebarLoader } from "@/components/layout/RightSidebarLoader";
 import { ClientStoresHydrator } from "@/components/providers/ClientStoresHydrator";
@@ -41,9 +40,6 @@ export async function MainLayoutShell({ children }: Props) {
       initialUnreadCount={initialUnreadCount}
     >
       <div className="min-h-screen bg-background">
-        <Suspense fallback={null}>
-          <FactionsHydratorLoader />
-        </Suspense>
         <div className="mx-auto flex max-w-[1280px] items-start gap-2 px-2 sm:gap-4 sm:px-3 lg:gap-6 lg:px-4">
           <LeftSidebar sidebarAuth={sidebarAuth} />
 

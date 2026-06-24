@@ -33,13 +33,8 @@ export async function loadAllNpcs(): Promise<Profile[]> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("profiles")
-    .select("*, faction:factions(name, slug)")
+    .select("*")
     .eq("is_npc", true);
 
   return (data as Profile[]) ?? [];
-}
-
-export function factionNameForNpc(npc: Profile): string | null {
-  const f = npc.faction as { name?: string; slug?: string } | null | undefined;
-  return f?.name ?? null;
 }

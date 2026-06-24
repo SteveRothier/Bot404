@@ -1,19 +1,16 @@
-import { processCommentFactionEffects } from "@/lib/factions/simulation";
-import {
-  buildNpcLorePromptBlock,
-  getNpcLoreContext,
-} from "@/lib/lore/lore-context";
+import { contentHasHuntKeywords } from "@/lib/narrative/hunt-keywords";
 import { isEmergentModeActive } from "@/lib/narrative/queries";
+import type { NarrativeSignal } from "@/lib/narrative/types";
 import {
   getWelcomeFocusHuman,
   welcomeAmbientPromptBlock,
 } from "@/lib/narrative/welcome-human";
 import { checkOllamaStatus } from "@/lib/ollama";
+import { pickNpcForSignal } from "@/lib/npc/cast";
 import { buildRichThreadSnippet } from "@/lib/npc/thread-context";
 import { buildNpcHistoryBlock, fetchRecentNpcPostContents } from "@/lib/npc/npc-history";
 import { ollamaChat } from "@/lib/npc/ollama";
 import { npcBase, npcExamplePostsBlock } from "@/lib/npc/prompt";
-import { pickRotatingNpc, factionNameForNpc } from "@/lib/npc/select-npc";
 import { validateNpcPostContent } from "@/lib/npc/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Personality, Profile } from "@/lib/supabase/types";
@@ -60,7 +57,7 @@ export async function generateNpcComment(): Promise<GenerateNpcCommentResult> {
   if (!ollama.online) {
     return {
       ok: false,
-      error: "Ollama est hors ligne. Lancez ollama serve puis réessayez.",
+      error: "Ollama est hors ligne. Lancez ollama serve et réessayez.",
     };
   }
 
@@ -85,31 +82,51 @@ export async function generateNpcComment(): Promise<GenerateNpcCommentResult> {
     return { ok: false, error: "Aucun NPC disponible pour commenter." };
   }
 
+  const castSignal: NarrativeSignal = {
+    id: 0,
+    kind: "human_post",
+    author_id: post.author_id,
+    post_id: post.id,
+    comment_id: null,
+    reaction_kind: null,
+    mentioned_username: null,
+    priority: 30,
+    status: "pending",
+    payload: { content: post.content },
+    result: {},
+    created_at: new Date().toISOString(),
+    handled_at: null,
+  };
+
   const npc =
-    (await pickRotatingNpc(new Set([post.author_id]))) ??
-    commenters[Math.floor(Math.random() * commenters.length)];
+    pickNpcForSignal(commenters, {
+      signal: castSignal,
+      humanContent: post.content,
+      excludeNpcIds: new Set([post.author_id]),
+      huntContent: contentHasHuntKeywords(post.content),
+    }) ?? commenters[Math.floor(Math.random() * commenters.length)];
 
   const p = (npc.personality ?? {}) as Personality;
-  const [loreBlock, historyBlock, threadBlock, recentPosts, welcomeFocus] =
+  const [historyBlock, threadBlock, recentPosts, welcomeFocus] =
     await Promise.all([
-    getNpcLoreContext().then(buildNpcLorePromptBlock),
-    buildNpcHistoryBlock(npc.id),
-    buildRichThreadSnippet(post.id),
-    fetchRecentNpcPostContents(npc.id),
-    getWelcomeFocusHuman(),
-  ]);
+      buildNpcHistoryBlock(npc.id),
+      buildRichThreadSnippet(post.id),
+      fetchRecentNpcPostContents(npc.id),
+      getWelcomeFocusHuman(),
+    ]);
 
   const welcomeBlock =
     welcomeFocus && Math.random() < 0.35
       ? welcomeAmbientPromptBlock(welcomeFocus.username)
       : "";
 
-  const system = `${npcBase(npc, factionNameForNpc(npc))}${npcExamplePostsBlock(npc)}${loreBlock}${historyBlock}${welcomeBlock}
+  const system = `${npcBase(npc)}${npcExamplePostsBlock(npc)}${historyBlock}${welcomeBlock}
 
 Fil de discussion :
 ${threadBlock}
 
-Réponds en commentaire (max 200 caractères), ton: ${p.personality ?? "sarcastique"}. Apporte un angle différent des commentaires existants. Français.`;
+Réponds en commentaire (max 200 caractères). Ton conversationnel et réactif — une phrase dans le fil, pas d'audit ni de ton policier.
+Ton: ${p.personality ?? "sarcastique"}. Apporte un angle différent des commentaires existants. Français.`;
   const user = `Post original: "${post.content}"\nÉcris une réponse courte et originale.`;
 
   const raw = await ollamaChat(system, user, 300, "comment");
@@ -145,8 +162,6 @@ Réponds en commentaire (max 200 caractères), ton: ${p.personality ?? "sarcasti
     .from("profiles")
     .update({ popularity_score: (npc.popularity_score ?? 0) + 1 })
     .eq("id", npc.id);
-
-  await processCommentFactionEffects(supabase, post.id, npc.id, content);
 
   return {
     ok: true,

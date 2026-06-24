@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { ToastHost } from "@/components/ui/toast-host";
 import type { OllamaStatus } from "@/lib/ollama";
-import {
-  startFactionsRealtime,
-  stopFactionsRealtime,
-} from "@/stores/factions-store";
 import {
   startNotificationsRealtime,
   stopNotificationsRealtime,
@@ -22,46 +17,18 @@ type Props = {
   children: React.ReactNode;
 };
 
-function useFactionsRealtimeEnabled() {
-  const pathname = usePathname();
-  const [isXl, setIsXl] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia("(min-width: 1280px)");
-    const update = () => setIsXl(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-
-  return isXl || pathname.startsWith("/factions");
-}
-
 export function ClientStoresHydrator({
   ollama,
   userId,
   initialUnreadCount,
   children,
 }: Props) {
-  const factionsRealtimeEnabled = useFactionsRealtimeEnabled();
-
   useEffect(() => {
     useNotificationsStore.getState().hydrate(initialUnreadCount);
     if (ollama.model) {
       useOllamaStore.setState({ model: ollama.model });
     }
   }, [ollama.model, initialUnreadCount]);
-
-
-  useEffect(() => {
-    if (factionsRealtimeEnabled) {
-      startFactionsRealtime();
-    } else {
-      stopFactionsRealtime();
-    }
-
-    return () => stopFactionsRealtime();
-  }, [factionsRealtimeEnabled]);
 
   useEffect(() => {
     if (!userId) {

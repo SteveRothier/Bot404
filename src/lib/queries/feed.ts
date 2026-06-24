@@ -5,7 +5,6 @@ import {
   getSuggestedNpcs,
 } from "@/lib/queries/follows";
 import { resolvePostInteractions } from "@/lib/queries/feed-context";
-import { countActiveWorldEvents } from "@/lib/queries/world-events";
 import { computeNetworkState } from "@/lib/network-state";
 import { getRequestAuth, type RequestAuth } from "@/lib/queries/auth";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -47,7 +46,7 @@ export async function getPostById(id: number): Promise<PostWithAuthor | null> {
 
   const { data: post, error } = await supabase
     .from("posts")
-    .select("*, author:profiles!author_id(*, faction:factions(*))")
+    .select("*, author:profiles!author_id(*)")
     .eq("id", id)
     .maybeSingle();
 
@@ -141,7 +140,6 @@ export async function getNetworkStats(): Promise<NetworkStats> {
     { count: humanCount },
     { count: postsCount },
     { data: flagsSum },
-    activeEventsCount,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -156,7 +154,6 @@ export async function getNetworkStats(): Promise<NetworkStats> {
       .select("*", { count: "exact", head: true })
       .gte("created_at", since24h),
     supabase.rpc("total_flags_last_24h"),
-    countActiveWorldEvents(),
   ]);
 
   const total = (npcCount ?? 0) + (humanCount ?? 0);
@@ -167,7 +164,6 @@ export async function getNetworkStats(): Promise<NetworkStats> {
   const networkState = computeNetworkState({
     humanPercent: humanPct,
     flags24h: totalFlags24h,
-    activeEvents: activeEventsCount,
   });
 
   return {
@@ -177,6 +173,5 @@ export async function getNetworkStats(): Promise<NetworkStats> {
     humanPercent,
     networkState,
     totalFlags24h,
-    activeEventsCount,
   };
 }

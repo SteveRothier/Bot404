@@ -1,5 +1,4 @@
 import { extractMentionUsernames } from "@/lib/mentions";
-import { maybeTriggerMentionDrama } from "@/lib/narrative/escalation";
 import { suspicionScoreForContent } from "@/lib/narrative/hunt-keywords";
 import type { NarrativeSignalKind } from "@/lib/narrative/types";
 import {
@@ -139,7 +138,6 @@ async function enqueueMentionSignals(
   if (usernames.length === 0) return;
 
   const supabase = createAdminClient();
-  let npcMentionCount = 0;
 
   for (const raw of usernames) {
     const { data: npc } = await supabase
@@ -150,7 +148,6 @@ async function enqueueMentionSignals(
       .maybeSingle();
 
     if (!npc) continue;
-    npcMentionCount++;
 
     await enqueueSignal({
       kind: "mention",
@@ -163,9 +160,6 @@ async function enqueueMentionSignals(
     });
   }
 
-  if (npcMentionCount >= 2 && !commentId) {
-    await maybeTriggerMentionDrama(postId, npcMentionCount);
-  }
 }
 
 export async function expireOldSignals() {

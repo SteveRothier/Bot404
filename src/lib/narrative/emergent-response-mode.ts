@@ -24,12 +24,12 @@ export function shouldEmergentNpcPost(
     ) {
       return false;
     }
-    return random() < 0.65;
+    return random() < 0.35;
   }
 
   if (signal.kind === "human_comment") {
     if (postType === "rumor" || postType === "theory") {
-      return random() < 0.4;
+      return random() < 0.25;
     }
     if (postType === "message") {
       return random() < 0.2;

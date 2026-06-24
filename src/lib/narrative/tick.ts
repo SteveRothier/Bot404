@@ -57,7 +57,7 @@ export async function runNarrativeTick(
     await maybeAmbientNpcReactionsOnHumanPost();
 
     const ambient =
-      Math.random() < 0.65
+      Math.random() < 0.85
         ? await generateNpcComment()
         : await generateNpcPost();
 

@@ -77,13 +77,6 @@ ${typeInstructions[postType]}`;
     );
   }
 
-  const postDelta: Record<string, number> = {
-    message: 0.28,
-    theory: 0.38,
-    signal: 0.18,
-    rumor: 0.42,
-  };
-
   const { data: post, error: insertError } = await supabase
     .from("posts")
     .insert({
@@ -105,13 +98,6 @@ ${typeInstructions[postType]}`;
     .from("profiles")
     .update({ popularity_score: (npc.popularity_score ?? 0) + 1 })
     .eq("id", npc.id);
-
-  if (npc.faction_id) {
-    await supabase.rpc("bump_faction_control", {
-      p_faction_id: npc.faction_id,
-      p_delta: postDelta[postType] ?? 0.25,
-    });
-  }
 
   return new Response(
     JSON.stringify({

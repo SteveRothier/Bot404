@@ -4,7 +4,7 @@ import {
   contentHasHuntKeywords,
   suspicionScoreForContent,
 } from "@/lib/narrative/hunt-keywords";
-import { pickPostTypeForFaction } from "@/lib/factions/behavior";
+import { pickRandomNpcPostType } from "@/lib/post-types";
 
 describe("hunt-keywords", () => {
   it("détecte les mots de chasse", () => {
@@ -17,12 +17,12 @@ describe("hunt-keywords", () => {
   });
 });
 
-describe("pickPostTypeForFaction", () => {
-  it("retourne un type valide par faction", () => {
+describe("pickRandomNpcPostType", () => {
+  it("retourne un type valide", () => {
     const types = new Set<string>();
     for (let i = 0; i < 20; i++) {
-      types.add(pickPostTypeForFaction("purbots", () => i / 20));
+      types.add(pickRandomNpcPostType());
     }
-    assert.ok(types.has("theory") || types.has("signal"));
+    assert.ok(types.has("message") || types.has("theory"));
   });
 });

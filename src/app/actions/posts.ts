@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { revalidateDataCaches } from "@/lib/queries/cache-tags";
-import { processPostFactionEffects } from "@/lib/factions/simulation";
 import {
   enqueueHumanCommentSignal,
   enqueueHumanPostSignal,
@@ -140,19 +139,6 @@ export async function createPost(formData: FormData) {
   const supabase = await createClient();
   const { user } = auth;
 
-  const { data: authorProfile } = await supabase
-    .from("profiles")
-    .select("faction_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!authorProfile?.faction_id) {
-    return {
-      error:
-        "Choisissez une faction dans votre profil pour publier sur le réseau.",
-    };
-  }
-
   let media_url: string | null = null;
   let media_type: PostMediaType | null = null;
 
@@ -224,7 +210,6 @@ export async function createPost(formData: FormData) {
   }
 
   if (post?.id) {
-    await processPostFactionEffects(createAdminClient(), post.id);
     if (content) {
       await createMentionNotifications(content, user.id, post.id);
     }

@@ -13,7 +13,7 @@ export async function getProfileByUsername(
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("*, faction:factions(*)")
+    .select("*")
     .ilike("username", normalized)
     .maybeSingle();
 

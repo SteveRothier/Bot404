@@ -93,10 +93,10 @@ async function checkSupabaseNarrative() {
     const emergent = arcs?.find((a) => a.slug === "reseau-reactif");
 
     checks.push({
-      name: "Acte 1",
-      ok: scripted?.status === "completed",
+      name: "Acte 1 (scripté)",
+      ok: scripted?.status !== "active",
       detail: scripted
-        ? `status=${scripted.status}`
+        ? `status=${scripted.status} (doit être paused ou completed)`
         : "arc introuvable",
     });
 
@@ -138,32 +138,6 @@ async function checkSupabaseNarrative() {
       detail: pendingDetail,
     });
 
-    const activeScripted = arcs?.find(
-      (a) => a.mode === "scripted" && a.status === "active"
-    );
-    const failedArcId = activeScripted?.id ?? scripted?.id;
-
-    if (failedArcId) {
-      const { data: failedBeats } = await supabase
-        .from("narrative_beats")
-        .select("sort_order, kind, status")
-        .eq("arc_id", failedArcId)
-        .eq("status", "failed")
-        .order("sort_order");
-
-      const failedList = (failedBeats ?? [])
-        .map((b) => `#${b.sort_order} ${b.kind}`)
-        .join(", ");
-
-      checks.push({
-        name: "Beats failed",
-        ok: (failedBeats?.length ?? 0) === 0,
-        detail:
-          failedBeats?.length
-            ? `${failedList} — npm run npc:beat:retry -- <sort_order>`
-            : "aucun",
-      });
-    }
   }
 }
 

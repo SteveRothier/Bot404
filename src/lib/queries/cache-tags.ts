@@ -4,8 +4,6 @@ import { revalidateTag } from "next/cache";
 export const CACHE_TAGS = {
   networkStats: "network-stats",
   hashtags: "hashtags",
-  factions: "factions",
-  worldEvents: "world-events",
   shell: "shell-data",
 } as const;
 

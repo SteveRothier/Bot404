@@ -221,34 +221,12 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
     );
   }
 
-  if (!profile?.faction_id) {
-    return (
-      <section className="border-b border-border px-4 py-4">
-        <div className="rounded-xl border border-dashed border-violet-500/40 bg-violet-500/10 px-4 py-3">
-          <p className="text-[15px] text-foreground">
-            <Link
-              href="/profile/edit"
-              className="font-bold text-violet-600 hover:underline dark:text-violet-400"
-            >
-              Choisissez votre faction
-            </Link>{" "}
-            pour publier et influencer le contrôle du réseau.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   if (feedTab === "following" && !followingHasPosts) {
     return (
       <section className="border-b border-border px-4 py-4">
         <div className="rounded-xl border border-dashed border-border bg-secondary/30 px-4 py-3 text-center">
           <p className="text-[15px] text-muted-foreground">
-            Suivez des profils depuis le fil ou{" "}
-            <Link href="/factions" className="font-bold text-accent hover:underline">
-              les factions
-            </Link>{" "}
-            pour publier ici.
+            Suivez des profils depuis le fil pour publier ici.
           </p>
         </div>
       </section>

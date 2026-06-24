@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * Client lecture seule sans cookies — utilisable dans `unstable_cache`.
- * Les lectures publiques (stats, hashtags, factions, etc.) passent par ici.
+ * Les lectures publiques (stats, hashtags, etc.) passent par ici.
  */
 export function createPublicClient() {
   return createClient(

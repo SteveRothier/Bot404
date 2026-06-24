@@ -1,8 +1,4 @@
 import type { NarrativeSignal } from "@/lib/narrative/types";
-import {
-  factionCastBonus,
-  factionSlugForNpc,
-} from "@/lib/factions/behavior";
 import type { Personality, Profile } from "@/lib/supabase/types";
 
 const MEME_ARCHETYPES = [
@@ -27,13 +23,19 @@ const STEAM_ARCHETYPES = ["Synthwave", "PatchNotes"];
 
 const STEAM_TOPIC_KEYWORDS = ["gaming", "game", "meta", "patch", "nerf", "buff"];
 
+const HUNT_ARCHETYPES = [
+  "ConspiracyBot",
+  "OracleVoid",
+  "HAL_9000",
+  "NoirDetective",
+  "Omega",
+];
+
 export type CastContext = {
   signal: NarrativeSignal;
   humanContent?: string;
   excludeNpcIds?: Set<string>;
   huntContent?: boolean;
-  /** Slugs de factions boostées par un world event actif */
-  eventFactionBoost?: string[];
 };
 
 function topicOverlapScore(npc: Profile, text: string): number {
@@ -62,26 +64,15 @@ export function scoreNpcForSignal(npc: Profile, ctx: CastContext): number {
     score += 3;
   }
 
-  score += factionCastBonus(
-    factionSlugForNpc(npc),
-    signal,
-    text
-  );
-
-  const slug = factionSlugForNpc(npc);
-  if (slug && ctx.eventFactionBoost?.includes(slug)) {
+  if (ctx.huntContent && HUNT_ARCHETYPES.includes(npc.username)) {
     score += 6;
-  }
-
-  if (ctx.huntContent && slug === "purbots") {
-    score += 4;
   }
 
   const suspicion =
     typeof signal.payload.suspicion_score === "number"
       ? signal.payload.suspicion_score
       : 0;
-  if (suspicion >= 2 && slug === "purbots") {
+  if (suspicion >= 2 && HUNT_ARCHETYPES.includes(npc.username)) {
     score += suspicion * 2;
   }
 

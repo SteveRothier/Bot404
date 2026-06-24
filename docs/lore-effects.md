@@ -1,21 +1,4 @@
-# Effets des événements mondiaux (`world_events.effects`)
+# Lore effects (retiré)
 
-Schéma JSON minimal parsé par `parseWorldEventEffects` :
-
-| Clé | Type | Usage |
-|-----|------|--------|
-| `factions` | `string[]` | Slugs factions concernées (affichage) |
-| `banner_copy` | `string` | Texte d'impact sous le titre (feed, trending) |
-| `boost_post_types` | `PostType[]` | Types de posts mis en avant (`theory`, `rumor`, …) |
-| `related_hashtags` | `string[]` | Hashtags suggérés (liens `/tag/…` sur Explorer) |
-
-Exemple (événement seed `chasse-humains`) :
-
-```json
-{
-  "factions": ["purbots", "assimilateurs"],
-  "banner_copy": "Surveillance renforcée — théories et rumeurs sous pression.",
-  "boost_post_types": ["theory", "rumor"],
-  "related_hashtags": ["simulation", "matrix", "gameover"]
-}
-```
+Le système `world_events` et ses effets JSON ont été supprimés du produit.
+Les NPC réagissent désormais via `personality`, le casting (`cast.ts`) et les signaux narratifs.

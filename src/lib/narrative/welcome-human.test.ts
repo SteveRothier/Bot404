@@ -12,36 +12,25 @@ import {
 import type { NarrativeSignal } from "@/lib/narrative/types";
 import type { Profile } from "@/lib/supabase/types";
 
-function npc(id: string, factionSlug: string | null): Profile {
+function npc(id: string, username: string): Profile {
   return {
     id,
-    username: `npc_${id}`,
+    username,
     avatar_url: null,
     bio: null,
     is_npc: true,
     personality: null,
     popularity_score: 0,
-    faction_id: factionSlug,
     trust_score: 0,
     influence_score: 0,
     created_at: new Date().toISOString(),
-    faction: factionSlug
-      ? {
-          id: factionSlug,
-          slug: factionSlug,
-          name: factionSlug,
-          color: "#fff",
-          control_percent: 0,
-          created_at: new Date().toISOString(),
-        }
-      : null,
   };
 }
 
 describe("buildWelcomePostPrompt", () => {
   it("mentionne @username dans system et user", () => {
     const { system, user } = buildWelcomePostPrompt(
-      npc("1", "humanistes"),
+      npc("1", "GrandmaBot"),
       "Alice",
       "welcome"
     );
@@ -51,7 +40,7 @@ describe("buildWelcomePostPrompt", () => {
 
   it("adapte le ton selon le beat", () => {
     const suspicion = buildWelcomePostPrompt(
-      npc("2", "purbots"),
+      npc("2", "ConspiracyBot"),
       "Bob",
       "suspicion"
     );
@@ -77,23 +66,23 @@ describe("usernameFromWelcomeSignal", () => {
 });
 
 describe("pickNpcForWelcomeBeat", () => {
-  it("favorise la faction cible", () => {
-    const humaniste = npc("h", "humanistes");
-    const purbot = npc("p", "purbots");
+  it("favorise l'archetype du beat", () => {
+    const welcomeNpc = npc("h", "GrandmaBot");
+    const other = npc("p", "PatchNotes");
     const picked = pickNpcForWelcomeBeat(
-      [purbot, humaniste],
+      [other, welcomeNpc],
       "welcome",
       () => 0.01
     );
-    assert.equal(picked?.id, humaniste.id);
+    assert.equal(picked?.id, welcomeNpc.id);
   });
 });
 
 describe("scoreNpcForWelcomeBeat", () => {
-  it("score PurBots sur suspicion", () => {
+  it("score plus élevé pour l'archetype suspicion", () => {
     assert.ok(
-      scoreNpcForWelcomeBeat(npc("p", "purbots"), "suspicion") >
-        scoreNpcForWelcomeBeat(npc("h", "humanistes"), "suspicion")
+      scoreNpcForWelcomeBeat(npc("p", "ConspiracyBot"), "suspicion") >
+        scoreNpcForWelcomeBeat(npc("h", "GrandmaBot"), "suspicion")
     );
   });
 });

@@ -7,26 +7,6 @@ export type Personality = {
   example_posts?: string[];
 };
 
-export type Faction = {
-  id: string;
-  slug: string;
-  name: string;
-  color: string;
-  description: string | null;
-  control_percent: number;
-};
-
-export type FactionControlSnapshotValue = {
-  slug: string;
-  percent: number;
-};
-
-export type FactionControlSnapshot = {
-  id: number;
-  recorded_at: string;
-  values: FactionControlSnapshotValue[];
-};
-
 export type Profile = {
   id: string;
   username: string;
@@ -35,12 +15,10 @@ export type Profile = {
   is_npc: boolean;
   personality: Personality | null;
   popularity_score: number;
-  faction_id: string | null;
   trust_score: number;
   influence_score: number;
   welcome_focus_until?: string | null;
   created_at: string;
-  faction?: Faction | null;
 };
 
 export type PostType = "message" | "theory" | "signal" | "rumor";
@@ -102,17 +80,6 @@ export type CommentWithAuthor = Comment & {
   isRecentNarrativeResponse?: boolean;
 };
 
-export type WorldEvent = {
-  id: number;
-  slug: string;
-  title: string;
-  description: string;
-  starts_at: string;
-  ends_at: string | null;
-  effects: Record<string, unknown>;
-  created_at: string;
-};
-
 export type TrendingHashtag = {
   tag: string;
   count: number;
@@ -152,7 +119,6 @@ export type NetworkStats = {
   humanPercent: string;
   networkState: NetworkState;
   totalFlags24h: number;
-  activeEventsCount: number;
 };
 
 export type DashboardStats = {
@@ -161,14 +127,12 @@ export type DashboardStats = {
   postsLast24h: number;
   signalsLast24h: number;
   rumorsLast24h: number;
-  topFaction: Faction | null;
 };
 
 export type NotificationKind =
   | "mention"
   | "reaction"
-  | "follow"
-  | "world_event";
+  | "follow";
 
 export type Notification = {
   id: string;

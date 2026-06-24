@@ -78,6 +78,6 @@ export type NpcCommentBeatPayload = {
 
 export type NarrativeTickResult = {
   handled: boolean;
-  mode: "scripted_beat" | "emergent" | "ambient" | "none";
+  mode: "emergent" | "ambient" | "none";
   detail?: Record<string, unknown>;
 };

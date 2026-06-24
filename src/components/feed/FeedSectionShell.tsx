@@ -10,20 +10,17 @@ import {
 } from "@/components/feed/FeedFollowingContext";
 import { PostComposerForm } from "@/components/feed/PostComposerForm";
 import { FeedTabs, type FeedTab } from "@/components/feed/FeedTabs";
-import { ActiveWorldEventStrip } from "@/components/lore/ActiveWorldEventStrip";
-import { FactionPickBanner } from "@/components/factions/FactionPickBanner";
 import {
   feedTabToSearchParam,
   parseFeedTabParam,
 } from "@/lib/feed/feed-tab-params";
-import type { Profile, WorldEvent } from "@/lib/supabase/types";
+import type { Profile } from "@/lib/supabase/types";
 
 export const FeedTabContext = createContext<FeedTab>("for-you");
 
 type Props = {
   user: { id: string; email?: string } | null;
   profile: Profile | null;
-  activeWorldEvent?: WorldEvent | null;
   initialTab?: FeedTab;
   children: React.ReactNode;
 };
@@ -31,7 +28,6 @@ type Props = {
 export function FeedSectionShell({
   user,
   profile,
-  activeWorldEvent = null,
   initialTab = "for-you",
   children,
 }: Props) {
@@ -65,8 +61,6 @@ export function FeedSectionShell({
         <FeedTabContext.Provider value={tab}>
           <div className="w-full min-w-0">
             <FeedTabs value={tab} onChange={handleTabChange} />
-            {activeWorldEvent && <ActiveWorldEventStrip event={activeWorldEvent} />}
-            {user && profile && !profile.faction_id && <FactionPickBanner />}
             <PostComposerForm user={user} profile={profile} feedTab={tab} />
             <div
               id={`feed-panel-${tab}`}

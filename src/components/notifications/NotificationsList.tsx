@@ -38,11 +38,6 @@ function notificationMessage(
         text: `${actor} vous suit`,
         href: n.actor ? `/profile/${n.actor.username}` : "/",
       };
-    case "world_event":
-      return {
-        text: "Un événement mondial est actif",
-        href: "/trending",
-      };
     default:
       return { text: "Nouvelle notification", href: "/" };
   }

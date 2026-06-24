@@ -3,7 +3,6 @@
 import { runNarrativeTick } from "@/lib/narrative/tick";
 import { getPendingSignals } from "@/lib/narrative/signals";
 import { getNarrativeStateForUi } from "@/lib/narrative/queries";
-import { getActiveWorldEvents } from "@/lib/queries/world-events";
 import { isNarrativeAdminEnabled } from "@/lib/narrative/admin-config";
 
 export async function forceNarrativeTickAction() {
@@ -23,11 +22,10 @@ export async function forceNarrativeTickAction() {
 export async function getNarrativeOpsSnapshot() {
   if (!isNarrativeAdminEnabled()) return null;
 
-  const [state, signals, events] = await Promise.all([
+  const [state, signals] = await Promise.all([
     getNarrativeStateForUi(),
     getPendingSignals(8),
-    getActiveWorldEvents(),
   ]);
 
-  return { state, signals, events };
+  return { state, signals };
 }

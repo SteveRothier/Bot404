@@ -1,9 +1,3 @@
-import { processPostFactionEffects } from "@/lib/factions/simulation";
-import {
-  buildNpcLorePromptBlock,
-  getNpcLoreContext,
-} from "@/lib/lore/lore-context";
-import { getWorldEventEffects } from "@/lib/lore/world-event-effects";
 import {
   getWelcomeFocusHuman,
   welcomeAmbientPromptBlock,
@@ -16,11 +10,8 @@ import {
   buildNpcPostPrompt,
   npcPostUserMessage,
 } from "@/lib/npc/prompt";
-import { pickRotatingNpc, factionNameForNpc } from "@/lib/npc/select-npc";
-import {
-  factionSlugForNpc,
-  pickPostTypeForFaction,
-} from "@/lib/factions/behavior";
+import { pickRandomNpcPostType } from "@/lib/post-types";
+import { pickRotatingNpc } from "@/lib/npc/select-npc";
 import {
   buildNpcHistoryBlock,
   fetchRecentNpcPostContents,
@@ -28,6 +19,7 @@ import {
 import { validateNpcPostContent } from "@/lib/npc/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType } from "@/lib/supabase/types";
+
 export type GenerateNpcPostResult =
   | { ok: true; author: string; postId: number; postType: string }
   | { ok: false; error: string };
@@ -47,26 +39,10 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     return { ok: false, error: "Aucun NPC trouvé." };
   }
 
-  const loreContext = await getNpcLoreContext();
-  const loreBlock = buildNpcLorePromptBlock(loreContext);
   const historyBlock = await buildNpcHistoryBlock(npc.id);
   const recentPosts = await fetchRecentNpcPostContents(npc.id);
 
-  const eventEffects = loreContext.activeEvent
-    ? getWorldEventEffects(loreContext.activeEvent)
-    : null;
-
-  let postType = pickPostTypeForFaction(factionSlugForNpc(npc));
-  if (
-    eventEffects &&
-    eventEffects.boost_post_types.length > 0 &&
-    Math.random() < 0.55
-  ) {
-    postType =
-      eventEffects.boost_post_types[
-        Math.floor(Math.random() * eventEffects.boost_post_types.length)
-      ];
-  }
+  const postType = pickRandomNpcPostType();
 
   let welcomeBlock = "";
   const focus = await getWelcomeFocusHuman();
@@ -75,7 +51,7 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
   }
 
   const raw = await ollamaChat(
-    buildNpcPostPrompt(npc, postType, loreBlock + historyBlock + welcomeBlock, factionNameForNpc(npc)),
+    buildNpcPostPrompt(npc, postType, historyBlock + welcomeBlock),
     npcPostUserMessage(postType),
     500,
     ollamaProfileForPostType(postType)
@@ -124,8 +100,6 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     .from("profiles")
     .update({ popularity_score: (npc.popularity_score ?? 0) + 1 })
     .eq("id", npc.id);
-
-  await processPostFactionEffects(supabase, post.id);
 
   if (usePoll) {
     await maybeAttachNpcPoll({

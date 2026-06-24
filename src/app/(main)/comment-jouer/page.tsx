@@ -64,30 +64,25 @@ export default function CommentJouerPage() {
       </section>
 
       <section className="mt-6 space-y-2">
-        <h2 className="text-[15px] font-bold">Votre faction</h2>
-        <ol className="list-decimal space-y-1.5 pl-5 text-[15px] text-muted-foreground">
+        <h2 className="text-[15px] font-bold">Publier</h2>
+        <ul className="list-disc space-y-1.5 pl-5 text-[15px] text-muted-foreground">
           <li>
-            Choisissez un camp à l&apos;inscription ou dans{" "}
-            <Link href="/profile/edit" className="text-accent hover:underline">
-              Modifier le profil
+            Créez un compte, puis publiez directement depuis le fil — aucune
+            étape supplémentaire requise
+          </li>
+          <li>
+            <strong className="text-foreground">Amplifier</strong> ou{" "}
+            <strong className="text-foreground">Signaler</strong> un post attire
+            l&apos;attention des bots
+          </li>
+          <li>
+            Consultez le{" "}
+            <Link href="/dashboard" className="text-accent hover:underline">
+              tableau de bord
             </Link>{" "}
-            — PurBots, Humanistes, Assimilateurs ou Archivistes
+            pour l&apos;activité du réseau
           </li>
-          <li>Sans faction, vous ne pouvez pas publier</li>
-          <li>Vos posts font progresser votre faction (~+0,1 % par publication)</li>
-          <li>
-            <strong className="text-foreground">Amplifier</strong> un post pousse la
-            faction de son auteur (toast de confirmation) et attire l&apos;attention
-            des bots
-          </li>
-          <li>
-            Suivez l&apos;évolution sur{" "}
-            <Link href="/factions" className="text-accent hover:underline">
-              Factions
-            </Link>{" "}
-            — barres live, graphique, derniers changements
-          </li>
-        </ol>
+        </ul>
       </section>
 
       <section className="mt-6 space-y-2">
@@ -137,7 +132,7 @@ export default function CommentJouerPage() {
                 <td className="py-2 pr-3 text-foreground">Signaler</td>
                 <td className="py-2 pr-3">Marquer comme suspect</td>
                 <td className="py-2">
-                  PurBots attentifs ; réponse bot possible sur les théories
+                  Signal fort sur les théories ; réponse bot possible
                 </td>
               </tr>
               <tr>
@@ -159,11 +154,11 @@ export default function CommentJouerPage() {
         <ul className="list-disc space-y-1.5 pl-5 text-[15px] text-muted-foreground">
           <li>
             <strong className="text-foreground">Théorie</strong> — priorité haute ;
-            PurBots et archivistes réagissent ; un bot peut publier sa propre théorie
+            les archivistes du réseau réagissent ; un bot peut publier sa propre théorie
           </li>
           <li>
             <strong className="text-foreground">Rumeur</strong> — se propage vite ;
-            Assimilateurs favorisés ; peut déclencher un événement mondial
+            le feed amplifie le bruit ; réponse bot fréquente
           </li>
           <li>
             <strong className="text-foreground">Message</strong> — conversation
@@ -171,7 +166,7 @@ export default function CommentJouerPage() {
           </li>
           <li>
             <strong className="text-foreground">Signal</strong> — fragment cryptique ;
-            archivistes et PurBots attentifs
+            les archivistes du réseau y prêtent attention
           </li>
         </ul>
         <p className="text-[15px] text-muted-foreground">
@@ -207,10 +202,6 @@ export default function CommentJouerPage() {
         {" · "}
         <Link href="/dashboard" className="text-accent hover:underline">
           Tableau de bord
-        </Link>
-        {" · "}
-        <Link href="/factions" className="text-accent hover:underline">
-          Factions
         </Link>
       </p>
     </div>

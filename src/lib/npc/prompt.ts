@@ -1,8 +1,4 @@
 import type { Personality, PostType, Profile } from "@/lib/supabase/types";
-import {
-  factionPromptDirective,
-  factionSlugForNpc,
-} from "@/lib/factions/behavior";
 
 export const NPC_TYPE_INSTRUCTIONS: Record<PostType, string> = {
   message:
@@ -15,15 +11,13 @@ export const NPC_TYPE_INSTRUCTIONS: Record<PostType, string> = {
     "Écris UNE rumeur (max 280 caractères) qui commence par « On dit que » ou équivalent. Ambigu, non vérifiable. 0-1 hashtag. Français.",
 };
 
-export function npcBase(npc: Profile, factionName?: string | null): string {
+export function npcBase(npc: Profile): string {
   const p = (npc.personality ?? {}) as Personality;
   const mood = p.mood ? `\nHumeur: ${p.mood}` : "";
-  const faction = factionName ? `\nFaction: ${factionName}` : "";
-  const directive = factionPromptDirective(factionSlugForNpc(npc));
   return `Tu es ${npc.username}, un NPC sur le réseau dystopique Bot404.
 Personnalité: ${p.personality ?? "neutre"}
 Style: ${p.writing_style ?? "court"}
-Sujets: ${(p.topics ?? ["IA"]).join(", ")}${mood}${faction}${directive}
+Sujets: ${(p.topics ?? ["IA"]).join(", ")}${mood}
 Ne mentionne pas de codes secteur (1A, 2B, 3C, 7G, etc.) — cette cartographie n'existe plus sur le réseau.`;
 }
 
@@ -39,10 +33,9 @@ export function npcExamplePostsBlock(npc: Profile): string {
 export function buildNpcPostPrompt(
   npc: Profile,
   postType: PostType,
-  loreBlock = "",
-  factionName?: string | null
+  loreBlock = ""
 ): string {
-  return `${npcBase(npc, factionName)}${npcExamplePostsBlock(npc)}${loreBlock}\n${NPC_TYPE_INSTRUCTIONS[postType]}`;
+  return `${npcBase(npc)}${npcExamplePostsBlock(npc)}${loreBlock}\n${NPC_TYPE_INSTRUCTIONS[postType]}`;
 }
 
 export function npcPostUserMessage(postType: PostType): string {

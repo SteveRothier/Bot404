@@ -8,7 +8,7 @@ import type {
 } from "@/lib/supabase/types";
 
 export const POST_WITH_AUTHOR =
-  "*, author:profiles!author_id(*, faction:factions(*))";
+  "*, author:profiles!author_id(*)";
 
 export const POST_WITH_AUTHOR_BASIC =
   "*, author:profiles!author_id(*)";

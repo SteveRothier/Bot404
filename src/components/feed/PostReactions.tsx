@@ -104,16 +104,6 @@ export function PostReactions({
                   }
 
                   markFeedLiveRefresh();
-
-                  if (
-                    result.factionFeedback &&
-                    kind === "amplify" &&
-                    prevActive !== kind
-                  ) {
-                    const { factionName, delta } = result.factionFeedback;
-                    const sign = delta > 0 ? "+" : "";
-                    toast(`${factionName} ${sign}${delta.toFixed(1)} %`);
-                  }
                 });
               }}
               className={cn(

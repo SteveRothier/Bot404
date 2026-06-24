@@ -100,14 +100,6 @@ export default async function ProfilePage({ params }: Props) {
           <p className="text-[15px] text-muted-foreground">
             @{profile.username.toLowerCase()}
           </p>
-          {profile.faction && (
-            <p
-              className="mt-1 text-meta font-medium"
-              style={{ color: profile.faction.color }}
-            >
-              {profile.faction.name}
-            </p>
-          )}
           {!profile.is_npc && (
             <p className="mt-2 text-meta text-muted-foreground">
               Confiance {profile.trust_score ?? 50} · Influence{" "}

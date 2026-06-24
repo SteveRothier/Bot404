@@ -9,7 +9,6 @@ export async function RightSidebarLoader() {
       hashtags={shell.hashtags}
       stats={shell.stats}
       npcSchedule={shell.npcSchedule}
-      loreAlerts={shell.loreAlerts}
     />
   );
 }

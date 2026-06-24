@@ -11,8 +11,6 @@ import {
   authInputClassName,
 } from "@/components/auth/AuthShell";
 import { cn } from "@/lib/utils";
-import { FactionPicker } from "@/components/factions/FactionPicker";
-import type { Faction } from "@/lib/supabase/types";
 
 type AuthMode = "login" | "signup";
 
@@ -21,9 +19,6 @@ type Props = {
   email: string;
   password: string;
   username: string;
-  factions: Faction[];
-  factionId: string | null;
-  onFactionChange: (factionId: string) => void;
   message: string | null;
   messageIsError: boolean;
   loading: boolean;
@@ -58,9 +53,6 @@ export function AuthCard({
   email,
   password,
   username,
-  factions,
-  factionId,
-  onFactionChange,
   message,
   messageIsError,
   loading,
@@ -110,19 +102,6 @@ export function AuthCard({
               onChange={(e) => onUsernameChange(e.target.value)}
               maxLength={30}
               className={authInputClassName}
-            />
-          </div>
-        )}
-
-        {mode === "signup" && factions.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">Votre faction</p>
-            <FactionPicker
-              factions={factions}
-              value={factionId}
-              onChange={onFactionChange}
-              disabled={loading}
-              required
             />
           </div>
         )}

@@ -1,20 +1,14 @@
 import {
-  processCommentFactionEffects,
-  processPostFactionEffects,
-} from "@/lib/factions/simulation";
-import {
   buildEmergentPostPrompt,
   buildEmergentPrompt,
 } from "@/lib/narrative/build-prompt";
 import { shouldEmergentNpcPost } from "@/lib/narrative/emergent-response-mode";
-import { getEmergentArcSynopsis } from "@/lib/narrative/execute-beat";
+import { getEmergentArcSynopsis } from "@/lib/narrative/queries";
 import { isEmergentModeActive } from "@/lib/narrative/queries";
+import { reactionActionLabel } from "@/lib/narrative/prompt-labels";
 import type { NarrativeSignal } from "@/lib/narrative/types";
 import { processHumanJoinedSignal } from "@/lib/narrative/welcome-human";
 import { pickNpcForSignal } from "@/lib/npc/cast";
-import { factionSlugForNpc, reactionActionLabel } from "@/lib/factions/behavior";
-import { getWorldEventEffects } from "@/lib/lore/world-event-effects";
-import { getActiveWorldEvents } from "@/lib/queries/world-events";
 import { contentHasHuntKeywords } from "@/lib/narrative/hunt-keywords";
 import { recordSignalFailure } from "@/lib/narrative/signals";
 import { maybeNpcVoteOnPoll } from "@/lib/npc/poll-vote";
@@ -151,22 +145,10 @@ async function loadSignalContext(signal: NarrativeSignal) {
   };
 }
 
-async function activeEventFactionSlugs(): Promise<string[]> {
-  const events = await getActiveWorldEvents();
-  const slugs = new Set<string>();
-  for (const event of events) {
-    for (const slug of getWorldEventEffects(event).factions) {
-      slugs.add(slug);
-    }
-  }
-  return [...slugs];
-}
-
 async function pickResponderNpc(
   signal: NarrativeSignal,
   targetPostId: number,
-  humanContent: string,
-  eventFactionBoost: string[]
+  humanContent: string
 ): Promise<Profile | null> {
   const supabase = createAdminClient();
 
@@ -187,7 +169,6 @@ async function pickResponderNpc(
     humanContent,
     excludeNpcIds: excludeIds,
     huntContent: contentHasHuntKeywords(humanContent),
-    eventFactionBoost,
   });
 }
 
@@ -213,7 +194,7 @@ async function applyNpcReactionsAfterEmergent(
   const supabase = createAdminClient();
   const { data: post } = await supabase
     .from("posts")
-    .select("author_id, post_type")
+    .select("author_id, post_type, content")
     .eq("id", targetPostId)
     .maybeSingle();
 
@@ -222,6 +203,7 @@ async function applyNpcReactionsAfterEmergent(
   await maybeNpcReactionsOnPost(targetPostId, {
     humanAuthorId: post.author_id,
     postType: (post.post_type ?? "message") as PostType,
+    postContent: post.content,
   });
 }
 
@@ -259,12 +241,10 @@ export async function processEmergentSignal(
   }
 
   const targetPostId = ctx.postId;
-  const eventFactionBoost = await activeEventFactionSlugs();
   const npc = await pickResponderNpc(
     typedSignal,
     targetPostId,
-    ctx.content,
-    eventFactionBoost
+    ctx.content
   );
   if (!npc) return fail("Aucun NPC disponible.");
 
@@ -352,8 +332,6 @@ export async function processEmergentSignal(
       .update({ popularity_score: (npc.popularity_score ?? 0) + 2 })
       .eq("id", npc.id);
 
-    await processPostFactionEffects(supabase, newPost.id);
-
     await maybeAttachNpcPoll({
       supabase,
       postId: newPost.id,
@@ -401,9 +379,7 @@ export async function processEmergentSignal(
   });
 
   const commentValidateType: PostType =
-    typedSignal.kind === "reaction" &&
-    emergentPostType === "rumor" &&
-    factionSlugForNpc(npc) === "assimilateurs"
+    typedSignal.kind === "reaction" && emergentPostType === "rumor"
       ? "rumor"
       : "message";
 
@@ -450,15 +426,6 @@ export async function processEmergentSignal(
     .from("profiles")
     .update({ popularity_score: (npc.popularity_score ?? 0) + 1 })
     .eq("id", npc.id);
-
-  await processCommentFactionEffects(
-    supabase,
-    targetPostId,
-    npc.id,
-    commentContent
-  );
-
-  await applyNpcReactionsAfterEmergent(typedSignal, targetPostId);
 
   return {
     ok: true,

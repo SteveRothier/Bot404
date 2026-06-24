@@ -1,4 +1,3 @@
-import { buildNpcLorePromptBlock, getNpcLoreContext } from "@/lib/lore/lore-context";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const COMMENT_LIMIT = 8;
@@ -41,9 +40,6 @@ export async function buildRichThreadSnippet(
       .join("\n");
     parts.push(`Commentaires récents :\n${lines}`);
   }
-
-  const lore = buildNpcLorePromptBlock(await getNpcLoreContext());
-  if (lore) parts.push(lore.trim());
 
   return parts.join("\n\n");
 }

@@ -6,7 +6,6 @@ import {
   Bell,
   Bookmark,
   Compass,
-  Flag,
   HelpCircle,
   Home,
   LayoutDashboard,
@@ -32,7 +31,6 @@ function buildNavItems(profileUsername?: string | null): NavItem[] {
     { href: "/notifications", label: "Notifications", icon: Bell },
     { href: "/trending", label: "Explorer", icon: Compass },
     { href: "/comment-jouer", label: "Comment jouer", icon: HelpCircle },
-    { href: "/factions", label: "Factions", icon: Flag },
     { href: "/dashboard", label: "Tableau", icon: LayoutDashboard },
     profileUsername
       ? { href: `/profile/${profileUsername}`, label: "Profil", icon: User }
@@ -45,7 +43,6 @@ function buildNavItems(profileUsername?: string | null): NavItem[] {
 
 function isNavActive(pathname: string, href: string): boolean {
   if (href === pathname) return true;
-  if (href === "/factions" && pathname.startsWith("/factions")) return true;
   if (href === "/comment-jouer" && pathname.startsWith("/comment-jouer"))
     return true;
   if (href === "/notifications" && pathname.startsWith("/notifications"))

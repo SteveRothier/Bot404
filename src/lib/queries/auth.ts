@@ -23,7 +23,7 @@ async function fetchRequestAuth(): Promise<RequestAuth> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("*, faction:factions(*)")
+    .select("*")
     .eq("id", user.id)
     .maybeSingle();
 

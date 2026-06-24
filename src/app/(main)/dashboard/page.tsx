@@ -1,4 +1,3 @@
-import { DashboardTopFaction } from "@/components/factions/DashboardTopFaction";
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/queries/dashboard";
 import { getCachedNetworkStats } from "@/lib/queries/cached";
@@ -10,7 +9,6 @@ import { isNarrativeAdminEnabled } from "@/lib/narrative/admin-config";
 import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import { getNarrativeStateForUi } from "@/lib/narrative/queries";
 import { getRecentNarrativeInteractions } from "@/lib/queries/narrative-ui";
-import { getActiveWorldEvents } from "@/lib/queries/world-events";
 import { NETWORK_STATE_LABELS } from "@/lib/network-state";
 
 export const revalidate = 60;
@@ -18,13 +16,12 @@ export const revalidate = 60;
 export default async function DashboardPage() {
   const network = await getCachedNetworkStats();
   const narrativeAdmin = isNarrativeAdminEnabled();
-  const [dashboard, narrativeState, recentInteractions, opsSnapshot, activeEvents] =
+  const [dashboard, narrativeState, recentInteractions, opsSnapshot] =
     await Promise.all([
       getDashboardStats(network),
       getNarrativeStateForUi(),
       getRecentNarrativeInteractions(2),
       narrativeAdmin ? getNarrativeOpsSnapshot() : Promise.resolve(null),
-      getActiveWorldEvents(),
     ]);
 
   const stateMeta = NETWORK_STATE_LABELS[network.networkState];
@@ -47,15 +44,7 @@ export default async function DashboardPage() {
         <StatCard label="Signaux / 24h" value={String(dashboard.signalsLast24h)} />
         <StatCard label="Rumeurs / 24h" value={String(dashboard.rumorsLast24h)} />
         <StatCard label="Signalements / 24h" value={String(network.totalFlags24h)} />
-        <StatCard
-          label="Événements actifs"
-          value={String(network.activeEventsCount)}
-        />
       </section>
-
-      {dashboard.topFaction && (
-        <DashboardTopFaction faction={dashboard.topFaction} />
-      )}
 
       <section className="px-4 py-4">
         <h2 className="mb-3 text-[15px] font-bold">
@@ -86,39 +75,9 @@ export default async function DashboardPage() {
 
       {opsSnapshot && (
         <section className="px-4 py-4">
-          <NarrativeOpsPanel
-            signals={opsSnapshot.signals}
-            events={opsSnapshot.events}
-          />
+          <NarrativeOpsPanel signals={opsSnapshot.signals} />
         </section>
       )}
-
-      <section className="px-4 py-4">
-        <h2 className="mb-3 text-[15px] font-bold">Événements</h2>
-        {activeEvents.length === 0 ? (
-          <p className="text-[15px] text-muted-foreground">
-            Aucun événement mondial actif
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {activeEvents.map((event) => (
-              <li
-                key={event.id}
-                className="rounded-xl bg-secondary/50 px-3 py-2 text-[15px]"
-              >
-                <p className="font-bold">{event.title}</p>
-                <p className="text-muted-foreground">{event.description}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        <Link
-          href="/trending"
-          className="mt-2 inline-block text-sm text-accent hover:underline"
-        >
-          Voir dans Explorer →
-        </Link>
-      </section>
     </div>
   );
 }

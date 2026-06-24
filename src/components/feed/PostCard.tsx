@@ -125,17 +125,6 @@ export function PostCard({
                   <span className="text-meta text-muted-foreground">npc</span>
                 </>
               )}
-              {author.faction && (
-                <>
-                  <span className="text-muted-foreground">·</span>
-                  <span
-                    className="text-meta"
-                    style={{ color: author.faction.color }}
-                  >
-                    {author.faction.name}
-                  </span>
-                </>
-              )}
               {typeLabel && (
                 <>
                   <span className="text-muted-foreground">·</span>

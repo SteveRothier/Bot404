@@ -2,14 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { revalidateDataCaches } from "@/lib/queries/cache-tags";
-import { processReactionFactionEffects } from "@/lib/factions/simulation";
-import { runNarrativeEscalation } from "@/lib/narrative/escalation";
 import { enqueueReactionSignal } from "@/lib/narrative/signals";
 import { triggerNarrativeTickAfterAction } from "@/lib/narrative/trigger-tick";
 import { createReactionNotification } from "@/lib/notifications";
 import { maybeNpcReactionsOnPost } from "@/lib/npc/npc-reaction";
 import { isReactionKind } from "@/lib/reactions";
-import { maybePromoteRumorToEvent } from "@/lib/rumor-events";
 import { requireAuthUser } from "@/lib/queries/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -21,7 +18,7 @@ async function mirrorNpcReactionsOnRelay(postId: number) {
   const supabase = createAdminClient();
   const { data: post } = await supabase
     .from("posts")
-    .select("author_id, post_type, author:profiles!author_id(is_npc)")
+    .select("author_id, post_type, content, author:profiles!author_id(is_npc)")
     .eq("id", postId)
     .maybeSingle();
 
@@ -37,6 +34,7 @@ async function mirrorNpcReactionsOnRelay(postId: number) {
   await maybeNpcReactionsOnPost(postId, {
     humanAuthorId: post.author_id,
     postType: (post.post_type ?? "message") as PostType,
+    postContent: post.content,
     minCount: 1,
     maxCount: 2,
   });
@@ -57,8 +55,6 @@ async function applyNarrativeReactionEffects(
 
   if (kind === "amplify") {
     await createReactionNotification(postId, userId, "amplify");
-    await maybePromoteRumorToEvent(postId);
-    await runNarrativeEscalation(postId);
   }
 
   await enqueueReactionSignal(userId, postId, kind);
@@ -74,7 +70,6 @@ export async function toggleReaction(postId: number, kind: string) {
   if ("error" in auth) return auth;
 
   const supabase = await createClient();
-  const admin = createAdminClient();
   const { user } = auth;
   const reactionKind = kind as ReactionKind;
 
@@ -92,29 +87,18 @@ export async function toggleReaction(postId: number, kind: string) {
       .eq("user_id", user.id)
       .eq("post_id", postId);
     if (error) return { error: error.message };
-    await processReactionFactionEffects(admin, postId, reactionKind, -1);
     revalidatePath("/");
     revalidateDataCaches();
     return { success: true, kind: null };
   }
 
-  let factionFeedback: { factionName: string; delta: number } | null = null;
-
   if (existing) {
-    const oldKind = existing.kind as ReactionKind;
     const { error } = await supabase
       .from("post_reactions")
       .update({ kind })
       .eq("user_id", user.id)
       .eq("post_id", postId);
     if (error) return { error: error.message };
-    await processReactionFactionEffects(admin, postId, oldKind, -1);
-    factionFeedback = await processReactionFactionEffects(
-      admin,
-      postId,
-      reactionKind,
-      1
-    );
     await applyNarrativeReactionEffects(postId, user.id, reactionKind);
   } else {
     const { error } = await supabase.from("post_reactions").insert({
@@ -123,12 +107,6 @@ export async function toggleReaction(postId: number, kind: string) {
       kind,
     });
     if (error) return { error: error.message };
-    factionFeedback = await processReactionFactionEffects(
-      admin,
-      postId,
-      reactionKind,
-      1
-    );
 
     await applyNarrativeReactionEffects(postId, user.id, reactionKind);
   }
@@ -136,5 +114,5 @@ export async function toggleReaction(postId: number, kind: string) {
   revalidatePath("/");
   revalidatePath(`/post/${postId}`);
   revalidateDataCaches();
-  return { success: true, kind, factionFeedback: factionFeedback ?? undefined };
+  return { success: true, kind };
 }

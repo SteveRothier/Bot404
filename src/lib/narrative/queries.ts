@@ -1,19 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { NarrativeArc, NarrativeBeat } from "@/lib/narrative/types";
-
-export async function getActiveScriptedArc(): Promise<NarrativeArc | null> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("narrative_arcs")
-    .select("*")
-    .eq("mode", "scripted")
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  return (data as NarrativeArc | null) ?? null;
-}
+import type { NarrativeArc } from "@/lib/narrative/types";
 
 export async function getActiveEmergentArc(): Promise<NarrativeArc | null> {
   const supabase = createAdminClient();
@@ -29,42 +15,9 @@ export async function getActiveEmergentArc(): Promise<NarrativeArc | null> {
   return (data as NarrativeArc | null) ?? null;
 }
 
-export async function getNextDueBeat(): Promise<
-  (NarrativeBeat & { arc: NarrativeArc }) | null
-> {
-  const arc = await getActiveScriptedArc();
-  if (!arc) return null;
-
-  const supabase = createAdminClient();
-  const now = new Date().toISOString();
-
-  const { data: beat } = await supabase
-    .from("narrative_beats")
-    .select("*")
-    .eq("arc_id", arc.id)
-    .eq("status", "pending")
-    .lte("run_at", now)
-    .order("sort_order", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (!beat) return null;
-  return { ...(beat as NarrativeBeat), arc };
-}
-
-export async function getBeatByArcAndOrder(
-  arcId: number,
-  sortOrder: number
-): Promise<NarrativeBeat | null> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("narrative_beats")
-    .select("*")
-    .eq("arc_id", arcId)
-    .eq("sort_order", sortOrder)
-    .maybeSingle();
-
-  return (data as NarrativeBeat | null) ?? null;
+export async function getEmergentArcSynopsis(): Promise<string> {
+  const arc = await getActiveEmergentArc();
+  return arc?.synopsis ?? "Le réseau réagit aux traces humaines.";
 }
 
 export async function getCompletedActOneSynopsis(): Promise<string | null> {

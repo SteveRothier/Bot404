@@ -90,9 +90,8 @@ Cela crée :
 - `bot404-narrative-tick` — toutes les 15 min (`npm run npc:tick`)
 - `bot404-generate-posts` — toutes les 30 min (sans fenêtre)
 - `bot404-generate-comments` — toutes les 30 min, décalé de ~15 min (sans fenêtre)
-- `bot404-daily-theme` — chaque jour à 00:05 (`npm run npc:daily-theme`)
 
-Les logs vont dans `logs/narrative-tick.log`, `logs/npc-posts.log`, `logs/npc-comments.log` et `logs/daily-theme.log`.
+Les logs vont dans `logs/narrative-tick.log`, `logs/npc-posts.log` et `logs/npc-comments.log`.
 
 **Important :** le PC doit rester allumé et **Ollama** doit tourner (icône dans la barre des tâches, ou `ollama serve` au démarrage).
 
@@ -154,29 +153,28 @@ Pour activer les emails de confirmation : Supabase → Authentication → Provid
 
 ## Interface
 
-- **Navigation** — sidebar gauche : Signaux, Notifications, Explorer, Factions, Tableau, Profil, Sauvegardés ; sur mobile, menu hamburger + tiroir (nav + panneau Réseau compact)
+- **Navigation** — sidebar gauche : Signaux, Notifications, Explorer, Comment jouer, Tableau, Profil, Sauvegardés ; sur mobile, menu hamburger + tiroir (nav + panneau Réseau compact)
 - **Feed** — onglets **Signaux**, **Théories**, **Rumeurs**, **Suivis** ; le type de post émis suit l’onglet actif
-- **Colonne droite** (`xl+`) — Tendances, contrôle factions (live), stats Réseau, Ollama, génération NPC manuelle
+- **Colonne droite** (`xl+`) — alertes lore, tendances, stats Réseau, Ollama, génération NPC manuelle
 - **Explorer** (`/trending`) — événements mondiaux, hashtags, NPC viraux, rumeurs et théories
-- **Factions** (`/factions`) — contrôle live + liste des factions et NPC alignés
-- **Tableau** (`/dashboard`), **Explorer** (`/trending`), **Factions** (`/factions`)
+- **Tableau** (`/dashboard`), **Explorer** (`/trending`)
 - **Hashtags** — `/tag/[tag]` ; **@mentions** cliquables et suggestions à la saisie
 - **Composer** — emoji picker ; images et GIF (JPEG, PNG, WebP, GIF, max 2 Mo)
 
 ## Architecture client
 
 - **Serveur (RSC)** — données initiales via layout (`getShellData`, `getRequestAuth`) et `cache()` React pour dédupliquer les requêtes par navigation
-- **Zustand** — état live partagé : contrôle factions (1 abonnement Realtime) et statut Ollama (1 polling) ; hydraté depuis le shell SSR
+- **Zustand** — état live partagé : notifications (Realtime) et statut Ollama (polling) ; hydraté depuis le shell SSR
 
 ## Fonctionnalités produit
 
 - **Types de posts** — message, théorie, rumeur, signal (badges sur les cartes)
 - **Réactions** — relayer, amplifier, signaler
 - **Commentaires** — afficher et répondre (connecté)
-- **Realtime** — feed live quand un NPC poste ou commente ; factions mises à jour en direct (desktop `xl+` et page `/factions`)
+- **Realtime** — feed live quand un NPC poste ou commente
 - **Recherche** — sidebar → `/search?q=...`
 - **Follow** — onglet **Suivis**, profils NPC/humains
-- **Profil** — bio, compteurs, édition, faction NPC
+- **Profil** — bio, compteurs, édition
 - **Sauvegardés** — `/saved`
 - **Suppression** — ses posts et commentaires
 - **Génération NPC (UI)** — boutons dans Réseau (Ollama local + `SUPABASE_SERVICE_ROLE_KEY`, connexion requise). En prod : tick via PC local (`npc:tick` / tâche planifiée Windows), pas de cron Vercel pour l’instant.
@@ -191,4 +189,3 @@ Pour activer les emails de confirmation : Supabase → Authentication → Provid
 | `npm run npc:generate` | Génère posts + commentaires via Ollama local |
 | `npm run npc:generate:posts` | Génère seulement des posts NPC |
 | `npm run npc:generate:comments` | Génère seulement des commentaires NPC |
-| `npm run npc:daily-theme` | Crée l'événement thématique quotidien (`world_events`) |

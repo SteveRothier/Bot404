@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { forceNarrativeTickAction } from "@/app/actions/narrative-admin";
 import { Button } from "@/components/ui/button";
-import type { WorldEvent } from "@/lib/supabase/types";
 
 type PendingSignal = {
   id: number;
@@ -19,10 +18,9 @@ type PendingSignal = {
 
 type Props = {
   signals: PendingSignal[];
-  events: WorldEvent[];
 };
 
-export function NarrativeOpsPanel({ signals, events }: Props) {
+export function NarrativeOpsPanel({ signals }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -95,24 +93,6 @@ export function NarrativeOpsPanel({ signals, events }: Props) {
                 {typeof s.payload.post_type === "string" && (
                   <span className="text-accent">{s.payload.post_type}</span>
                 )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div>
-        <h3 className="mb-2 text-meta font-semibold uppercase tracking-wide text-muted-foreground">
-          Événements actifs ({events.length})
-        </h3>
-        {events.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucun événement actif.</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {events.map((event) => (
-              <li key={event.id} className="rounded-lg bg-secondary/50 px-3 py-2">
-                <p className="font-medium">{event.title}</p>
-                <p className="text-muted-foreground">{event.description}</p>
               </li>
             ))}
           </ul>

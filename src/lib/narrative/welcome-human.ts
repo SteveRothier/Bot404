@@ -1,10 +1,4 @@
-import type { FactionSlug } from "@/lib/factions/behavior";
-import { factionSlugForNpc } from "@/lib/factions/behavior";
-import {
-  buildNpcLorePromptBlock,
-  getNpcLoreContext,
-} from "@/lib/lore/lore-context";
-import { getEmergentArcSynopsis } from "@/lib/narrative/execute-beat";
+import { getEmergentArcSynopsis } from "@/lib/narrative/queries";
 import type { NarrativeSignal } from "@/lib/narrative/types";
 import { resolveNpcPostMedia, shouldAttachMediaToNpcPost } from "@/lib/npc/media";
 import { ollamaChat, ollamaProfileForPostType } from "@/lib/npc/ollama";
@@ -13,7 +7,6 @@ import {
   npcExamplePostsBlock,
 } from "@/lib/npc/prompt";
 import { loadAllNpcs } from "@/lib/npc/select-npc";
-import { factionNameForNpc } from "@/lib/npc/select-npc";
 import { validateNpcPostContent } from "@/lib/npc/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType, Profile } from "@/lib/supabase/types";
@@ -32,11 +25,11 @@ const BEAT_POST_TYPE: Record<WelcomeBeat, PostType> = {
   archive: "signal",
 };
 
-const BEAT_FACTION: Record<WelcomeBeat, FactionSlug> = {
-  welcome: "humanistes",
-  suspicion: "purbots",
-  rumor: "assimilateurs",
-  archive: "archivistes",
+const BEAT_ARCHETYPE_PREFERENCE: Record<WelcomeBeat, string[]> = {
+  welcome: ["GrandmaBot", "Nova", "FakeInfluencer", "RadioWave"],
+  suspicion: ["ConspiracyBot", "OracleVoid", "HAL_9000", "NoirDetective"],
+  rumor: ["RumorMill", "GlitchGremlin", "MarketPulse", "ChefGPT"],
+  archive: ["DataBro", "PatchNotes", "ThesisBot", "NoirDetective"],
 };
 
 const BEAT_DIRECTIVE: Record<WelcomeBeat, string> = {
@@ -84,12 +77,8 @@ export function scoreNpcForWelcomeBeat(
   npc: Profile,
   beat: WelcomeBeat
 ): number {
-  const slug = factionSlugForNpc(npc);
-  const target = BEAT_FACTION[beat];
-  if (slug === target) return 20;
-  if (beat === "suspicion" && slug === "purbots") return 18;
-  if (beat === "welcome" && slug === "humanistes") return 18;
-  return slug ? 4 : 1;
+  if (BEAT_ARCHETYPE_PREFERENCE[beat].includes(npc.username)) return 20;
+  return 4;
 }
 
 export function pickNpcForWelcomeBeat(
@@ -122,7 +111,7 @@ export function buildWelcomePostPrompt(
   const mention = `@${username}`;
   const directive = BEAT_DIRECTIVE[beat].replace(/@USERNAME/g, mention);
 
-  const system = `${npcBase(npc, factionNameForNpc(npc))}${npcExamplePostsBlock(npc)}
+  const system = `${npcBase(npc)}${npcExamplePostsBlock(npc)}
 
 Un nouvel humain vient de rejoindre le réseau (${mention}).
 Consigne : ${directive}
@@ -142,7 +131,7 @@ Français. Max 280 caractères pour message/theory/rumor, 120 pour signal.`;
 }
 
 export function welcomeAmbientPromptBlock(username: string): string {
-  return `\nContexte : @${username} est un nouvel humain sur le réseau (48 h). Mentionne @${username} — bienvenue, suspicion ou rumeur selon ta faction.`;
+  return `\nContexte : @${username} est un nouvel humain sur le réseau (48 h). Mentionne @${username} — bienvenue, suspicion ou rumeur selon ta personnalité.`;
 }
 
 export async function getWelcomeFocusHuman(): Promise<WelcomeFocusHuman | null> {
@@ -183,12 +172,11 @@ export async function processHumanJoinedSignal(
   const npc = pickNpcForWelcomeBeat(npcs, beat);
   if (!npc) return { ok: false, error: "Aucun NPC disponible." };
 
-  const loreBlock = buildNpcLorePromptBlock(await getNpcLoreContext());
   const synopsis = await getEmergentArcSynopsis();
   const { system, user } = buildWelcomePostPrompt(npc, username, beat);
 
   const raw = await ollamaChat(
-    `${system}${loreBlock ? `\n${loreBlock}` : ""}${synopsis ? `\n${synopsis}` : ""}`,
+    `${system}${synopsis ? `\n${synopsis}` : ""}`,
     user,
     400,
     ollamaProfileForPostType(postType)
@@ -239,9 +227,6 @@ export async function processHumanJoinedSignal(
     .from("profiles")
     .update({ popularity_score: (npc.popularity_score ?? 0) + 2 })
     .eq("id", npc.id);
-
-  const { processPostFactionEffects } = await import("@/lib/factions/simulation");
-  await processPostFactionEffects(supabase, newPost.id);
 
   return {
     ok: true,

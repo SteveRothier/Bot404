@@ -16,7 +16,6 @@ npm run dev
 | `npm run npc:ops:check` | Vérifie clés, Ollama, tables, état des arcs |
 | `npm run npc:generate` | Tick narratif puis posts/comments aléatoires |
 | `npm run npc:schedule:install` | Tâches Windows silencieuses (tick 15 min + posts/comments 30 min) |
-| `npm run npc:beat:retry -- <sort_order>` | (Legacy) Remet un beat scripté `failed` en `pending` |
 | `npm test` | Tests unitaires narrative (copy, priorités signaux) |
 
 **Joueur / test manuel** : [`comment-jouer.md`](comment-jouer.md) — pas de jargon technique.

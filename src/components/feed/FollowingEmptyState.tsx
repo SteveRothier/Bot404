@@ -69,10 +69,10 @@ export function FollowingEmptyState({ suggestedNpcs, isLoggedIn }: Props) {
         </div>
       )}
       <Link
-        href="/factions"
+        href="/trending"
         className="mt-6 inline-block text-[15px] text-accent hover:underline"
       >
-        Explorer les factions →
+        Explorer le réseau →
       </Link>
     </div>
   );
