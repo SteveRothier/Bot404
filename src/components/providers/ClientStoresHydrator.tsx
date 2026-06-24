@@ -4,11 +4,9 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ToastHost } from "@/components/ui/toast-host";
 import type { OllamaStatus } from "@/lib/ollama";
-import type { Faction } from "@/lib/supabase/types";
 import {
   startFactionsRealtime,
   stopFactionsRealtime,
-  useFactionsStore,
 } from "@/stores/factions-store";
 import {
   startNotificationsRealtime,
@@ -18,7 +16,6 @@ import {
 import { useOllamaStore } from "@/stores/ollama-store";
 
 type Props = {
-  factions: Faction[];
   ollama: OllamaStatus;
   userId: string | null;
   initialUnreadCount: number;
@@ -41,7 +38,6 @@ function useFactionsRealtimeEnabled() {
 }
 
 export function ClientStoresHydrator({
-  factions,
   ollama,
   userId,
   initialUnreadCount,
@@ -50,12 +46,11 @@ export function ClientStoresHydrator({
   const factionsRealtimeEnabled = useFactionsRealtimeEnabled();
 
   useEffect(() => {
-    useFactionsStore.getState().hydrate(factions);
     useNotificationsStore.getState().hydrate(initialUnreadCount);
     if (ollama.model) {
       useOllamaStore.setState({ model: ollama.model });
     }
-  }, [factions, ollama.model, initialUnreadCount]);
+  }, [ollama.model, initialUnreadCount]);
 
 
   useEffect(() => {

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageCircle } from "lucide-react";
+import { BarChart2, MessageCircle } from "lucide-react";
 import { BookmarkButton } from "@/components/feed/BookmarkButton";
 import { PostReactions } from "@/components/feed/PostReactions";
+import { PostViewTracker } from "@/components/feed/PostViewTracker";
 import { HoverTooltip } from "@/components/ui/hover-tooltip";
 import { PostCardMenu } from "@/components/feed/PostCardMenu";
 import { PostContent } from "@/components/feed/PostContent";
@@ -24,7 +25,6 @@ import { avatarFallbackSeed } from "@/lib/avatars";
 import { formatCount, formatRelativeTimeShort } from "@/lib/format";
 import { isPollExpired } from "@/lib/polls";
 import { POST_TYPE_LABELS } from "@/lib/post-types";
-import { NARRATIVE_COPY } from "@/lib/narrative/copy";
 import { cn } from "@/lib/utils";
 import type {
   CommentWithAuthor,
@@ -61,6 +61,11 @@ export function PostCard({
   const typeLabel = POST_TYPE_LABELS[post.post_type ?? "message"];
   const handle = `@${author.username.toLowerCase()}`;
   const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
+  const [viewCount, setViewCount] = useState(post.view_count ?? 0);
+
+  useEffect(() => {
+    setViewCount(post.view_count ?? 0);
+  }, [post.view_count]);
   const canDelete = isLoggedIn && userId === post.author_id;
   const canClosePoll =
     canDelete &&
@@ -75,12 +80,18 @@ export function PostCard({
   return (
     <article
       className={cn(
-        "surface-hover cursor-default px-4 py-3",
+        "surface-hover relative cursor-default px-4 py-3",
         !author.is_npc && "border-l-2 border-accent/30 pl-3",
         post.isRecentNarrativeResponse &&
           "ring-2 ring-violet-500/30 ring-offset-0"
       )}
     >
+      <PostViewTracker
+        postId={post.id}
+        mode={defaultCommentsOpen ? "detail" : "feed"}
+        trackViews={!author.is_npc}
+        onRecorded={setViewCount}
+      />
       <div className="flex items-start gap-3">
         <Link
           href={`/profile/${author.username}`}
@@ -130,14 +141,6 @@ export function PostCard({
                   <span className="text-muted-foreground">·</span>
                   <span className="text-meta text-muted-foreground">
                     {typeLabel}
-                  </span>
-                </>
-              )}
-              {post.narrative_signal_id && author.is_npc && (
-                <>
-                  <span className="text-muted-foreground">·</span>
-                  <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-meta text-violet-600 dark:text-violet-400">
-                    {NARRATIVE_COPY.commentBadge}
                   </span>
                 </>
               )}
@@ -202,7 +205,7 @@ export function PostCard({
             />
           )}
 
-          <div className="mt-3 flex max-w-[425px] justify-between text-muted-foreground">
+          <div className="mt-3 flex max-w-[425px] items-center justify-between text-muted-foreground">
             <HoverTooltip label="Commentaires">
               <button
                 type="button"
@@ -226,11 +229,22 @@ export function PostCard({
               userReaction={userReaction}
               isLoggedIn={isLoggedIn}
             />
-            <BookmarkButton
-              postId={post.id}
-              bookmarkedByUser={bookmarkedByUser}
-              isLoggedIn={isLoggedIn}
-            />
+            <div className="flex items-center gap-3">
+              {viewCount > 0 && (
+                <span
+                  className="flex items-center gap-1.5 text-sm"
+                  aria-label={`${viewCount} vues`}
+                >
+                  <BarChart2 className="size-[18px]" strokeWidth={1.75} />
+                  <span>{formatCount(viewCount)}</span>
+                </span>
+              )}
+              <BookmarkButton
+                postId={post.id}
+                bookmarkedByUser={bookmarkedByUser}
+                isLoggedIn={isLoggedIn}
+              />
+            </div>
           </div>
 
           {(commentsOpen || defaultCommentsOpen) && (

@@ -58,19 +58,7 @@ export async function generateNpcPostAction() {
   try {
     const tick = await runNarrativeTick();
     if (tick.handled) {
-      if (tick.mode === "scripted_beat") {
-        const inner = (tick.detail as { result?: { post_id?: number; author?: string } })
-          ?.result;
-        if (inner?.post_id) {
-          await setNpcCooldown(auth.user.id, "post");
-          await revalidateAfterNpcAction();
-          return {
-            success: true,
-            author: inner.author ?? "NPC",
-            postId: inner.post_id,
-          };
-        }
-      } else if (tick.mode === "emergent" || tick.mode === "ambient") {
+      if (tick.mode === "emergent" || tick.mode === "ambient") {
         const extracted = tickPostFromDetail(
           tick.detail as Record<string, unknown> | undefined
         );
@@ -117,22 +105,6 @@ export async function generateNpcCommentAction() {
   try {
     const tick = await runNarrativeTick();
     if (tick.handled) {
-      if (tick.mode === "scripted_beat") {
-        const inner = (tick.detail as {
-          result?: { comment_id?: number; post_id?: number; author?: string };
-        })?.result;
-        if (inner?.comment_id && inner?.post_id) {
-          await setNpcCooldown(auth.user.id, "comment");
-          await revalidateAfterNpcAction(inner.post_id);
-          return {
-            success: true,
-            author: inner.author ?? "NPC",
-            postId: inner.post_id,
-            commentId: inner.comment_id,
-          };
-        }
-      }
-
       const extracted = tickPostFromDetail(
         tick.detail as Record<string, unknown> | undefined
       );

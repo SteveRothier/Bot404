@@ -19,3 +19,9 @@ export function formatCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return String(n);
 }
+
+export function formatViewCount(n: number): string {
+  if (n <= 0) return "";
+  if (n === 1) return "1 vue";
+  return `${formatCount(n)} vues`;
+}

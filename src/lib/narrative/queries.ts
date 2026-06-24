@@ -82,52 +82,19 @@ export async function getCompletedActOneSynopsis(): Promise<string | null> {
 
 export async function isEmergentModeActive(): Promise<boolean> {
   const arc = await getActiveEmergentArc();
-  return arc !== null;
+  if (arc !== null) return true;
+  if (process.env.NODE_ENV === "development") return true;
+  return false;
 }
 
 export type NarrativeUiState = {
-  scriptedActive: boolean;
   emergentActive: boolean;
-  actOneTitle: string | null;
   pendingSignals: number;
-  scriptedProgress: { completed: number; total: number } | null;
-  failedBeatsCount: number;
 };
-
-async function getScriptedProgress(
-  arcId: number
-): Promise<{ completed: number; total: number } | null> {
-  const supabase = createAdminClient();
-  const { data: beats } = await supabase
-    .from("narrative_beats")
-    .select("status")
-    .eq("arc_id", arcId);
-
-  if (!beats?.length) return null;
-
-  const total = beats.length;
-  const completed = beats.filter(
-    (b) => b.status === "done" || b.status === "skipped"
-  ).length;
-
-  return { completed, total };
-}
-
-async function getFailedBeatsCount(arcId: number): Promise<number> {
-  const supabase = createAdminClient();
-  const { count } = await supabase
-    .from("narrative_beats")
-    .select("*", { count: "exact", head: true })
-    .eq("arc_id", arcId)
-    .eq("status", "failed");
-
-  return count ?? 0;
-}
 
 export async function getNarrativeStateForUi(): Promise<NarrativeUiState> {
   const supabase = createAdminClient();
-  const [scripted, emergent, { count }] = await Promise.all([
-    getActiveScriptedArc(),
+  const [emergent, { count }] = await Promise.all([
     getActiveEmergentArc(),
     supabase
       .from("narrative_signals")
@@ -135,20 +102,8 @@ export async function getNarrativeStateForUi(): Promise<NarrativeUiState> {
       .eq("status", "pending"),
   ]);
 
-  const [scriptedProgress, failedBeatsCount] =
-    scripted !== null
-      ? await Promise.all([
-          getScriptedProgress(scripted.id),
-          getFailedBeatsCount(scripted.id),
-        ])
-      : [null, 0];
-
   return {
-    scriptedActive: scripted !== null,
     emergentActive: emergent !== null,
-    actOneTitle: scripted?.title ?? null,
     pendingSignals: count ?? 0,
-    scriptedProgress,
-    failedBeatsCount,
   };
 }

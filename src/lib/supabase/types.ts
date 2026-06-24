@@ -16,6 +16,17 @@ export type Faction = {
   control_percent: number;
 };
 
+export type FactionControlSnapshotValue = {
+  slug: string;
+  percent: number;
+};
+
+export type FactionControlSnapshot = {
+  id: number;
+  recorded_at: string;
+  values: FactionControlSnapshotValue[];
+};
+
 export type Profile = {
   id: string;
   username: string;
@@ -27,6 +38,7 @@ export type Profile = {
   faction_id: string | null;
   trust_score: number;
   influence_score: number;
+  welcome_focus_until?: string | null;
   created_at: string;
   faction?: Faction | null;
 };
@@ -47,6 +59,7 @@ export type Post = {
   relay_count: number;
   amplify_count: number;
   flag_count: number;
+  view_count: number;
   narrative_beat_id: number | null;
   narrative_signal_id: number | null;
   created_at: string;

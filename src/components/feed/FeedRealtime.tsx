@@ -5,6 +5,7 @@ import {
   fetchFeedCommentById,
   fetchFeedPostById,
 } from "@/app/actions/feed";
+import { FeedLiveRefresh } from "@/components/feed/FeedLiveRefresh";
 import { useFeedBridge } from "@/components/feed/FeedBridgeContext";
 import { createClient } from "@/lib/supabase/client";
 
@@ -80,5 +81,10 @@ export function FeedRealtime({ children }: Props) {
     };
   }, [bridge]);
 
-  return <>{children}</>;
+  return (
+    <>
+      <FeedLiveRefresh />
+      {children}
+    </>
+  );
 }

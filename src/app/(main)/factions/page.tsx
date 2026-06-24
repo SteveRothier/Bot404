@@ -1,4 +1,5 @@
-import { FactionsListLive } from "@/components/factions/FactionsListLive";
+import { FactionMembersLive } from "@/components/factions/FactionMembersLive";
+import { FactionControlHistorySection } from "@/components/factions/FactionControlHistorySection";
 import { ActiveWorldEventHighlight } from "@/components/lore/ActiveWorldEventHighlight";
 import { FactionControlLive } from "@/components/widgets/FactionControlLive";
 import { getCachedFactions } from "@/lib/queries/cached";
@@ -45,11 +46,13 @@ export default async function FactionsPage() {
         <FactionControlLive />
       </section>
 
+      <FactionControlHistorySection factions={factions} />
+
       <section className="px-4 py-4">
         <h2 className="mb-3 text-[15px] font-bold">Les quatre factions</h2>
-        <FactionsListLive
+        <FactionMembersLive
           factions={factions}
-          membersByFaction={membersByFaction}
+          initialMembersByFaction={membersByFaction}
         />
       </section>
     </div>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Bookmark } from "lucide-react";
 import { toggleBookmark } from "@/app/actions/bookmarks";
 import { HoverTooltip } from "@/components/ui/hover-tooltip";
+import { toast } from "@/stores/toast-store";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -18,7 +19,11 @@ export function BookmarkButton({
   isLoggedIn = false,
 }: Props) {
   const [bookmarked, setBookmarked] = useState(bookmarkedByUser);
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    setBookmarked(bookmarkedByUser);
+  }, [bookmarkedByUser]);
 
   if (!isLoggedIn) return null;
 
@@ -27,15 +32,18 @@ export function BookmarkButton({
     : "Sauvegarder";
 
   return (
-    <HoverTooltip label={tooltipLabel} disabled={pending}>
+    <HoverTooltip label={tooltipLabel}>
       <button
         type="button"
-        disabled={pending}
         onClick={() => {
+          const prev = bookmarked;
+          setBookmarked(!bookmarked);
+
           startTransition(async () => {
             const result = await toggleBookmark(postId);
-            if ("success" in result && result.success) {
-              setBookmarked((value) => !value);
+            if (!("success" in result) || !result.success) {
+              setBookmarked(prev);
+              toast("Impossible de mettre à jour le signet.");
             }
           });
         }}

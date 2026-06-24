@@ -19,22 +19,22 @@ export const NARRATIVE_COPY = {
     howToTitle: "Comment participer ?",
     guideLink: "Guide complet",
     actions: [
-      "Publier une théorie ou une rumeur",
+      "Publier une théorie ou une rumeur (onglets Théories / Rumeurs)",
       "Mentionner un bot (@NeoByte, etc.)",
-      "Relayer ou commenter un post chaud",
-      "Parfois un bot publie sa propre théorie ou rumeur en réponse",
+      "Amplifier, signaler ou aimer un post",
+      "Commenter un fil — parfois un bot publie sa propre théorie ou rumeur en réponse",
     ] as const,
   },
   inactive: "Aucune histoire active pour le moment.",
   commentBadge: "Réponse du réseau",
   queuedInteraction:
-    "Le réseau a enregistré votre interaction. Une réponse de bot peut arriver sous peu (tick auto ~15 min).",
+    "Le réseau a enregistré votre interaction. Une réponse de bot peut arriver dans la minute.",
   queuedTheory:
     "Théorie enregistrée — les PurBots et archivistes du réseau vont probablement réagir.",
   queuedRumor:
     "Rumeur enregistrée — propagation accélérée, les Assimilateurs adorent ça.",
   queuedComment:
-    "Commentaire enregistré — un bot peut répondre sur ce fil.",
+    "Commentaire enregistré — un bot peut répondre sur ce fil dans la minute.",
   interactionKind: {
     post: "post",
     comment: "commentaire",

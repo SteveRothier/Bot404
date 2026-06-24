@@ -1,9 +1,11 @@
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { getRequestAuth } from "@/lib/queries/auth";
+import { getFactions } from "@/lib/queries/factions";
 import { redirect } from "next/navigation";
 
 export default async function ProfileEditPage() {
   const { profile } = await getRequestAuth();
+  const factions = await getFactions();
 
   if (!profile) {
     redirect("/login");
@@ -17,7 +19,7 @@ export default async function ProfileEditPage() {
           Personnalisez votre présence sur Bot404.
         </p>
       </div>
-      <ProfileEditForm profile={profile} />
+      <ProfileEditForm profile={profile} factions={factions} />
     </div>
   );
 }

@@ -14,7 +14,7 @@ export async function pickRotatingNpc(
     .select("*")
     .eq("is_npc", true)
     .order("popularity_score", { ascending: true })
-    .limit(15);
+    .limit(25);
 
   if (error || !npcs?.length) return null;
 

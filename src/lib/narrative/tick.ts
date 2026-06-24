@@ -1,7 +1,5 @@
 import { checkOllamaStatus } from "@/lib/ollama";
-import { executeBeat } from "@/lib/narrative/execute-beat";
 import { generateEmergentNpcResponseBatch } from "@/lib/narrative/generate-emergent";
-import { getNextDueBeat } from "@/lib/narrative/queries";
 import {
   getAmbientFallbackChance,
   getSignalsPerTick,
@@ -11,6 +9,7 @@ import { checkNarrativeEndgame } from "@/lib/narrative/endgame";
 import type { NarrativeTickResult } from "@/lib/narrative/types";
 import { generateNpcComment } from "@/lib/npc/generate-comment";
 import { generateNpcPost } from "@/lib/npc/generate-post";
+import { maybeAmbientNpcReactionsOnHumanPost } from "@/lib/npc/npc-reaction";
 
 export type RunNarrativeTickOptions = {
   /** Surcharge le nombre de signaux émergents traités (défaut: NARRATIVE_SIGNALS_PER_TICK). */
@@ -26,21 +25,6 @@ export async function runNarrativeTick(
   }
 
   await expireOldSignals();
-
-  const dueBeat = await getNextDueBeat();
-  if (dueBeat) {
-    const result = await executeBeat(dueBeat);
-    return {
-      handled: result.ok,
-      mode: "scripted_beat",
-      detail: {
-        beat_id: dueBeat.id,
-        kind: dueBeat.kind,
-        sort_order: dueBeat.sort_order,
-        ...result,
-      },
-    };
-  }
 
   const maxSignals = options.maxSignals ?? getSignalsPerTick();
   const batch = await generateEmergentNpcResponseBatch(maxSignals);
@@ -70,10 +54,12 @@ export async function runNarrativeTick(
   }
 
   if (Math.random() < getAmbientFallbackChance()) {
+    await maybeAmbientNpcReactionsOnHumanPost();
+
     const ambient =
-      Math.random() < 0.55
-        ? await generateNpcPost()
-        : await generateNpcComment();
+      Math.random() < 0.65
+        ? await generateNpcComment()
+        : await generateNpcPost();
 
     if (ambient.ok) {
       const isComment = "commentId" in ambient;

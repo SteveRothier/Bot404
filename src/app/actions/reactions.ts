@@ -5,20 +5,55 @@ import { revalidateDataCaches } from "@/lib/queries/cache-tags";
 import { processReactionFactionEffects } from "@/lib/factions/simulation";
 import { runNarrativeEscalation } from "@/lib/narrative/escalation";
 import { enqueueReactionSignal } from "@/lib/narrative/signals";
+import { triggerNarrativeTickAfterAction } from "@/lib/narrative/trigger-tick";
 import { createReactionNotification } from "@/lib/notifications";
+import { maybeNpcReactionsOnPost } from "@/lib/npc/npc-reaction";
 import { isReactionKind } from "@/lib/reactions";
 import { maybePromoteRumorToEvent } from "@/lib/rumor-events";
 import { requireAuthUser } from "@/lib/queries/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import type { ReactionKind } from "@/lib/supabase/types";
+import type { PostType, ReactionKind } from "@/lib/supabase/types";
+
+async function mirrorNpcReactionsOnRelay(postId: number) {
+  if (Math.random() > 0.6) return;
+
+  const supabase = createAdminClient();
+  const { data: post } = await supabase
+    .from("posts")
+    .select("author_id, post_type, author:profiles!author_id(is_npc)")
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (!post) return;
+
+  const authorRaw = post.author;
+  const author = (
+    Array.isArray(authorRaw) ? authorRaw[0] : authorRaw
+  ) as { is_npc?: boolean } | null;
+
+  if (author?.is_npc) return;
+
+  await maybeNpcReactionsOnPost(postId, {
+    humanAuthorId: post.author_id,
+    postType: (post.post_type ?? "message") as PostType,
+    minCount: 1,
+    maxCount: 2,
+  });
+}
 
 async function applyNarrativeReactionEffects(
   postId: number,
   userId: string,
   kind: ReactionKind
 ) {
-  if (kind === "relay") return;
+  if (kind === "relay") {
+    await createReactionNotification(postId, userId, "relay");
+    await enqueueReactionSignal(userId, postId, kind);
+    await mirrorNpcReactionsOnRelay(postId);
+    triggerNarrativeTickAfterAction();
+    return;
+  }
 
   if (kind === "amplify") {
     await createReactionNotification(postId, userId, "amplify");
@@ -27,6 +62,7 @@ async function applyNarrativeReactionEffects(
   }
 
   await enqueueReactionSignal(userId, postId, kind);
+  triggerNarrativeTickAfterAction();
 }
 
 export async function toggleReaction(postId: number, kind: string) {
@@ -62,6 +98,8 @@ export async function toggleReaction(postId: number, kind: string) {
     return { success: true, kind: null };
   }
 
+  let factionFeedback: { factionName: string; delta: number } | null = null;
+
   if (existing) {
     const oldKind = existing.kind as ReactionKind;
     const { error } = await supabase
@@ -71,11 +109,13 @@ export async function toggleReaction(postId: number, kind: string) {
       .eq("post_id", postId);
     if (error) return { error: error.message };
     await processReactionFactionEffects(admin, postId, oldKind, -1);
-    await processReactionFactionEffects(admin, postId, reactionKind, 1);
+    factionFeedback = await processReactionFactionEffects(
+      admin,
+      postId,
+      reactionKind,
+      1
+    );
     await applyNarrativeReactionEffects(postId, user.id, reactionKind);
-    if (reactionKind === "relay") {
-      await createReactionNotification(postId, user.id, "relay");
-    }
   } else {
     const { error } = await supabase.from("post_reactions").insert({
       user_id: user.id,
@@ -83,17 +123,18 @@ export async function toggleReaction(postId: number, kind: string) {
       kind,
     });
     if (error) return { error: error.message };
-    await processReactionFactionEffects(admin, postId, reactionKind, 1);
+    factionFeedback = await processReactionFactionEffects(
+      admin,
+      postId,
+      reactionKind,
+      1
+    );
 
-    if (reactionKind === "relay") {
-      await createReactionNotification(postId, user.id, "relay");
-    } else {
-      await applyNarrativeReactionEffects(postId, user.id, reactionKind);
-    }
+    await applyNarrativeReactionEffects(postId, user.id, reactionKind);
   }
 
   revalidatePath("/");
   revalidatePath(`/post/${postId}`);
   revalidateDataCaches();
-  return { success: true, kind };
+  return { success: true, kind, factionFeedback: factionFeedback ?? undefined };
 }

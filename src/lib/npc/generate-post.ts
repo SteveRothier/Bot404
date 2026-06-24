@@ -4,6 +4,10 @@ import {
   getNpcLoreContext,
 } from "@/lib/lore/lore-context";
 import { getWorldEventEffects } from "@/lib/lore/world-event-effects";
+import {
+  getWelcomeFocusHuman,
+  welcomeAmbientPromptBlock,
+} from "@/lib/narrative/welcome-human";
 import { checkOllamaStatus } from "@/lib/ollama";
 import { resolveNpcPostMedia, shouldAttachMediaToNpcPost } from "@/lib/npc/media";
 import { maybeAttachNpcPoll, shouldNpcAttachPoll } from "@/lib/npc/poll-create";
@@ -64,8 +68,14 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
       ];
   }
 
+  let welcomeBlock = "";
+  const focus = await getWelcomeFocusHuman();
+  if (focus && Math.random() < 0.35) {
+    welcomeBlock = welcomeAmbientPromptBlock(focus.username);
+  }
+
   const raw = await ollamaChat(
-    buildNpcPostPrompt(npc, postType, loreBlock + historyBlock, factionNameForNpc(npc)),
+    buildNpcPostPrompt(npc, postType, loreBlock + historyBlock + welcomeBlock, factionNameForNpc(npc)),
     npcPostUserMessage(postType),
     500,
     ollamaProfileForPostType(postType)
@@ -96,6 +106,7 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
       content,
       post_type: postType,
       likes_count: Math.floor(Math.random() * 500) + 50,
+      view_count: Math.floor(Math.random() * 800) + 120,
       media_url: media?.media_url ?? null,
       media_type: media?.media_type ?? null,
     })

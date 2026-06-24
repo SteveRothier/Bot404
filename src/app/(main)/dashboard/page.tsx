@@ -1,3 +1,4 @@
+import { DashboardTopFaction } from "@/components/factions/DashboardTopFaction";
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/queries/dashboard";
 import { getCachedNetworkStats } from "@/lib/queries/cached";
@@ -53,20 +54,14 @@ export default async function DashboardPage() {
       </section>
 
       {dashboard.topFaction && (
-        <section className="px-4 py-4">
-          <h2 className="mb-2 text-[15px] font-bold">Faction dominante</h2>
-          <p style={{ color: dashboard.topFaction.color }} className="font-bold">
-            {dashboard.topFaction.name} —{" "}
-            {Number(dashboard.topFaction.control_percent).toFixed(1)}%
-          </p>
-        </section>
+        <DashboardTopFaction faction={dashboard.topFaction} />
       )}
 
       <section className="px-4 py-4">
         <h2 className="mb-3 text-[15px] font-bold">
           {NARRATIVE_COPY.sections.narration}
         </h2>
-        {narrativeState.scriptedActive || narrativeState.emergentActive ? (
+        {narrativeState.emergentActive ? (
           <NarrativeStatusCard {...narrativeState} />
         ) : (
           <p className="text-[15px] text-muted-foreground">

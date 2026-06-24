@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   isStrongEmergentSignal,
+  priorityForHumanJoined,
   priorityForPost,
   priorityForReaction,
   priorityForReactionSignal,
@@ -24,8 +25,8 @@ describe("priorityForReaction", () => {
 });
 
 describe("priorityForReactionSignal", () => {
-  it("ignore relay (like)", () => {
-    assert.equal(priorityForReactionSignal("relay", "rumor"), 0);
+  it("priorise relay faiblement", () => {
+    assert.equal(priorityForReactionSignal("relay", "rumor"), 18);
   });
 
   it("priorise amplify rumeur et flag théorie", () => {
@@ -39,7 +40,14 @@ describe("priorityForReactionSignal", () => {
 });
 
 describe("isStrongEmergentSignal", () => {
-  it("détecte les théories humaines", () => {
+  it("détecte human_joined", () => {
+    assert.equal(
+      isStrongEmergentSignal({ kind: "human_joined", priority: 42 }),
+      true
+    );
+  });
+
+  it("détecte les théories et rumeurs humaines", () => {
     assert.equal(
       isStrongEmergentSignal({
         kind: "human_post",
@@ -51,11 +59,26 @@ describe("isStrongEmergentSignal", () => {
     assert.equal(
       isStrongEmergentSignal({
         kind: "human_post",
-        priority: 15,
+        priority: 35,
+        postType: "rumor",
+      }),
+      true
+    );
+    assert.equal(
+      isStrongEmergentSignal({
+        kind: "human_post",
+        priority: 22,
         postType: "message",
       }),
       false
     );
+  });
+});
+
+describe("priorityForHumanJoined", () => {
+  it("priorise la première vague d'accueil", () => {
+    assert.equal(priorityForHumanJoined(0), 48);
+    assert.ok(priorityForHumanJoined(0) > priorityForPost("theory"));
   });
 });
 
@@ -82,11 +105,21 @@ describe("shouldEmergentNpcPost", () => {
   it("peut poster en réponse à un commentaire sur théorie", () => {
     const signal = {
       kind: "human_comment",
-      priority: 28,
+      priority: 32,
       payload: { post_type: "theory" },
     } as unknown as NarrativeSignal;
     assert.equal(shouldEmergentNpcPost(signal, () => 0.1), true);
     assert.equal(shouldEmergentNpcPost(signal, () => 0.9), false);
+  });
+
+  it("peut poster en réponse à un commentaire message", () => {
+    const signal = {
+      kind: "human_comment",
+      priority: 32,
+      payload: { post_type: "message" },
+    } as unknown as NarrativeSignal;
+    assert.equal(shouldEmergentNpcPost(signal, () => 0.1), true);
+    assert.equal(shouldEmergentNpcPost(signal, () => 0.25), false);
   });
 
   it("peut poster après amplify sur rumeur", () => {

@@ -2,9 +2,14 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { pickNpcForSignal, scoreNpcForSignal } from "@/lib/npc/cast";
 import type { NarrativeSignal } from "@/lib/narrative/types";
+import type { FactionSlug } from "@/lib/factions/behavior";
 import type { Profile } from "@/lib/supabase/types";
 
-function npc(username: string, id: string): Profile {
+function npc(
+  username: string,
+  id: string,
+  slug: FactionSlug | null = null
+): Profile {
   return {
     id,
     username,
@@ -18,10 +23,20 @@ function npc(username: string, id: string): Profile {
       mood: "neutral",
     },
     popularity_score: 100,
-    faction_id: null,
+    faction_id: slug ? `faction-${slug}` : null,
     trust_score: 0,
     influence_score: 0,
     created_at: new Date().toISOString(),
+    faction: slug
+      ? {
+          id: `faction-${slug}`,
+          slug,
+          name: slug,
+          color: "#fff",
+          description: null,
+          control_percent: 25,
+        }
+      : null,
   };
 }
 
@@ -45,34 +60,34 @@ const signal = (overrides: Partial<NarrativeSignal>): NarrativeSignal => ({
 describe("scoreNpcForSignal", () => {
   it("priorise la mention exacte", () => {
     const s = signal({ mentioned_username: "Nova" });
-    const score = scoreNpcForSignal(npc("Nova", "n1"), {
+    const score = scoreNpcForSignal(npc("Nova", "n1", "humanistes"), {
       signal: s,
       humanContent: "hello",
     });
     assert.equal(score, 1000);
   });
 
-  it("favorise ConspiracyBot pour une théorie", () => {
+  it("favorise PurBots pour une théorie", () => {
     const s = signal({ payload: { post_type: "theory" } });
-    const pur = scoreNpcForSignal(npc("ConspiracyBot", "c1"), {
+    const pur = scoreNpcForSignal(npc("ConspiracyBot", "c1", "purbots"), {
       signal: s,
       humanContent: "matrix",
     });
-    const other = scoreNpcForSignal(npc("Nova", "n1"), { signal: s });
+    const other = scoreNpcForSignal(npc("Nova", "n1", "humanistes"), { signal: s });
     assert.ok(pur > other);
   });
 
-  it("favorise RumorMill pour amplify sur rumeur", () => {
+  it("favorise Assimilateurs pour amplify sur rumeur", () => {
     const s = signal({
       kind: "reaction",
       reaction_kind: "amplify",
       payload: { post_type: "rumor" },
     });
-    const rumor = scoreNpcForSignal(npc("RumorMill", "r1"), {
+    const rumor = scoreNpcForSignal(npc("RumorMill", "r1", "assimilateurs"), {
       signal: s,
       humanContent: "on dit que",
     });
-    const other = scoreNpcForSignal(npc("Nova", "n1"), { signal: s });
+    const other = scoreNpcForSignal(npc("Nova", "n1", "humanistes"), { signal: s });
     assert.ok(rumor > other);
   });
 });
@@ -81,8 +96,8 @@ describe("pickNpcForSignal", () => {
   it("exclut les NPC déjà présents sur le fil", () => {
     const s = signal({ payload: { post_type: "theory" } });
     const pool = [
-      npc("ConspiracyBot", "c1"),
-      npc("Nova", "n1"),
+      npc("ConspiracyBot", "c1", "purbots"),
+      npc("Nova", "n1", "humanistes"),
     ];
     const picked = pickNpcForSignal(
       pool,

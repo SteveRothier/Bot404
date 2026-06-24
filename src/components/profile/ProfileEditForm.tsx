@@ -17,13 +17,15 @@ import {
 } from "@/lib/avatars";
 import { isDiscordAvatarUrl } from "@/lib/avatars";
 import { AUTH_MESSAGES, validatePassword } from "@/lib/auth/constants";
-import type { Profile } from "@/lib/supabase/types";
+import type { Faction, Profile } from "@/lib/supabase/types";
+import { FactionPicker } from "@/components/factions/FactionPicker";
 
 type Props = {
   profile: Profile;
+  factions: Faction[];
 };
 
-export function ProfileEditForm({ profile }: Props) {
+export function ProfileEditForm({ profile, factions }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,9 @@ export function ProfileEditForm({ profile }: Props) {
   const [clearAvatar, setClearAvatar] = useState(false);
   const [previewError, setPreviewError] = useState(false);
   const [bioLength, setBioLength] = useState(profile.bio?.length ?? 0);
+  const [factionId, setFactionId] = useState<string | null>(
+    profile.faction_id ?? null
+  );
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -159,6 +164,9 @@ export function ProfileEditForm({ profile }: Props) {
           if (clearAvatar) {
             formData.set("clear_avatar", "1");
           }
+          if (factionId) {
+            formData.set("faction_id", factionId);
+          }
           startTransition(async () => {
             const result = await updateProfile(formData);
             if ("error" in result) {
@@ -247,6 +255,22 @@ export function ProfileEditForm({ profile }: Props) {
             {bioLength}/160
           </p>
         </div>
+
+        {factions.length > 0 && (
+          <div>
+            <p className="mb-2 text-[15px] font-bold">Ma faction</p>
+            <p className="mb-3 text-meta text-muted-foreground">
+              Vos posts et réactions Amplifier font progresser votre camp sur le
+              réseau.
+            </p>
+            <FactionPicker
+              factions={factions}
+              value={factionId}
+              onChange={setFactionId}
+              disabled={pending}
+            />
+          </div>
+        )}
 
         {!avatarFile && (
           <div>

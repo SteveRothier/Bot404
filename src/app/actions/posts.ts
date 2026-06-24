@@ -7,6 +7,7 @@ import {
   enqueueHumanCommentSignal,
   enqueueHumanPostSignal,
 } from "@/lib/narrative/signals";
+import { triggerNarrativeTickAfterAction } from "@/lib/narrative/trigger-tick";
 import { isEmergentModeActive } from "@/lib/narrative/queries";
 import { createMentionNotifications } from "@/lib/notifications";
 import { isValidPostType } from "@/lib/post-types";
@@ -139,6 +140,19 @@ export async function createPost(formData: FormData) {
   const supabase = await createClient();
   const { user } = auth;
 
+  const { data: authorProfile } = await supabase
+    .from("profiles")
+    .select("faction_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!authorProfile?.faction_id) {
+    return {
+      error:
+        "Choisissez une faction dans votre profil pour publier sur le réseau.",
+    };
+  }
+
   let media_url: string | null = null;
   let media_type: PostMediaType | null = null;
 
@@ -215,6 +229,7 @@ export async function createPost(formData: FormData) {
       await createMentionNotifications(content, user.id, post.id);
     }
     await enqueueHumanPostSignal(user.id, post.id, content, post_type);
+    triggerNarrativeTickAfterAction();
   }
 
   const narrativeQueued = post?.id
@@ -256,6 +271,7 @@ export async function createComment(postId: number, formData: FormData) {
 
   if (comment?.id) {
     await enqueueHumanCommentSignal(user.id, postId, comment.id, content);
+    triggerNarrativeTickAfterAction();
   }
 
   const narrativeQueued = comment?.id

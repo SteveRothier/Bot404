@@ -11,6 +11,7 @@ import {
 import { PostComposerForm } from "@/components/feed/PostComposerForm";
 import { FeedTabs, type FeedTab } from "@/components/feed/FeedTabs";
 import { ActiveWorldEventStrip } from "@/components/lore/ActiveWorldEventStrip";
+import { FactionPickBanner } from "@/components/factions/FactionPickBanner";
 import {
   feedTabToSearchParam,
   parseFeedTabParam,
@@ -65,6 +66,7 @@ export function FeedSectionShell({
           <div className="w-full min-w-0">
             <FeedTabs value={tab} onChange={handleTabChange} />
             {activeWorldEvent && <ActiveWorldEventStrip event={activeWorldEvent} />}
+            {user && profile && !profile.faction_id && <FactionPickBanner />}
             <PostComposerForm user={user} profile={profile} feedTab={tab} />
             <div
               id={`feed-panel-${tab}`}

@@ -7,7 +7,7 @@ function parentPostType(signal: NarrativeSignal): string | null {
     : null;
 }
 
-/** 50 % post NPC / 50 % commentaire pour signaux forts (théorie, priorité haute). */
+/** Probabilité de post NPC vs commentaire pour signaux émergents. */
 export function shouldEmergentNpcPost(
   signal: NarrativeSignal,
   random = Math.random
@@ -24,12 +24,15 @@ export function shouldEmergentNpcPost(
     ) {
       return false;
     }
-    return random() < 0.5;
+    return random() < 0.65;
   }
 
   if (signal.kind === "human_comment") {
     if (postType === "rumor" || postType === "theory") {
-      return random() < 0.25;
+      return random() < 0.4;
+    }
+    if (postType === "message") {
+      return random() < 0.2;
     }
     return false;
   }
@@ -37,10 +40,10 @@ export function shouldEmergentNpcPost(
   if (signal.kind === "reaction") {
     const reaction = signal.reaction_kind;
     if (reaction === "amplify" && postType === "rumor") {
-      return random() < 0.2;
+      return random() < 0.35;
     }
     if (reaction === "flag" && postType === "theory") {
-      return random() < 0.15;
+      return random() < 0.3;
     }
     return false;
   }

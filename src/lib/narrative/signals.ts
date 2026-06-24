@@ -8,6 +8,7 @@ import {
 } from "@/lib/narrative/signal-priority";
 import type { PostType, ReactionKind } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { priorityForHumanJoined } from "@/lib/narrative/welcome-human";
 
 const SIGNAL_TTL_MS = 48 * 60 * 60 * 1000;
 export const MAX_SIGNAL_ATTEMPTS = 3;
@@ -80,7 +81,7 @@ export async function enqueueHumanCommentSignal(
     authorId,
     postId,
     commentId,
-    priority: 28,
+    priority: 32,
     payload: { content, suspicion_score: suspicionScoreForContent(content) },
   });
 
@@ -92,8 +93,6 @@ export async function enqueueReactionSignal(
   postId: number,
   kind: ReactionKind
 ) {
-  if (kind === "relay") return;
-
   const supabase = createAdminClient();
   const { data: post } = await supabase
     .from("posts")
@@ -223,4 +222,45 @@ export async function getPendingSignals(limit = 10) {
     .limit(limit);
 
   return data ?? [];
+}
+
+const WELCOME_BEATS = ["welcome", "suspicion", "rumor", "archive"] as const;
+
+/** Enfile la vague d'accueil (4 signaux human_joined) — idempotent côté SQL. */
+export async function enqueueHumanWelcomeWave(
+  userId: string,
+  username: string
+): Promise<{ inserted: boolean }> {
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("narrative_signals")
+    .select("id")
+    .eq("author_id", userId)
+    .eq("kind", "human_joined")
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) return { inserted: false };
+
+  await supabase
+    .from("profiles")
+    .update({
+      welcome_focus_until: new Date(
+        Date.now() + 48 * 60 * 60 * 1000
+      ).toISOString(),
+    })
+    .eq("id", userId);
+
+  const rows = WELCOME_BEATS.map((beat, waveIndex) => ({
+    kind: "human_joined" as const,
+    author_id: userId,
+    priority: priorityForHumanJoined(waveIndex),
+    payload: { username, beat, wave_index: waveIndex },
+  }));
+
+  const { error } = await supabase.from("narrative_signals").insert(rows);
+  if (error) throw new Error(error.message);
+
+  return { inserted: true };
 }

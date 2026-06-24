@@ -6,7 +6,11 @@ import {
 import type { PostType, ReactionKind } from "@/lib/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const HUMANISTES_SLUG = "humanistes";
+const HUMAN_POST_FACTION_DELTA = 0.12;
+
+export function humanPostFactionDelta(factionId: string | null | undefined): number {
+  return factionId ? HUMAN_POST_FACTION_DELTA : 0;
+}
 
 const POST_TYPE_DELTA: Record<PostType, number> = {
   message: 0.28,
@@ -38,14 +42,6 @@ async function bumpFaction(
 async function getFactions(supabase: SupabaseClient): Promise<FactionRow[]> {
   const { data } = await supabase.from("factions").select("id, slug, name");
   return (data as FactionRow[]) ?? [];
-}
-
-async function getFactionIdBySlug(
-  supabase: SupabaseClient,
-  slug: string
-): Promise<string | null> {
-  const factions = await getFactions(supabase);
-  return factions.find((f) => f.slug === slug)?.id ?? null;
 }
 
 async function getFactionSlugById(
@@ -147,8 +143,10 @@ export async function processPostFactionEffects(
     const delta = POST_TYPE_DELTA[post.post_type as PostType] ?? 0.25;
     await bumpFaction(supabase, author.faction_id, delta);
   } else if (!author.is_npc) {
-    const humanistesId = await getFactionIdBySlug(supabase, HUMANISTES_SLUG);
-    await bumpFaction(supabase, humanistesId, 0.12);
+    const delta = humanPostFactionDelta(author.faction_id);
+    if (delta > 0) {
+      await bumpFaction(supabase, author.faction_id, delta);
+    }
   }
 
   const mentions = extractMentionUsernames(post.content);
@@ -211,8 +209,8 @@ export async function processReactionFactionEffects(
   postId: number,
   kind: ReactionKind,
   delta: 1 | -1
-) {
-  if (kind === "flag") return;
+): Promise<{ factionName: string; delta: number } | null> {
+  if (kind === "flag") return null;
 
   const { data: post } = await supabase
     .from("posts")
@@ -220,16 +218,27 @@ export async function processReactionFactionEffects(
     .eq("id", postId)
     .maybeSingle();
 
-  if (!post) return;
+  if (!post) return null;
 
   const { data: author } = await supabase
     .from("profiles")
-    .select("faction_id")
+    .select("faction_id, faction:factions(name)")
     .eq("id", post.author_id)
     .maybeSingle();
 
   const change = REACTION_DELTA[kind] * delta;
-  await bumpFaction(supabase, author?.faction_id, change);
+  if (!author?.faction_id || change === 0) return null;
+
+  await bumpFaction(supabase, author.faction_id, change);
+
+  const factionRaw = author.faction;
+  const factionName = (
+    Array.isArray(factionRaw) ? factionRaw[0] : factionRaw
+  ) as { name?: string } | null;
+  const feedback =
+    factionName?.name && delta > 0 && kind === "amplify"
+      ? { factionName: factionName.name, delta: change }
+      : null;
 
   if (delta > 0) {
     const { data: fresh } = await supabase
@@ -255,6 +264,8 @@ export async function processReactionFactionEffects(
       }
     }
   }
+
+  return feedback;
 }
 
 /** Commentaire NPC : peut recruter l'auteur du post ou être recruté par lui. */

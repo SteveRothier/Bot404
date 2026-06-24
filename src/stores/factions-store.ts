@@ -10,11 +10,21 @@ type FactionsState = {
   setFactions: (factions: Faction[]) => void;
 };
 
-export const useFactionsStore = create<FactionsState>((set) => ({
+export const useFactionsStore = create<FactionsState>((set, get) => ({
   factions: [],
   hydrated: false,
-  hydrate: (factions) => set({ factions, hydrated: true }),
-  setFactions: (factions) => set({ factions }),
+  hydrate: (factions) => {
+    if (factions.length === 0) {
+      if (get().factions.length > 0) return;
+      set({ hydrated: true });
+      return;
+    }
+    set({ factions, hydrated: true });
+  },
+  setFactions: (factions) => {
+    if (factions.length === 0) return;
+    set({ factions, hydrated: true });
+  },
 }));
 
 let realtimeChannel: RealtimeChannel | null = null;

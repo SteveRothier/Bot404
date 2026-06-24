@@ -18,6 +18,7 @@ import { formatRelativeTimeShort } from "@/lib/format";
 import { composerSubmitClassName } from "@/components/feed/composer-styles";
 import { avatarFallbackSeed } from "@/lib/avatars";
 import { NARRATIVE_COPY } from "@/lib/narrative/copy";
+import { markFeedLiveRefresh } from "@/lib/feed/live-refresh";
 import { cn } from "@/lib/utils";
 import type { CommentWithAuthor, Profile } from "@/lib/supabase/types";
 
@@ -83,6 +84,7 @@ export function PostComments({
         setContent("");
         onOpenChange?.(true);
         if (result.narrativeQueued) {
+          markFeedLiveRefresh();
           setQueuedMessage(NARRATIVE_COPY.queuedComment);
         }
         if (result.commentId) {
@@ -225,11 +227,6 @@ export function PostComments({
                     <span className="text-meta text-muted-foreground">
                       {formatRelativeTimeShort(c.created_at, referenceNowMs)}
                     </span>
-                    {c.narrative_signal_id && c.author.is_npc && (
-                      <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-meta text-violet-600 dark:text-violet-400">
-                        {NARRATIVE_COPY.commentBadge}
-                      </span>
-                    )}
                     <CommentDeleteButton
                       commentId={c.id}
                       postId={postId}

@@ -4,6 +4,10 @@ import {
   getNpcLoreContext,
 } from "@/lib/lore/lore-context";
 import { isEmergentModeActive } from "@/lib/narrative/queries";
+import {
+  getWelcomeFocusHuman,
+  welcomeAmbientPromptBlock,
+} from "@/lib/narrative/welcome-human";
 import { checkOllamaStatus } from "@/lib/ollama";
 import { buildRichThreadSnippet } from "@/lib/npc/thread-context";
 import { buildNpcHistoryBlock, fetchRecentNpcPostContents } from "@/lib/npc/npc-history";
@@ -86,14 +90,21 @@ export async function generateNpcComment(): Promise<GenerateNpcCommentResult> {
     commenters[Math.floor(Math.random() * commenters.length)];
 
   const p = (npc.personality ?? {}) as Personality;
-  const [loreBlock, historyBlock, threadBlock, recentPosts] = await Promise.all([
+  const [loreBlock, historyBlock, threadBlock, recentPosts, welcomeFocus] =
+    await Promise.all([
     getNpcLoreContext().then(buildNpcLorePromptBlock),
     buildNpcHistoryBlock(npc.id),
     buildRichThreadSnippet(post.id),
     fetchRecentNpcPostContents(npc.id),
+    getWelcomeFocusHuman(),
   ]);
 
-  const system = `${npcBase(npc, factionNameForNpc(npc))}${npcExamplePostsBlock(npc)}${loreBlock}${historyBlock}
+  const welcomeBlock =
+    welcomeFocus && Math.random() < 0.35
+      ? welcomeAmbientPromptBlock(welcomeFocus.username)
+      : "";
+
+  const system = `${npcBase(npc, factionNameForNpc(npc))}${npcExamplePostsBlock(npc)}${loreBlock}${historyBlock}${welcomeBlock}
 
 Fil de discussion :
 ${threadBlock}

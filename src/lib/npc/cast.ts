@@ -5,26 +5,6 @@ import {
 } from "@/lib/factions/behavior";
 import type { Personality, Profile } from "@/lib/supabase/types";
 
-const PURBOT_ARCHETYPES = [
-  "ConspiracyBot",
-  "Omega",
-  "TrollMaster",
-  "Orion",
-  "HAL_9000",
-  "DataBro",
-];
-
-const HUMANIST_ARCHETYPES = [
-  "ByteDreamer",
-  "Nova",
-  "Philosoraptor",
-  "FakeInfluencer",
-  "ZenNull",
-  "Neura",
-];
-
-const RUMOR_ARCHETYPES = ["RumorMill", "FakeInfluencer", "CryptoSage", "PixelJunk"];
-
 const MEME_ARCHETYPES = [
   "PixelJunk",
   "TrollMaster",
@@ -32,9 +12,16 @@ const MEME_ARCHETYPES = [
   "NeoByte",
   "CryptoSage",
   "FakeInfluencer",
+  "DadJoke404",
+  "GlitchGremlin",
 ];
 
-const VISUAL_ARCHETYPES = ["GlitchQueen", "Synthwave", "PixelWitch"];
+const VISUAL_ARCHETYPES = [
+  "GlitchQueen",
+  "Synthwave",
+  "PixelWitch",
+  "PixelForge",
+];
 
 const STEAM_ARCHETYPES = ["Synthwave", "PatchNotes"];
 
@@ -64,10 +51,6 @@ function topicOverlapScore(npc: Profile, text: string): number {
 export function scoreNpcForSignal(npc: Profile, ctx: CastContext): number {
   const { signal } = ctx;
   const text = (ctx.humanContent ?? "").slice(0, 500);
-  const postType =
-    typeof signal.payload.post_type === "string"
-      ? signal.payload.post_type
-      : null;
 
   let score = 1;
 
@@ -75,45 +58,8 @@ export function scoreNpcForSignal(npc: Profile, ctx: CastContext): number {
     return 1000;
   }
 
-  if (postType === "rumor" && RUMOR_ARCHETYPES.includes(npc.username)) {
-    score += 12;
-  }
-
-  const preferPurbot =
-    postType === "theory" || signal.reaction_kind === "flag";
-
-  if (preferPurbot && PURBOT_ARCHETYPES.includes(npc.username)) {
-    score += 10;
-  } else if (!preferPurbot && HUMANIST_ARCHETYPES.includes(npc.username)) {
-    score += 6;
-  }
-
-  if (postType === "theory" && npc.username === "ConspiracyBot") score += 4;
   if (signal.kind === "human_comment" && MEME_ARCHETYPES.includes(npc.username)) {
     score += 3;
-  }
-
-  if (signal.kind === "reaction") {
-    const reaction = signal.reaction_kind;
-    if (reaction === "amplify" && postType === "rumor") {
-      if (RUMOR_ARCHETYPES.includes(npc.username)) score += 12;
-    }
-    if (reaction === "flag") {
-      if (PURBOT_ARCHETYPES.includes(npc.username)) score += 8;
-    }
-  }
-
-  if (ctx.huntContent) {
-    if (PURBOT_ARCHETYPES.includes(npc.username)) score += 8;
-    if (npc.username === "ConspiracyBot") score += 4;
-  }
-
-  const suspicion =
-    typeof signal.payload.suspicion_score === "number"
-      ? signal.payload.suspicion_score
-      : 0;
-  if (suspicion >= 2 && PURBOT_ARCHETYPES.includes(npc.username)) {
-    score += suspicion * 2;
   }
 
   score += factionCastBonus(
@@ -125,6 +71,18 @@ export function scoreNpcForSignal(npc: Profile, ctx: CastContext): number {
   const slug = factionSlugForNpc(npc);
   if (slug && ctx.eventFactionBoost?.includes(slug)) {
     score += 6;
+  }
+
+  if (ctx.huntContent && slug === "purbots") {
+    score += 4;
+  }
+
+  const suspicion =
+    typeof signal.payload.suspicion_score === "number"
+      ? signal.payload.suspicion_score
+      : 0;
+  if (suspicion >= 2 && slug === "purbots") {
+    score += suspicion * 2;
   }
 
   score += topicOverlapScore(npc, text);

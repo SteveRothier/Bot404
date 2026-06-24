@@ -3,10 +3,41 @@
 import { SidebarPanel } from "@/components/widgets/SidebarPanel";
 import { useFactionsStore } from "@/stores/factions-store";
 
+function FactionControlSkeleton() {
+  return (
+    <div className="space-y-2.5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i}>
+          <div className="mb-0.5 flex justify-between">
+            <div className="h-3.5 w-20 animate-pulse rounded bg-border" />
+            <div className="h-3.5 w-10 animate-pulse rounded bg-border" />
+          </div>
+          <div className="h-1 animate-pulse rounded-full bg-border" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function FactionControlLive() {
   const factions = useFactionsStore((s) => s.factions);
+  const hydrated = useFactionsStore((s) => s.hydrated);
 
-  if (factions.length === 0) return null;
+  if (!hydrated) {
+    return (
+      <SidebarPanel title="Contrôle">
+        <FactionControlSkeleton />
+      </SidebarPanel>
+    );
+  }
+
+  if (factions.length === 0) {
+    return (
+      <SidebarPanel title="Contrôle">
+        <p className="text-meta text-muted-foreground">Données indisponibles.</p>
+      </SidebarPanel>
+    );
+  }
 
   return (
     <SidebarPanel title="Contrôle">

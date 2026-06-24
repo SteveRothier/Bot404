@@ -63,6 +63,8 @@ function mergePostsPreservePolls(
   incoming: PostWithAuthor[],
   previous: PostWithAuthor[]
 ): PostWithAuthor[] {
+  if (incoming.length === 0) return previous;
+
   const pollById = new Map(
     previous.filter((p) => p.poll).map((p) => [p.id, p.poll!])
   );
@@ -105,7 +107,7 @@ export function HomeFeedClient({
   const isLoggedIn = !!user;
 
   const [tabCache, setTabCache] = useState<Set<FeedTab>>(
-    () => new Set(["for-you"])
+    () => new Set(["for-you", "theory", "rumor", "following"])
   );
   const [loadingTab, setLoadingTab] = useState<FeedTab | null>(null);
   const [tabLoadError, setTabLoadError] = useState<string | null>(null);
@@ -130,6 +132,9 @@ export function HomeFeedClient({
     Partial<Record<FeedTab, number>>
   >({
     "for-you": initialRecentPosts.length,
+    theory: initialTheoryPosts.length,
+    rumor: initialRumorPosts.length,
+    following: initialFollowingPosts.length,
   });
 
   useEffect(() => {

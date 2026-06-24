@@ -10,8 +10,7 @@ export async function TrendingNarrativeSection() {
     getRecentNarrativeInteractions(6),
   ]);
 
-  const showStory =
-    narrativeState.scriptedActive || narrativeState.emergentActive;
+  const showStory = narrativeState.emergentActive;
 
   if (!showStory && narrativeInteractions.length === 0) {
     return null;

@@ -36,7 +36,6 @@ export async function MainLayoutShell({ children }: Props) {
 
   return (
     <ClientStoresHydrator
-      factions={[]}
       ollama={getDefaultOllamaStatus()}
       userId={userId}
       initialUnreadCount={initialUnreadCount}

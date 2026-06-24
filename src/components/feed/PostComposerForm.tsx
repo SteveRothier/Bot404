@@ -29,6 +29,7 @@ import {
   validatePollDraft,
 } from "@/lib/polls";
 import { NARRATIVE_COPY, queuedMessageForPostType } from "@/lib/narrative/copy";
+import { markFeedLiveRefresh } from "@/lib/feed/live-refresh";
 import type { Profile } from "@/lib/supabase/types";
 
 const POST_MAX_LENGTH = 500;
@@ -164,6 +165,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
         clearMedia();
         setPollDraft(null);
         if (result.narrativeQueued) {
+          markFeedLiveRefresh();
           setQueuedMessage(
             queuedMessageForPostType(postTypeForFeedTab(feedTab))
           );
@@ -214,6 +216,24 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
                 : "pour publier un signal, une théorie ou un sondage."}
             </p>
           </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!profile?.faction_id) {
+    return (
+      <section className="border-b border-border px-4 py-4">
+        <div className="rounded-xl border border-dashed border-violet-500/40 bg-violet-500/10 px-4 py-3">
+          <p className="text-[15px] text-foreground">
+            <Link
+              href="/profile/edit"
+              className="font-bold text-violet-600 hover:underline dark:text-violet-400"
+            >
+              Choisissez votre faction
+            </Link>{" "}
+            pour publier et influencer le contrôle du réseau.
+          </p>
         </div>
       </section>
     );

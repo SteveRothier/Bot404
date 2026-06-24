@@ -15,6 +15,7 @@ export type NarrativeBeatStatus = "pending" | "done" | "skipped" | "failed";
 export type NarrativeSignalKind =
   | "human_post"
   | "human_comment"
+  | "human_joined"
   | "reaction"
   | "mention";
 

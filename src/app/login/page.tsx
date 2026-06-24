@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { requestPasswordReset } from "@/app/actions/auth";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { PasswordResetSentDialog } from "@/components/auth/PasswordResetSentDialog";
 import { AUTH_MESSAGES, validateEmail, validatePassword } from "@/lib/auth/constants";
 import { createClient } from "@/lib/supabase/client";
+import type { Faction } from "@/lib/supabase/types";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -24,6 +25,23 @@ function LoginForm() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotDialogOpen, setForgotDialogOpen] = useState(false);
+  const [factions, setFactions] = useState<Faction[]>([]);
+  const [factionId, setFactionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (mode !== "signup") return;
+    const supabase = createClient();
+    void supabase
+      .from("factions")
+      .select("*")
+      .order("control_percent", { ascending: false })
+      .then(({ data }) => {
+        if (data?.length) {
+          setFactions(data as Faction[]);
+          setFactionId((current) => current ?? data[0]!.id);
+        }
+      });
+  }, [mode]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,11 +67,22 @@ function LoginForm() {
     const supabase = createClient();
 
     if (mode === "signup") {
+      if (!factionId) {
+        setMessageIsError(true);
+        setMessage("Choisissez une faction.");
+        setLoading(false);
+        return;
+      }
+
+      const selectedFaction = factions.find((f) => f.id === factionId);
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
         options: {
-          data: { username: username || undefined },
+          data: {
+            username: username || undefined,
+            faction_slug: selectedFaction?.slug,
+          },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
@@ -148,6 +177,9 @@ function LoginForm() {
         email={email}
         password={password}
         username={username}
+        factions={factions}
+        factionId={factionId}
+        onFactionChange={setFactionId}
         message={message ?? urlAuthError}
         messageIsError={messageIsError || !!urlAuthError}
         loading={loading}

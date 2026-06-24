@@ -8,8 +8,9 @@ import {
 } from "@/lib/narrative/build-prompt";
 import { shouldEmergentNpcPost } from "@/lib/narrative/emergent-response-mode";
 import { getEmergentArcSynopsis } from "@/lib/narrative/execute-beat";
-import { getActiveEmergentArc } from "@/lib/narrative/queries";
+import { isEmergentModeActive } from "@/lib/narrative/queries";
 import type { NarrativeSignal } from "@/lib/narrative/types";
+import { processHumanJoinedSignal } from "@/lib/narrative/welcome-human";
 import { pickNpcForSignal } from "@/lib/npc/cast";
 import { factionSlugForNpc, reactionActionLabel } from "@/lib/factions/behavior";
 import { getWorldEventEffects } from "@/lib/lore/world-event-effects";
@@ -23,6 +24,7 @@ import { ollamaChat } from "@/lib/npc/ollama";
 import { getRecentNpcAuthorIdsOnPost } from "@/lib/npc/recent-repliers";
 import { loadAllNpcs } from "@/lib/npc/select-npc";
 import { buildRichThreadSnippet } from "@/lib/npc/thread-context";
+import { maybeNpcReactionsOnPost } from "@/lib/npc/npc-reaction";
 import { validateNpcPostContent } from "@/lib/npc/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType, Profile, ReactionKind } from "@/lib/supabase/types";
@@ -189,6 +191,40 @@ async function pickResponderNpc(
   });
 }
 
+async function applyNpcReactionsAfterEmergent(
+  typedSignal: NarrativeSignal,
+  targetPostId: number
+) {
+  if (typedSignal.kind === "human_post") {
+    const postType =
+      typeof typedSignal.payload.post_type === "string"
+        ? (typedSignal.payload.post_type as PostType)
+        : "message";
+    await maybeNpcReactionsOnPost(targetPostId, {
+      humanAuthorId: typedSignal.author_id,
+      postType,
+    });
+    return;
+  }
+
+  const postAuthorIsNpc = typedSignal.payload.post_author_is_npc !== false;
+  if (postAuthorIsNpc) return;
+
+  const supabase = createAdminClient();
+  const { data: post } = await supabase
+    .from("posts")
+    .select("author_id, post_type")
+    .eq("id", targetPostId)
+    .maybeSingle();
+
+  if (!post) return;
+
+  await maybeNpcReactionsOnPost(targetPostId, {
+    humanAuthorId: post.author_id,
+    postType: (post.post_type ?? "message") as PostType,
+  });
+}
+
 export async function processEmergentSignal(
   typedSignal: NarrativeSignal
 ): Promise<EmergentResponseResult> {
@@ -197,6 +233,19 @@ export async function processEmergentSignal(
   async function fail(error: string): Promise<EmergentResponseResult> {
     await recordSignalFailure(typedSignal.id);
     return { ok: false, error };
+  }
+
+  if (typedSignal.kind === "human_joined") {
+    const welcome = await processHumanJoinedSignal(typedSignal);
+    if (!welcome.ok) return fail(welcome.error);
+    return {
+      ok: true,
+      author: welcome.author,
+      postId: welcome.postId,
+      commentId: null,
+      signalId: welcome.signalId,
+      responseType: "post",
+    };
   }
 
   const ctx = await loadSignalContext(typedSignal);
@@ -272,6 +321,7 @@ export async function processEmergentSignal(
         post_type: postType,
         narrative_signal_id: typedSignal.id,
         likes_count: Math.floor(Math.random() * 80) + 10,
+        view_count: Math.floor(Math.random() * 800) + 120,
         media_url: media?.media_url ?? null,
         media_type: media?.media_type ?? null,
       })
@@ -313,6 +363,8 @@ export async function processEmergentSignal(
       hasMedia: !!media,
       context: "emergent",
     });
+
+    await applyNpcReactionsAfterEmergent(typedSignal, targetPostId);
 
     return {
       ok: true,
@@ -406,6 +458,8 @@ export async function processEmergentSignal(
     commentContent
   );
 
+  await applyNpcReactionsAfterEmergent(typedSignal, targetPostId);
+
   return {
     ok: true,
     author: npc.username,
@@ -437,8 +491,8 @@ export async function generateEmergentNpcResponseBatch(
   results: EmergentResponseSuccess[];
   lastError: string | null;
 }> {
-  const emergentArc = await getActiveEmergentArc();
-  if (!emergentArc) {
+  const emergentActive = await isEmergentModeActive();
+  if (!emergentActive) {
     return { handled: 0, results: [], lastError: "Mode émergent inactif." };
   }
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { Flag, Heart, Zap } from "lucide-react";
 import { toggleReaction } from "@/app/actions/reactions";
-import { REACTION_LABELS } from "@/lib/reactions";
+import { applyReactionToggle, REACTION_LABELS } from "@/lib/reactions";
+import { markFeedLiveRefresh } from "@/lib/feed/live-refresh";
 import { formatCount } from "@/lib/format";
 import { toast } from "@/stores/toast-store";
 import { HoverTooltip } from "@/components/ui/hover-tooltip";
@@ -42,17 +43,15 @@ export function PostReactions({
     amplify: amplifyCount,
     flag: flagCount,
   });
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    setActive(userReaction);
+    setCounts({ relay: relayCount, amplify: amplifyCount, flag: flagCount });
+  }, [userReaction, relayCount, amplifyCount, flagCount]);
 
   function countFor(kind: ReactionKind) {
     return counts[kind];
-  }
-
-  function bump(kind: ReactionKind, delta: number) {
-    setCounts((c) => ({
-      ...c,
-      [kind]: Math.max(0, c[kind] + delta),
-    }));
   }
 
   if (!isLoggedIn) {
@@ -84,27 +83,36 @@ export function PostReactions({
         const isActive = active === kind;
         const label = REACTION_LABELS[kind].label;
         return (
-          <HoverTooltip key={kind} label={label} disabled={pending}>
+          <HoverTooltip key={kind} label={label}>
             <button
               type="button"
-              disabled={pending}
               aria-label={label}
               onClick={() => {
+                const prevActive = active;
+                const prevCounts = counts;
+                const next = applyReactionToggle(prevActive, counts, kind);
+                setActive(next.active);
+                setCounts(next.counts);
+
                 startTransition(async () => {
-                  const prev = active;
                   const result = await toggleReaction(postId, kind);
                   if (!("success" in result) || !result.success) {
+                    setActive(prevActive);
+                    setCounts(prevCounts);
                     toast("Impossible d'enregistrer la réaction.");
                     return;
                   }
 
-                  if (prev === kind) {
-                    bump(kind, -1);
-                    setActive(null);
-                  } else {
-                    if (prev) bump(prev, -1);
-                    bump(kind, 1);
-                    setActive(kind);
+                  markFeedLiveRefresh();
+
+                  if (
+                    result.factionFeedback &&
+                    kind === "amplify" &&
+                    prevActive !== kind
+                  ) {
+                    const { factionName, delta } = result.factionFeedback;
+                    const sign = delta > 0 ? "+" : "";
+                    toast(`${factionName} ${sign}${delta.toFixed(1)} %`);
                   }
                 });
               }}

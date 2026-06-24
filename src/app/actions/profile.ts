@@ -13,6 +13,7 @@ export async function updateProfile(formData: FormData) {
   const avatarUrl = ((formData.get("avatar_url") as string) ?? "").trim();
   const avatarFile = formData.get("avatar_file");
   const clearAvatar = formData.get("clear_avatar") === "1";
+  const factionIdRaw = ((formData.get("faction_id") as string) ?? "").trim();
 
   if (bio.length > 160) {
     return { error: "La bio ne peut pas dépasser 160 caractères." };
@@ -27,6 +28,19 @@ export async function updateProfile(formData: FormData) {
 
   const supabase = await createClient();
   const { user } = auth;
+
+  let faction_id: string | null = null;
+  if (factionIdRaw) {
+    const { data: faction } = await supabase
+      .from("factions")
+      .select("id")
+      .eq("id", factionIdRaw)
+      .maybeSingle();
+    if (!faction) {
+      return { error: "Faction invalide." };
+    }
+    faction_id = faction.id;
+  }
 
   let avatar_url: string | null;
 
@@ -51,6 +65,7 @@ export async function updateProfile(formData: FormData) {
     .update({
       bio: bio || null,
       avatar_url,
+      faction_id,
     })
     .eq("id", user.id)
     .eq("is_npc", false)
@@ -67,5 +82,7 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath(`/profile/${profile.username}`);
   revalidatePath("/profile/edit");
+  revalidatePath("/factions");
+  revalidatePath("/");
   return { success: true };
 }

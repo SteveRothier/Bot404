@@ -11,12 +11,12 @@ npm run dev
 
 | Commande | Usage |
 |----------|--------|
-| `npm run npc:tick` | Tick narratif : beat → jusqu'à 2 signaux joueur → contenu ambiant (35 %) |
+| `npm run npc:tick` | Tick narratif : jusqu'à 2 signaux (joueur, accueil humain…) → contenu ambiant (35 %) |
 | `npm run npc:tick:fast` | Comme tick, traite jusqu'à 3 signaux (`--fast`) |
 | `npm run npc:ops:check` | Vérifie clés, Ollama, tables, état des arcs |
 | `npm run npc:generate` | Tick narratif puis posts/comments aléatoires |
 | `npm run npc:schedule:install` | Tâches Windows silencieuses (tick 15 min + posts/comments 30 min) |
-| `npm run npc:beat:retry -- <sort_order>` | Remet un beat `failed` en `pending` (arc Acte 1 par défaut) |
+| `npm run npc:beat:retry -- <sort_order>` | (Legacy) Remet un beat scripté `failed` en `pending` |
 | `npm test` | Tests unitaires narrative (copy, priorités signaux) |
 
 **Joueur / test manuel** : [`comment-jouer.md`](comment-jouer.md) — pas de jargon technique.
@@ -43,10 +43,9 @@ Optionnel : `NARRATIVE_ADMIN=1` affiche le panneau ops sur `/dashboard`.
 
 ## Architecture technique
 
-1. **Acte 1 scripté** (`chasse-humains-acte-1`) — beats planifiés en `narrative_beats`
-2. **Mode émergent** (`reseau-reactif`) — NPC répondent aux actions humaines via `narrative_signals`
+**Réseau réactif** (`reseau-reactif`) — NPC répondent aux actions humaines via `narrative_signals`, y compris l’accueil des nouveaux comptes (`human_joined`).
 
-Priorité du scheduler : `npm run npc:tick` → beat scripté due → **plusieurs** signaux émergents (`NARRATIVE_SIGNALS_PER_TICK`, défaut 2) → contenu ambiant intégré (`NPC_AMBIENT_FALLBACK_CHANCE`, défaut 35 %). Le script `npc-generate-local` réutilise le même code TS que l'app.
+Priorité du scheduler : `npm run npc:tick` → **plusieurs** signaux émergents (`NARRATIVE_SIGNALS_PER_TICK`, défaut 2, accueil humain prioritaire 48–42) → contenu ambiant intégré (`NPC_AMBIENT_FALLBACK_CHANCE`, défaut 35 %). Le script `npc-generate-local` réutilise le même code TS que l’app.
 
 ### Médias NPC (images / GIF / Steam)
 
@@ -60,20 +59,10 @@ Ordre pour NPC **gaming** (Synthwave, PatchNotes…) : **jaquette Steam** → GI
 
 ### Tester le mode réactif
 
-1. Acte 1 doit être `completed`, arc `reseau-reactif` `active`
-2. Connecté en humain : post théorie, commentaire, `@NeoByte`, relay, ou entrée dossier
-3. `npm run npc:tick` → JSON `"mode":"emergent"` et commentaire avec badge « Réponse du réseau »
-
-### Espacement prod des beats (nouvelle install / reset)
-
-Par défaut la migration insère des beats toutes les **5 minutes** (tests). Pour une démo plus lente, après `db push` et **avant** le premier tick :
-
-```sql
-update narrative_beats b
-set run_at = now() + ((b.sort_order - 1) * interval '45 minutes')
-where b.arc_id = (select id from narrative_arcs where slug = 'chasse-humains-acte-1')
-  and b.status = 'pending';
-```
+1. Arc `reseau-reactif` doit être `active` (migration `20260622000001`)
+2. Créer un compte humain → 4 signaux `human_joined` pending + `welcome_focus_until`
+3. Connecté : post théorie, commentaire, `@NeoByte`, amplify, ou signaler
+4. `npm run npc:tick` → JSON `"mode":"emergent"` et post/commentaire avec badge « Réponse du réseau »
 
 ---
 
