@@ -1,8 +1,4 @@
-﻿import {
-  getWelcomeFocusHuman,
-  welcomeAmbientPromptBlock,
-} from "@/lib/engine/reactive/welcome-human";
-import { checkOllamaStatus } from "@/lib/ollama";
+﻿import { checkOllamaStatus } from "@/lib/ollama";
 import { resolveNpcPostMedia, shouldAttachMediaToNpcPost } from "@/lib/engine/content/media";
 import { maybeAttachNpcPoll, shouldNpcAttachPoll } from "@/lib/engine/content/poll-create";
 import { ollamaChat, ollamaProfileForPostType } from "@/lib/engine/content/ollama";
@@ -21,6 +17,10 @@ import {
   buildNpcHistoryBlock,
   fetchRecentNpcPostContents,
 } from "@/lib/engine/ambient/npc-history";
+import {
+  getWelcomeFocusHuman,
+  welcomeAmbientPromptBlock,
+} from "@/lib/engine/reactive/welcome-human";
 import { validateNpcAmbientPostContent } from "@/lib/engine/content/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType } from "@/lib/supabase/types";
@@ -29,15 +29,12 @@ export type GenerateNpcPostResult =
   | { ok: true; author: string; postId: number; postType: string }
   | { ok: false; error: string };
 
-export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
-  const ollama = await checkOllamaStatus();
-  if (!ollama.online) {
-    return {
-      ok: false,
-      error: "Ollama est hors ligne. Lancez ollama serve puis réessayez.",
-    };
-  }
+export function clampNpcPostBatchCount(count: number): number {
+  const n = Number.isFinite(count) ? Math.floor(count) : 1;
+  return Math.min(5, Math.max(1, n));
+}
 
+async function generateSingleNpcPost(): Promise<GenerateNpcPostResult> {
   const supabase = createAdminClient();
   const npc = await pickRotatingNpc();
   if (!npc) {
@@ -145,4 +142,41 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     postId: post.id,
     postType,
   };
+}
+
+export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
+  const ollama = await checkOllamaStatus();
+  if (!ollama.online) {
+    return {
+      ok: false,
+      error: "Ollama est hors ligne. Lancez ollama serve puis réessayez.",
+    };
+  }
+
+  return generateSingleNpcPost();
+}
+
+export async function generateNpcPostsBatch(
+  count = 1
+): Promise<GenerateNpcPostResult[]> {
+  const ollama = await checkOllamaStatus();
+  if (!ollama.online) {
+    return [
+      {
+        ok: false,
+        error: "Ollama est hors ligne. Lancez ollama serve puis réessayez.",
+      },
+    ];
+  }
+
+  const batchSize = clampNpcPostBatchCount(count);
+  const results: GenerateNpcPostResult[] = [];
+
+  for (let i = 0; i < batchSize; i++) {
+    const result = await generateSingleNpcPost();
+    results.push(result);
+    if (!result.ok && result.error.includes("Ollama est hors ligne")) break;
+  }
+
+  return results;
 }

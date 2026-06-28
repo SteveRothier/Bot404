@@ -11,6 +11,7 @@ import {
 import { checkOllamaStatus } from "@/lib/ollama";
 import { pickNpcForSignal } from "@/lib/engine/casting/cast";
 import { maybeNpcReactionsOnPost } from "@/lib/engine/casting/npc-reaction";
+import { maybeNpcVoteOnPoll } from "@/lib/engine/content/poll-vote";
 import { buildRichThreadSnippet } from "@/lib/engine/casting/thread-context";
 import {
   buildNpcHistoryBlock,
@@ -23,8 +24,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType, Profile } from "@/lib/supabase/types";
 
 export type GenerateNpcCommentResult =
-  | { ok: true; author: string; postId: number; commentId: number }
+  | { ok: true; author: string; postId: number; commentId: number; pollVote?: string }
   | { ok: false; error: string };
+
+export function clampNpcCommentBatchCount(count: number): number {
+  const n = Number.isFinite(count) ? Math.floor(count) : 1;
+  return Math.min(10, Math.max(1, n));
+}
 
 type CommentTarget = {
   id: number;
@@ -262,11 +268,16 @@ async function generateSingleNpcComment(
       });
     }
 
+    let pollVote: string | undefined;
+    const vote = await maybeNpcVoteOnPoll(post.id, npc, post.content);
+    if (vote.ok) pollVote = vote.label;
+
     return {
       ok: true,
       author: npc.username,
       postId: post.id,
       commentId: comment.id,
+      pollVote,
     };
   }
 
@@ -283,10 +294,11 @@ export async function generateNpcComment(): Promise<GenerateNpcCommentResult> {
 export async function generateNpcCommentsBatch(
   count = 2
 ): Promise<GenerateNpcCommentResult[]> {
+  const batchSize = clampNpcCommentBatchCount(count);
   const results: GenerateNpcCommentResult[] = [];
   const usedPosts = new Set<number>();
 
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < batchSize; i++) {
     const result = await generateSingleNpcComment(usedPosts);
     results.push(result);
     if (result.ok) usedPosts.add(result.postId);
