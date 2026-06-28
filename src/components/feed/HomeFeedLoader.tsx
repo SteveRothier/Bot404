@@ -34,6 +34,15 @@ export async function HomeFeedLoader({ auth, referenceNowMs }: Props) {
         ...forYou.userReactionsByPostId,
         ...following.userReactionsByPostId,
       }}
+      likedCommentIds={[
+        ...new Set([...forYou.likedCommentIds, ...following.likedCommentIds]),
+      ]}
+      bookmarkedCommentIds={[
+        ...new Set([
+          ...forYou.bookmarkedCommentIds,
+          ...following.bookmarkedCommentIds,
+        ]),
+      ]}
       referenceNowMs={referenceNowMs}
     />
   );

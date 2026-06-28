@@ -27,6 +27,8 @@ type Props = {
   userId?: string;
   commentsByPostId: Record<number, CommentWithAuthor[]>;
   userReactionsByPostId: Record<number, ReactionKind>;
+  likedCommentIds: number[];
+  bookmarkedCommentIds: number[];
   referenceNowMs: number;
   emptyConfig: FeedEmptyConfig;
   onLoadMoreResult: (result: FeedLoadMoreResult) => void;
@@ -42,6 +44,8 @@ export function FeedInfiniteList({
   userId,
   commentsByPostId,
   userReactionsByPostId,
+  likedCommentIds,
+  bookmarkedCommentIds,
   referenceNowMs,
   emptyConfig,
   onLoadMoreResult,
@@ -76,6 +80,8 @@ export function FeedInfiniteList({
         userId={userId}
         commentsByPostId={commentsByPostId}
         userReactionsByPostId={userReactionsByPostId}
+        likedCommentIds={likedCommentIds}
+        bookmarkedCommentIds={bookmarkedCommentIds}
         referenceNowMs={referenceNowMs}
       />
       {hasMore && (

@@ -39,6 +39,8 @@ type Props = {
   profile?: Profile | null;
   userId?: string;
   comments?: CommentWithAuthor[];
+  likedCommentIds?: number[];
+  bookmarkedCommentIds?: number[];
   referenceNowMs?: number;
   defaultCommentsOpen?: boolean;
 };
@@ -51,6 +53,8 @@ export function PostCard({
   profile = null,
   userId,
   comments = [],
+  likedCommentIds = [],
+  bookmarkedCommentIds = [],
   referenceNowMs = Date.now(),
   defaultCommentsOpen = false,
 }: Props) {
@@ -206,6 +210,8 @@ export function PostCard({
               postId={post.id}
               replyToUsername={author.username}
               comments={comments}
+              likedCommentIds={likedCommentIds}
+              bookmarkedCommentIds={bookmarkedCommentIds}
               isLoggedIn={isLoggedIn}
               profile={profile}
               userId={userId}

@@ -70,6 +70,7 @@ export type Comment = {
   post_id: number;
   author_id: string;
   content: string;
+  relay_count?: number;
   narrative_beat_id: number | null;
   narrative_signal_id: number | null;
   created_at: string;

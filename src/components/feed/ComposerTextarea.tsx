@@ -19,6 +19,7 @@ type Props = {
   maxLength: number;
   disabled?: boolean;
   name?: string;
+  id?: string;
   minHeight?: string;
 };
 
@@ -29,6 +30,7 @@ export function ComposerTextarea({
   maxLength,
   disabled,
   name,
+  id,
   minHeight = "min-h-[52px]",
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -58,6 +60,7 @@ export function ComposerTextarea({
     <div className="relative">
       <Textarea
         ref={textareaRef}
+        id={id}
         name={name}
         placeholder={placeholder}
         className={`${composerTextareaClassName} ${minHeight}`}

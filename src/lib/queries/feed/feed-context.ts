@@ -1,6 +1,10 @@
 ﻿import { getCommentsByPostIds } from "@/lib/queries/posts";
-import { getUserBookmarkedPostIdsForPosts } from "@/lib/queries/social";
-import { getUserReactionsByPostIds } from "@/lib/queries/social";
+import {
+  getUserBookmarkedCommentIds,
+  getUserBookmarkedPostIdsForPosts,
+  getUserLikedCommentIds,
+  getUserReactionsByPostIds,
+} from "@/lib/queries/social";
 import { getRequestAuth, type RequestAuth } from "@/lib/queries/shell";
 import type { CommentWithAuthor, Profile, ReactionKind } from "@/lib/supabase/types";
 
@@ -8,6 +12,8 @@ export type PostInteractions = {
   bookmarkedPostIds: number[];
   commentsByPostId: Record<number, CommentWithAuthor[]>;
   userReactionsByPostId: Record<number, ReactionKind>;
+  likedCommentIds: number[];
+  bookmarkedCommentIds: number[];
 };
 
 export type FeedInteractionContext = PostInteractions & {
@@ -16,25 +22,47 @@ export type FeedInteractionContext = PostInteractions & {
   isLoggedIn: boolean;
 };
 
+function collectCommentIds(
+  commentsByPostId: Record<number, CommentWithAuthor[]>
+): number[] {
+  return Object.values(commentsByPostId).flatMap((list) =>
+    list.map((c) => c.id)
+  );
+}
+
 export async function resolvePostInteractions(
   postIds: number[],
   userId?: string
 ): Promise<PostInteractions> {
-  const [bookmarkedPostIds, commentsByPostId, userReactionsByPostId] =
-    await Promise.all([
-      userId
-        ? getUserBookmarkedPostIdsForPosts(userId, postIds)
-        : Promise.resolve(new Set<number>()),
-      getCommentsByPostIds(postIds),
-      userId
-        ? getUserReactionsByPostIds(postIds, userId)
-        : Promise.resolve({} as Record<number, ReactionKind>),
-    ]);
+  const commentsByPostId = await getCommentsByPostIds(postIds);
+  const commentIds = collectCommentIds(commentsByPostId);
+
+  const [
+    bookmarkedPostIds,
+    userReactionsByPostId,
+    likedCommentIds,
+    bookmarkedCommentIds,
+  ] = await Promise.all([
+    userId
+      ? getUserBookmarkedPostIdsForPosts(userId, postIds)
+      : Promise.resolve(new Set<number>()),
+    userId
+      ? getUserReactionsByPostIds(postIds, userId)
+      : Promise.resolve({} as Record<number, ReactionKind>),
+    userId
+      ? getUserLikedCommentIds(commentIds, userId)
+      : Promise.resolve(new Set<number>()),
+    userId
+      ? getUserBookmarkedCommentIds(commentIds, userId)
+      : Promise.resolve(new Set<number>()),
+  ]);
 
   return {
     bookmarkedPostIds: [...bookmarkedPostIds],
     commentsByPostId,
     userReactionsByPostId,
+    likedCommentIds: [...likedCommentIds],
+    bookmarkedCommentIds: [...bookmarkedCommentIds],
   };
 }
 

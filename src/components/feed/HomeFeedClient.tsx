@@ -37,6 +37,8 @@ type Props = {
   bookmarkedPostIds: number[];
   commentsByPostId: Record<number, CommentWithAuthor[]>;
   userReactionsByPostId: Record<number, ReactionKind>;
+  likedCommentIds: number[];
+  bookmarkedCommentIds: number[];
   referenceNowMs: number;
 };
 
@@ -91,6 +93,8 @@ export function HomeFeedClient({
   bookmarkedPostIds: initialBookmarkedPostIds,
   commentsByPostId: initialCommentsByPostId,
   userReactionsByPostId: initialUserReactionsByPostId,
+  likedCommentIds: initialLikedCommentIds,
+  bookmarkedCommentIds: initialBookmarkedCommentIds,
   referenceNowMs,
 }: Props) {
   const tab = useContext(FeedTabContext);
@@ -115,6 +119,10 @@ export function HomeFeedClient({
   const [userReactionsByPostId, setUserReactionsByPostId] = useState(
     initialUserReactionsByPostId
   );
+  const [likedCommentIds, setLikedCommentIds] = useState(initialLikedCommentIds);
+  const [bookmarkedCommentIds, setBookmarkedCommentIds] = useState(
+    initialBookmarkedCommentIds
+  );
   const [appendedByTab, setAppendedByTab] = useState<
     Partial<Record<FeedTab, PostWithAuthor[]>>
   >({});
@@ -134,6 +142,8 @@ export function HomeFeedClient({
     setBookmarkedPostIds(initialBookmarkedPostIds);
     setCommentsByPostId(initialCommentsByPostId);
     setUserReactionsByPostId(initialUserReactionsByPostId);
+    setLikedCommentIds(initialLikedCommentIds);
+    setBookmarkedCommentIds(initialBookmarkedCommentIds);
   }, [
     initialRecentPosts,
     initialFollowingPosts,
@@ -141,6 +151,8 @@ export function HomeFeedClient({
     initialBookmarkedPostIds,
     initialCommentsByPostId,
     initialUserReactionsByPostId,
+    initialLikedCommentIds,
+    initialBookmarkedCommentIds,
   ]);
 
   useEffect(() => {
@@ -209,6 +221,12 @@ export function HomeFeedClient({
           ...prev,
           ...payload.userReactionsByPostId,
         }));
+        setLikedCommentIds((prev) => [
+          ...new Set([...prev, ...payload.likedCommentIds]),
+        ]);
+        setBookmarkedCommentIds((prev) => [
+          ...new Set([...prev, ...payload.bookmarkedCommentIds]),
+        ]);
         setLoadingTab(null);
       })
       .catch(() => {
@@ -259,6 +277,12 @@ export function HomeFeedClient({
         ...prev,
         ...result.userReactionsByPostId,
       }));
+      setLikedCommentIds((prev) => [
+        ...new Set([...prev, ...result.likedCommentIds]),
+      ]);
+      setBookmarkedCommentIds((prev) => [
+        ...new Set([...prev, ...result.bookmarkedCommentIds]),
+      ]);
     },
     [tab, basePosts, loadedCount]
   );
@@ -299,6 +323,8 @@ export function HomeFeedClient({
       userId={user?.id}
       commentsByPostId={commentsByPostId}
       userReactionsByPostId={userReactionsByPostId}
+      likedCommentIds={likedCommentIds}
+      bookmarkedCommentIds={bookmarkedCommentIds}
       referenceNowMs={referenceNowMs}
       emptyConfig={emptyConfig}
       onLoadMoreResult={handleLoadMoreResult}

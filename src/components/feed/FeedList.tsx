@@ -16,6 +16,8 @@ type Props = {
   userId?: string;
   commentsByPostId?: Record<number, CommentWithAuthor[]>;
   userReactionsByPostId?: Record<number, ReactionKind>;
+  likedCommentIds?: number[];
+  bookmarkedCommentIds?: number[];
   referenceNowMs?: number;
   emptyMessage?: string;
   emptyConfig?: FeedEmptyConfig;
@@ -30,6 +32,8 @@ export function FeedList({
   userId,
   commentsByPostId = {},
   userReactionsByPostId = {},
+  likedCommentIds = [],
+  bookmarkedCommentIds = [],
   referenceNowMs = Date.now(),
   emptyMessage = "Aucun post pour l'instant.",
   emptyConfig,
@@ -76,6 +80,8 @@ export function FeedList({
           profile={profile}
           userId={userId}
           comments={commentsByPostId[post.id] ?? []}
+          likedCommentIds={likedCommentIds}
+          bookmarkedCommentIds={bookmarkedCommentIds}
           referenceNowMs={referenceNowMs}
           defaultCommentsOpen={defaultCommentsOpen}
         />

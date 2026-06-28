@@ -7,6 +7,7 @@ import { fetchFeedCommentById } from "@/app/actions/feed";
 import { createComment } from "@/app/actions/posts";
 import { useFeedBridge } from "@/components/feed/FeedBridgeContext";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { CommentActions } from "@/components/feed/CommentActions";
 import { CommentDeleteButton } from "@/components/feed/CommentDeleteButton";
 import { ComposerTextarea } from "@/components/feed/ComposerTextarea";
 import { ComposerToolbar } from "@/components/feed/ComposerToolbar";
@@ -27,6 +28,8 @@ type Props = {
   isLoggedIn: boolean;
   profile?: Profile | null;
   userId?: string;
+  likedCommentIds?: number[];
+  bookmarkedCommentIds?: number[];
   open: boolean;
   onOpenChange?: (open: boolean) => void;
   referenceNowMs?: number;
@@ -39,6 +42,8 @@ export function PostComments({
   isLoggedIn,
   profile,
   userId,
+  likedCommentIds = [],
+  bookmarkedCommentIds = [],
   open,
   onOpenChange,
   referenceNowMs = Date.now(),
@@ -50,6 +55,9 @@ export function PostComments({
   const [content, setContent] = useState("");
 
   const replyHandle = `@${replyToUsername.toLowerCase()}`;
+  const composerId = `reply-composer-${postId}`;
+  const likedCommentIdSet = new Set(likedCommentIds);
+  const bookmarkedCommentIdSet = new Set(bookmarkedCommentIds);
   const embedSourceUrl = extractEmbedMediaUrls(content)[0];
   const canSubmit = content.trim().length > 0 && !pending;
 
@@ -64,6 +72,19 @@ export function PostComments({
     setContent((c) => {
       const sep = c.length > 0 && !/\s$/.test(c) ? " " : "";
       return `${c}${sep}${gif.url}`;
+    });
+  }
+
+  function handleReplyToComment(username: string) {
+    const mention = `@${username.toLowerCase()} `;
+    setContent((prev) => {
+      if (prev.includes(mention)) return prev;
+      return `${mention}${prev}`.trimStart();
+    });
+    requestAnimationFrame(() => {
+      const el = document.getElementById(composerId);
+      el?.focus();
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
   }
 
@@ -125,6 +146,7 @@ export function PostComments({
 
               <div className="min-w-0 flex-1">
                 <ComposerTextarea
+                  id={composerId}
                   name="content"
                   placeholder="Émettre une réponse"
                   maxLength={300}
@@ -224,6 +246,15 @@ export function PostComments({
                   <PostContent
                     content={c.content}
                     className="mt-1 whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
+                  />
+                  <CommentActions
+                    commentId={c.id}
+                    postId={postId}
+                    relayCount={c.relay_count ?? 0}
+                    likedByUser={likedCommentIdSet.has(c.id)}
+                    bookmarkedByUser={bookmarkedCommentIdSet.has(c.id)}
+                    isLoggedIn={isLoggedIn}
+                    onReply={() => handleReplyToComment(c.author.username)}
                   />
                 </div>
               </article>
