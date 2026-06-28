@@ -1,5 +1,25 @@
 import { createServiceClient, verifyCron } from "../_shared/supabase.ts";
 
+const HASHTAG_REGEX = /#[\w\u00C0-\u024F]+/gi;
+
+function countHashtagsFromTexts(texts: string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const text of texts) {
+    const seenInText = new Set<string>();
+    const matches = text.match(HASHTAG_REGEX) ?? [];
+
+    for (const tag of matches) {
+      const normalized = tag.toLowerCase();
+      if (seenInText.has(normalized)) continue;
+      seenInText.add(normalized);
+      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
+    }
+  }
+
+  return counts;
+}
+
 Deno.serve(async (req) => {
   if (!verifyCron(req)) {
     return new Response("Unauthorized", { status: 401 });
@@ -8,26 +28,31 @@ Deno.serve(async (req) => {
   const supabase = createServiceClient();
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const { data: posts } = await supabase
-    .from("posts")
-    .select("content")
-    .gte("created_at", since);
+  const [{ data: posts }, { data: comments }] = await Promise.all([
+    supabase
+      .from("posts")
+      .select("content")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabase
+      .from("comments")
+      .select("content")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(250),
+  ]);
 
-  const tagCounts = new Map<string, number>();
-  const hashtagRegex = /#[\w\u00C0-\u024F]+/gi;
+  const texts = [
+    ...(posts?.map((p) => p.content) ?? []),
+    ...(comments?.map((c) => c.content) ?? []),
+  ];
 
-  posts?.forEach((p) => {
-    const matches = p.content.match(hashtagRegex);
-    matches?.forEach((tag) => {
-      const t = tag.toLowerCase();
-      tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
-    });
-  });
-
-  const hashtags = [...tagCounts.entries()]
+  const counts = countHashtagsFromTexts(texts);
+  const hashtags = [...counts.entries()]
     .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+    .slice(0, 10);
 
   const { data: topNpcs } = await supabase
     .from("profiles")
@@ -37,13 +62,7 @@ Deno.serve(async (req) => {
     .limit(5);
 
   const data = {
-    hashtags:
-      hashtags.length > 0
-        ? hashtags
-        : [
-            { tag: "#LaFinDuTravail", count: 10000 },
-            { tag: "#IAvsHumanité", count: 8000 },
-          ],
+    hashtags,
     top_npcs:
       topNpcs?.map((n) => ({
         username: n.username,

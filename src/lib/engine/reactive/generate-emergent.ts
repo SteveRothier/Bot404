@@ -19,7 +19,7 @@ import { getRecentNpcAuthorIdsOnPost } from "@/lib/engine/casting/recent-replier
 import { loadAllNpcs } from "@/lib/engine/casting/select-npc";
 import { buildRichThreadSnippet } from "@/lib/engine/casting/thread-context";
 import { maybeNpcReactionsOnPost } from "@/lib/engine/casting/npc-reaction";
-import { validateNpcPostContent } from "@/lib/engine/content/validate-content";
+import { validateNpcCommentContent, validateNpcPostContent } from "@/lib/engine/content/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType, Profile, ReactionKind } from "@/lib/supabase/types";
 
@@ -172,25 +172,7 @@ async function pickResponderNpc(
   });
 }
 
-async function applyNpcReactionsAfterEmergent(
-  typedSignal: NarrativeSignal,
-  targetPostId: number
-) {
-  if (typedSignal.kind === "human_post") {
-    const postType =
-      typeof typedSignal.payload.post_type === "string"
-        ? (typedSignal.payload.post_type as PostType)
-        : "message";
-    await maybeNpcReactionsOnPost(targetPostId, {
-      humanAuthorId: typedSignal.author_id,
-      postType,
-    });
-    return;
-  }
-
-  const postAuthorIsNpc = typedSignal.payload.post_author_is_npc !== false;
-  if (postAuthorIsNpc) return;
-
+async function applyNpcReactionsAfterEmergent(targetPostId: number) {
   const supabase = createAdminClient();
   const { data: post } = await supabase
     .from("posts")
@@ -204,6 +186,8 @@ async function applyNpcReactionsAfterEmergent(
     humanAuthorId: post.author_id,
     postType: (post.post_type ?? "message") as PostType,
     postContent: post.content,
+    minCount: 1,
+    maxCount: 4,
   });
 }
 
@@ -330,7 +314,7 @@ export async function processEmergentSignal(
       context: "emergent",
     });
 
-    await applyNpcReactionsAfterEmergent(typedSignal, targetPostId);
+    await applyNpcReactionsAfterEmergent(targetPostId);
 
     return {
       ok: true,
@@ -366,11 +350,9 @@ export async function processEmergentSignal(
     postAuthorIsNpc,
   });
 
-  const commentValidateType: PostType = "message";
-
   const rawComment = await ollamaChat(system, user, 300, "comment");
   const commentContent = rawComment
-    ? validateNpcPostContent(rawComment, commentValidateType, ctx.content)
+    ? validateNpcCommentContent(rawComment, ctx.content)
     : null;
   if (!commentContent) {
     return fail("Échec génération Ollama.");
@@ -411,6 +393,8 @@ export async function processEmergentSignal(
     .from("profiles")
     .update({ popularity_score: (npc.popularity_score ?? 0) + 1 })
     .eq("id", npc.id);
+
+  await applyNpcReactionsAfterEmergent(targetPostId);
 
   return {
     ok: true,

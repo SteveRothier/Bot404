@@ -69,16 +69,21 @@ export function pickReactionKindForNpc(
   }
 
   if (isMemeNpc) {
-    if (postType === "rumor" && random() < 0.3) {
-      return "amplify";
-    }
+    if (random() < 0.4) return "amplify";
+    if (random() < 0.08) return "flag";
     return "relay";
   }
 
-  if (postType === "rumor" && random() < 0.25) {
+  if (postType === "rumor" && random() < 0.35) {
     return "amplify";
   }
-  if (postType === "theory" && random() < 0.05) {
+  if (postType === "theory" && random() < 0.12) {
+    return "flag";
+  }
+  if (postType === "message" && random() < 0.22) {
+    return "amplify";
+  }
+  if (postType === "message" && random() < 0.06) {
     return "flag";
   }
   return "relay";

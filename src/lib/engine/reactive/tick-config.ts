@@ -6,8 +6,8 @@ export function getSignalsPerTick(): number {
 }
 
 export function getAmbientFallbackChance(): number {
-  const raw = process.env.NPC_AMBIENT_FALLBACK_CHANCE ?? "0.55";
+  const raw = process.env.NPC_AMBIENT_FALLBACK_CHANCE ?? "0.75";
   const n = Number.parseFloat(raw);
-  if (!Number.isFinite(n)) return 0.55;
+  if (!Number.isFinite(n)) return 0.75;
   return Math.min(Math.max(n, 0), 1);
 }

@@ -28,6 +28,9 @@ export function buildNpcPostPrompt(
   return `${npcBase(npc)}${npcExamplePostsBlock(npc)}${loreBlock}\n${MESSAGE_INSTRUCTION}`;
 }
 
-export function npcPostUserMessage(): string {
+export function npcPostUserMessage(trendingHint = false): string {
+  if (trendingHint) {
+    return "Écris un post en lien avec une tendance du moment (hashtag inclus).";
+  }
   return "Écris un nouveau post pour le feed.";
 }

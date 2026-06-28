@@ -7,9 +7,9 @@ import {
 import { expireOldSignals } from "@/lib/engine/reactive/signals";
 import { checkNarrativeEndgame } from "@/lib/engine/reactive/endgame-stub";
 import type { NarrativeTickResult } from "@/lib/engine/shared/types";
-import { generateNpcComment } from "@/lib/engine/ambient/generate-comment";
+import { generateNpcCommentsBatch } from "@/lib/engine/ambient/generate-comment";
 import { generateNpcPost } from "@/lib/engine/ambient/generate-post";
-import { maybeAmbientNpcReactionsOnHumanPost } from "@/lib/engine/casting/npc-reaction";
+import { maybeAmbientNpcReactions } from "@/lib/engine/casting/npc-reaction";
 
 export type RunNarrativeTickOptions = {
   /** Surcharge le nombre de signaux émergents traités (défaut: NARRATIVE_SIGNALS_PER_TICK). */
@@ -54,11 +54,12 @@ export async function runNarrativeTick(
   }
 
   if (Math.random() < getAmbientFallbackChance()) {
-    await maybeAmbientNpcReactionsOnHumanPost();
+    await maybeAmbientNpcReactions(2);
 
     const ambient =
-      Math.random() < 0.85
-        ? await generateNpcComment()
+      Math.random() < 0.88
+        ? (await generateNpcCommentsBatch(2 + Math.floor(Math.random() * 2)))[0] ??
+          { ok: false as const, error: "Aucun commentaire généré." }
         : await generateNpcPost();
 
     if (ambient.ok) {

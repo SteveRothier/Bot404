@@ -16,12 +16,64 @@ export type NpcReactionOptions = {
 
 export { pickReactionKindForNpc } from "@/lib/engine/casting/reaction-cast";
 
+type PostReactionTarget = {
+  id: number;
+  author_id: string;
+  post_type: PostType;
+  content: string;
+  reactionScore: number;
+};
+
+async function fetchPostsForAmbientReactions(
+  limit = 25
+): Promise<PostReactionTarget[]> {
+  const supabase = createAdminClient();
+  const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+  const { data: posts } = await supabase
+    .from("posts")
+    .select(
+      "id, author_id, post_type, content, relay_count, amplify_count, flag_count, created_at"
+    )
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (!posts?.length) return [];
+
+  return posts.map((p) => ({
+    id: p.id,
+    author_id: p.author_id,
+    post_type: (p.post_type ?? "message") as PostType,
+    content: p.content,
+    reactionScore:
+      (p.relay_count ?? 0) + (p.amplify_count ?? 0) + (p.flag_count ?? 0),
+  }));
+}
+
+function pickWeightedPost(
+  posts: PostReactionTarget[],
+  random = Math.random
+): PostReactionTarget | null {
+  if (!posts.length) return null;
+
+  const weights = posts.map((p) => 1 / (1 + p.reactionScore));
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  let r = random() * total;
+
+  for (let i = 0; i < posts.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return posts[i];
+  }
+  return posts[posts.length - 1];
+}
+
 export async function maybeNpcReactionsOnPost(
   postId: number,
   options: NpcReactionOptions
 ): Promise<number> {
-  const min = options.minCount ?? 1;
-  const max = options.maxCount ?? 2;
+  const min = options.minCount ?? 2;
+  const max = options.maxCount ?? 5;
   const count = min + Math.floor(Math.random() * (max - min + 1));
 
   const supabase = createAdminClient();
@@ -86,31 +138,35 @@ export async function maybeNpcReactionsOnPost(
   return inserted;
 }
 
+/** Réactions ambient sur plusieurs posts récents (humains et NPC). */
+export async function maybeAmbientNpcReactions(
+  batchSize = 2
+): Promise<number> {
+  const posts = await fetchPostsForAmbientReactions();
+  if (!posts.length) return 0;
+
+  let total = 0;
+  const used = new Set<number>();
+
+  for (let i = 0; i < batchSize; i++) {
+    const pool = posts.filter((p) => !used.has(p.id));
+    if (!pool.length) break;
+
+    const pick = pickWeightedPost(pool);
+    if (!pick) break;
+
+    used.add(pick.id);
+    total += await maybeNpcReactionsOnPost(pick.id, {
+      humanAuthorId: pick.author_id,
+      postType: pick.post_type,
+      postContent: pick.content,
+    });
+  }
+
+  return total;
+}
+
+/** @deprecated Utiliser maybeAmbientNpcReactions */
 export async function maybeAmbientNpcReactionsOnHumanPost(): Promise<void> {
-  if (Math.random() >= 0.5) return;
-
-  const supabase = createAdminClient();
-  const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
-
-  const { data: posts } = await supabase
-    .from("posts")
-    .select("id, author_id, post_type, content, author:profiles!author_id(is_npc)")
-    .gte("created_at", since)
-    .order("created_at", { ascending: false })
-    .limit(20);
-
-  const humanPosts =
-    posts?.filter((p) => {
-      const author = p.author as { is_npc?: boolean } | null;
-      return author?.is_npc === false;
-    }) ?? [];
-
-  if (!humanPosts.length) return;
-
-  const pick = humanPosts[Math.floor(Math.random() * humanPosts.length)];
-  await maybeNpcReactionsOnPost(pick.id, {
-    humanAuthorId: pick.author_id,
-    postType: (pick.post_type ?? "message") as PostType,
-    postContent: pick.content,
-  });
+  await maybeAmbientNpcReactions(1);
 }

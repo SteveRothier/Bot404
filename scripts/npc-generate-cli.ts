@@ -1,6 +1,6 @@
 ﻿import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { generateNpcComment } from "@/lib/engine/ambient/generate-comment";
+import { generateNpcComment, generateNpcCommentsBatch } from "@/lib/engine/ambient/generate-comment";
 import { generateNpcPost } from "@/lib/engine/ambient/generate-post";
 
 function loadDotEnv(filePath: string) {
@@ -38,7 +38,13 @@ async function main() {
     outcomes.push({ kind: "post", ...(await generateNpcPost()) });
   }
   if (runComments) {
-    outcomes.push({ kind: "comment", ...(await generateNpcComment()) });
+    const batch = await generateNpcCommentsBatch(2 + Math.floor(Math.random() * 2));
+    for (const result of batch) {
+      outcomes.push({ kind: "comment", ...result });
+    }
+    if (batch.length === 0) {
+      outcomes.push({ kind: "comment", ...(await generateNpcComment()) });
+    }
   }
 
   console.log(JSON.stringify({ ok: true, outcomes }));

@@ -64,3 +64,24 @@ export function validateNpcPostContent(
 
   return trimmed;
 }
+
+/** Validation assouplie pour commentaires (évite les faux positifs de style NPC). */
+export function validateNpcCommentContent(
+  content: string,
+  sourceText = "",
+  recentTexts: string[] = []
+): string | null {
+  const trimmed = content.trim();
+  if (!trimmed) return null;
+
+  if (sourceText && isTooSimilarToSource(trimmed, sourceText, 0.97)) {
+    return null;
+  }
+
+  const normalized = normalize(trimmed);
+  if (recentTexts.some((s) => normalize(s) === normalized)) {
+    return null;
+  }
+
+  return trimmed;
+}

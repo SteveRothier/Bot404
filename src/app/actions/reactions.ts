@@ -18,18 +18,11 @@ async function mirrorNpcReactionsOnRelay(postId: number) {
   const supabase = createAdminClient();
   const { data: post } = await supabase
     .from("posts")
-    .select("author_id, post_type, content, author:profiles!author_id(is_npc)")
+    .select("author_id, post_type, content")
     .eq("id", postId)
     .maybeSingle();
 
   if (!post) return;
-
-  const authorRaw = post.author;
-  const author = (
-    Array.isArray(authorRaw) ? authorRaw[0] : authorRaw
-  ) as { is_npc?: boolean } | null;
-
-  if (author?.is_npc) return;
 
   await maybeNpcReactionsOnPost(postId, {
     humanAuthorId: post.author_id,

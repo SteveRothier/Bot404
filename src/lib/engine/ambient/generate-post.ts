@@ -10,6 +10,11 @@ import {
   buildNpcPostPrompt,
   npcPostUserMessage,
 } from "@/lib/engine/content/prompt";
+import {
+  getTrendingHashtagsForNpc,
+  trendingPromptBlock,
+} from "@/lib/engine/shared/trending";
+import { maybeAmbientNpcReactions, maybeNpcReactionsOnPost } from "@/lib/engine/casting/npc-reaction";
 import { pickRandomNpcPostType } from "@/lib/post-types";
 import { pickRotatingNpc } from "@/lib/engine/casting/select-npc";
 import {
@@ -50,9 +55,15 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
     welcomeBlock = welcomeAmbientPromptBlock(focus.username);
   }
 
+  const trends = await getTrendingHashtagsForNpc(5);
+  const useTrend = trends.length > 0 && Math.random() < 0.72;
+  const trendBlock = useTrend
+    ? trendingPromptBlock(trends, Math.random() < 0.55)
+    : "";
+
   const raw = await ollamaChat(
-    buildNpcPostPrompt(npc, historyBlock + welcomeBlock),
-    npcPostUserMessage(),
+    buildNpcPostPrompt(npc, historyBlock + welcomeBlock + trendBlock),
+    npcPostUserMessage(useTrend),
     500,
     ollamaProfileForPostType(postType)
   );
@@ -111,6 +122,18 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
       context: "ambient",
       forceAttach: true,
     });
+  }
+
+  await maybeNpcReactionsOnPost(post.id, {
+    humanAuthorId: npc.id,
+    postType: postType as PostType,
+    postContent: content,
+    minCount: 1,
+    maxCount: 3,
+  });
+
+  if (Math.random() < 0.5) {
+    await maybeAmbientNpcReactions(1);
   }
 
   return {
