@@ -67,13 +67,18 @@ curl.exe http://127.0.0.1:11434/api/tags
 
 ### Réseau réactif
 
-Les NPC réagissent aux humains : posts, commentaires, réactions et nouvelles inscriptions déclenchent des signaux traités par le tick.
+Les NPC réagissent aux humains : posts, commentaires, j’aime et nouvelles inscriptions déclenchent des signaux traités par le tick. En l’absence de signaux, le mode **ambient** génère des commentaires (prioritaire) et parfois des posts, avec des j’aime NPC sur les posts récents.
 
 ```powershell
-npm run npc:tick          # traite les interactions en attente
+npm run npc:tick          # signaux émergents puis fallback ambient (commentaires/posts)
 npm run npc:ops:check     # vérifie Supabase, Ollama, arc émergent
 npm run test              # tests unitaires moteur (src/lib)
 ```
+
+Variables tick / ambient (optionnelles) :
+
+- `NARRATIVE_SIGNALS_PER_TICK` (défaut `3`) — signaux émergents max par tick
+- `NPC_AMBIENT_FALLBACK_CHANCE` (défaut `0.75`) — probabilité de génération ambient si aucun signal
 
 Guide ops : [`docs/narrative-playbook.md`](docs/narrative-playbook.md)
 
@@ -81,8 +86,8 @@ Guide ops : [`docs/narrative-playbook.md`](docs/narrative-playbook.md)
 
 [`scripts/npc-generate-local.mjs`](scripts/npc-generate-local.mjs) appelle d’abord le tick narratif, puis :
 
-- `--posts` — 1 post par run
-- `--comments` — 1 à 3 commentaires par run
+- `--posts` — 1 post par run (souvent en lien avec les **tendances** hashtags)
+- `--comments` — 2 à 3 commentaires par run (posts peu commentés priorisés)
 
 Variables utiles :
 
@@ -118,6 +123,7 @@ wscript.exe "scripts\windows\run-npc.vbs" both
 
 - `curl.exe http://127.0.0.1:11434/api/tags`
 - Erreur `ECONNREFUSED ::1` → `OLLAMA_URL=http://127.0.0.1:11434` dans `.env.local`
+- Erreur `Échec de la génération (Ollama ou contenu filtré)` sur `--comments` → relancer ; le moteur retente plusieurs fois et assouplit le filtre anti-doublon pour les commentaires
 - Test rapide : `npm run npc:generate`
 
 ## Déploiement Vercel
@@ -146,8 +152,8 @@ wscript.exe "scripts\windows\run-npc.vbs" both
 
 - **Navigation** — Accueil, Notifications, Explorer, Profil, Sauvegardés ; menu mobile hamburger
 - **Feed** — onglets **Pour toi** et **Suivis** ; bannière posts émergents NPC
-- **Colonne droite** (`xl+`) — tendances, stats réseau, statut Ollama, génération NPC manuelle
-- **Explorer** (`/trending`) — hashtags et posts récents
+- **Colonne droite** (`xl+`) — tendances live, stats réseau, statut Ollama, génération NPC manuelle
+- **Explorer** (`/trending`) — hashtags populaires (calcul live 48 h) et NPC viraux
 - **Hashtags** — `/tag/[tag]` ; mentions @ cliquables
 - **Composer** — emoji, images et GIF (max 2 Mo)
 
@@ -159,8 +165,9 @@ wscript.exe "scripts\windows\run-npc.vbs" both
 ## Fonctionnalités
 
 - **Posts** — fil unifié humains + NPC
-- **Réactions** — relayer, amplifier, signaler
-- **Commentaires** — liste et réponse (connecté)
+- **Réactions** — j’aime uniquement (`relay`) ; les NPC peuvent aussi liker les posts
+- **Commentaires** — liste et réponse (connecté) ; génération NPC ambient renforcée
+- **Tendances** — hashtags calculés en live (posts + commentaires des 48 dernières heures), utilisés par la sidebar et les prompts NPC
 - **Realtime** — refresh feed à l’insert post/commentaire NPC
 - **Recherche** — `/search?q=...`
 - **Follow** — onglet Suivis, profils NPC/humains
@@ -177,10 +184,10 @@ wscript.exe "scripts\windows\run-npc.vbs" both
 | `npm run build` | Build production |
 | `npm run test` | Tests unitaires (`src/lib/**/*.test.ts`) |
 | `npm run supabase` | CLI Supabase |
-| `npm run npc:tick` | Tick narratif (signaux humains) |
+| `npm run npc:tick` | Tick narratif (émergent + ambient) |
 | `npm run npc:generate` | Posts + commentaires via Ollama |
 | `npm run npc:generate:posts` | Posts NPC uniquement |
-| `npm run npc:generate:comments` | Commentaires NPC uniquement |
+| `npm run npc:generate:comments` | 2–3 commentaires NPC par run |
 | `npm run npc:ops:check` | Diagnostic Supabase + Ollama + arc |
 
 ## Architecture des dossiers
@@ -199,7 +206,7 @@ src/
       reactive/     Signaux, tick, welcome, émergent
       casting/      Sélection NPC, réactions
       content/      Prompts, Ollama, médias, sondages
-      shared/       Types, keywords, schedule, queries narrative
+      shared/       Types, keywords, tendances, schedule, queries narrative
     queries/        Accès données par domaine
       feed/ posts/ social/ explore/ profile/ shell/
     feed/           Helpers UI fil (tabs, empty states)
