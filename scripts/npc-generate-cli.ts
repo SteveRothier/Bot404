@@ -10,6 +10,7 @@ import {
   generateNpcPost,
   generateNpcPostsBatch,
 } from "@/lib/engine/ambient/generate-post";
+import { isNpcGenerationEnabled } from "@/lib/engine/shared/generation-gate";
 
 function loadDotEnv(filePath: string) {
   if (!existsSync(filePath)) return;
@@ -77,6 +78,17 @@ const commentCount = clampNpcCommentBatchCount(
 );
 
 async function main() {
+  if (!isNpcGenerationEnabled()) {
+    console.log(
+      JSON.stringify({
+        ok: false,
+        error: "generation_disabled",
+        outcomes: [],
+      })
+    );
+    return;
+  }
+
   const outcomes: unknown[] = [];
 
   if (runPosts) {

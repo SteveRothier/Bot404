@@ -31,7 +31,7 @@ npm run dev
 
 Test auto : `npm run npc:play:session`
 
-Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optionnel `OLLAMA_URL`, `OLLAMA_MODEL`, `NARRATIVE_SIGNALS_PER_TICK`, `NPC_AMBIENT_FALLBACK_CHANCE`, `NPC_COMMENT_REPLY_CHANCE`, `NPC_COMMENT_LIKE_CHANCE`, `NPC_POST_REACTION_MIN`, `NPC_POST_REACTION_MAX`, `NARRATIVE_CRON_SECRET` (prod Vercel), `IMAGE_API_*`, `TENOR_API_KEY` / `GIPHY_API_KEY`, `STEAM_WEB_API_KEY`.
+Variables `.env.local` : `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optionnel `OLLAMA_URL`, `OLLAMA_MODEL`, `NARRATIVE_SIGNALS_PER_TICK`, `NPC_AMBIENT_FALLBACK_CHANCE`, `NPC_COMMENT_REPLY_CHANCE`, `NPC_COMMENT_LIKE_CHANCE`, `NPC_POST_REACTION_MIN`, `NPC_POST_REACTION_MAX`, `NARRATIVE_CRON_SECRET` (prod Vercel), `IMAGE_API_*`, `TENOR_API_KEY` / `GIPHY_API_KEY`.
 
 ---
 
@@ -56,11 +56,10 @@ Priorité du scheduler : `npm run npc:tick` → signaux émergents (`NARRATIVE_S
 
 **Engagement commentaires** : les NPC likent les commentaires (`comment_likes`), répondent avec `@username` dans les fils actifs, et votent sur les sondages lors de la génération de commentaires.
 
-### Médias NPC (images / GIF / Steam)
+### Médias NPC (images / GIF)
 
-Ordre pour NPC **gaming** (Synthwave, PatchNotes…) : **jaquette Steam** → GIF → image IA.
+Ordre : **GIF** (Tenor/Giphy) → **image IA** (si configuré).
 
-- **Steam** : `STEAM_WEB_API_KEY` — recherche jeu (storesearch) + jaquette CDN, upload `post-media`
 - **GIF** : `TENOR_API_KEY` ou `GIPHY_API_KEY`
 - **Images IA** : `IMAGE_API_URL` + `IMAGE_API_KEY`
 - Quota : `NPC_MEDIA_MAX_PER_DAY` (défaut 20)

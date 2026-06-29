@@ -15,6 +15,10 @@ import {
   generateNpcPostsBatch,
 } from "@/lib/engine/ambient/generate-post";
 import { getNpcMediaStatus } from "@/lib/engine/content/media";
+import {
+  NPC_GENERATION_DISABLED_ERROR,
+  isNpcGenerationEnabled,
+} from "@/lib/engine/shared/generation-gate";
 import { runNarrativeTick } from "@/lib/engine/reactive/tick";
 
 export async function getNpcMediaStatusAction() {
@@ -68,6 +72,10 @@ export async function generateNpcPostAction(count = 1) {
     "Connectez-vous pour utiliser la génération NPC."
   );
   if ("error" in auth) return { error: auth.error };
+
+  if (!isNpcGenerationEnabled()) {
+    return { error: NPC_GENERATION_DISABLED_ERROR };
+  }
 
   const cooldown = await checkNpcCooldown(auth.user.id, "post");
   if (!cooldown.ok) return { error: cooldown.error };
@@ -123,6 +131,10 @@ export async function generateNpcCommentAction(count = 1) {
     "Connectez-vous pour utiliser la génération NPC."
   );
   if ("error" in auth) return { error: auth.error };
+
+  if (!isNpcGenerationEnabled()) {
+    return { error: NPC_GENERATION_DISABLED_ERROR };
+  }
 
   const cooldown = await checkNpcCooldown(auth.user.id, "comment");
   if (!cooldown.ok) return { error: cooldown.error };

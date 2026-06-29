@@ -24,6 +24,7 @@
 .DS_Store
 *.pem
 logs/
+.npc-generation-off
 
 # debug
 npm-debug.log*

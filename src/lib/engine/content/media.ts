@@ -1,15 +1,10 @@
 ﻿import {
   prefersAiImageMedia,
   prefersGifMedia,
-  prefersSteamMedia,
 } from "@/lib/engine/casting/cast";
 import { downloadAndPersist, persistMediaToStorage } from "@/lib/engine/content/media-storage";
 import { fetchGifUrlForQuery } from "@/lib/engine/content/gif-search";
 import { npcBase } from "@/lib/engine/content/prompt";
-import {
-  isSteamMediaEnabled,
-  resolveSteamPostMedia,
-} from "@/lib/engine/content/steam-media";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostMediaType, PostType, Profile } from "@/lib/supabase/types";
 
@@ -29,7 +24,7 @@ function hasAiImage(): boolean {
 }
 
 export function isNpcMediaEnabled(): boolean {
-  return hasGifSearch() || hasAiImage() || isSteamMediaEnabled();
+  return hasGifSearch() || hasAiImage();
 }
 
 function maxMediaPerDay(): number {
@@ -81,20 +76,17 @@ export function shouldAttachMediaToNpcPost(
   if (hasGifSearch()) chance += GIF_API_CHANCE_BONUS;
   if (prefersGifMedia(npc)) chance += MEME_GIF_CHANCE_BONUS;
   if (prefersAiImageMedia(npc)) chance += 0.08;
-  if (prefersSteamMedia(npc) && isSteamMediaEnabled()) chance += 0.1;
   return random() < Math.min(chance, 0.85);
 }
 
 export function getNpcMediaStatus(): {
   enabled: boolean;
   gif: boolean;
-  steam: boolean;
   ai: boolean;
 } {
   return {
     enabled: isNpcMediaEnabled(),
     gif: hasGifSearch(),
-    steam: isSteamMediaEnabled(),
     ai: hasAiImage(),
   };
 }
@@ -169,11 +161,6 @@ export async function resolveNpcPostMedia(
   if (prefersGifMedia(npc) && hasGifSearch()) {
     const gif = await resolveGifMedia(npc, postContent);
     if (gif) return gif;
-  }
-
-  if (prefersSteamMedia(npc) && isSteamMediaEnabled()) {
-    const steam = await resolveSteamPostMedia(npc, postContent);
-    if (steam) return steam;
   }
 
   if (hasGifSearch()) {

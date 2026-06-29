@@ -215,6 +215,11 @@ export function NpcGeneratePanel({ compact = false }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [postCount, setPostCount] = useState(1);
   const [commentCount, setCommentCount] = useState(1);
+  const [batchProgress, setBatchProgress] = useState<{
+    kind: "post" | "comment";
+    current: number;
+    total: number;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
   const [pendingKind, setPendingKind] = useState<"post" | "comment" | null>(
     null
@@ -222,7 +227,6 @@ export function NpcGeneratePanel({ compact = false }: Props) {
   const [mediaStatus, setMediaStatus] = useState<{
     enabled: boolean;
     gif: boolean;
-    steam: boolean;
     ai: boolean;
   } | null>(null);
 
@@ -234,7 +238,6 @@ export function NpcGeneratePanel({ compact = false }: Props) {
     if (!mediaStatus?.enabled) return null;
     const parts: string[] = [];
     if (mediaStatus.gif) parts.push("GIF");
-    if (mediaStatus.steam) parts.push("Steam");
     if (mediaStatus.ai) parts.push("Image IA");
     return parts.length > 0 ? parts.join(" · ") : "Médias";
   })();
@@ -246,6 +249,7 @@ export function NpcGeneratePanel({ compact = false }: Props) {
   ) {
     setError(null);
     setPendingKind(kind);
+    setBatchProgress({ kind, current: 0, total: count });
     startTransition(async () => {
       try {
         const isOnline = online || (await refresh());
@@ -254,17 +258,23 @@ export function NpcGeneratePanel({ compact = false }: Props) {
           return;
         }
 
-        const result = await action(count);
-        if (result.error) {
-          setError(result.error);
-          return;
+        let hadSuccess = false;
+        for (let i = 0; i < count; i++) {
+          setBatchProgress({ kind, current: i + 1, total: count });
+          const result = await action(1);
+          if (result.error) {
+            setError(result.error);
+            return;
+          }
+          if (result.success) hadSuccess = true;
         }
 
-        if (result.success) {
+        if (hadSuccess) {
           router.refresh();
         }
       } finally {
         setPendingKind(null);
+        setBatchProgress(null);
       }
     });
   }
@@ -409,6 +419,18 @@ export function NpcGeneratePanel({ compact = false }: Props) {
           onChange={setCommentCount}
         />
       </div>
+
+      {batchProgress && (
+        <p
+          className={cn(
+            "text-center text-muted-foreground",
+            compact ? "text-meta" : "text-xs"
+          )}
+        >
+          {batchProgress.kind === "post" ? "Posts" : "Commentaires"}{" "}
+          {batchProgress.current}/{batchProgress.total}…
+        </p>
+      )}
 
       {error && (
         <p

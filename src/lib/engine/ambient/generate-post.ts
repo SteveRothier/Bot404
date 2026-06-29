@@ -22,6 +22,10 @@ import {
   welcomeAmbientPromptBlock,
 } from "@/lib/engine/reactive/welcome-human";
 import { getNpcPostReactionBounds, rollChance } from "@/lib/engine/reactive/tick-config";
+import {
+  NPC_GENERATION_DISABLED_ERROR,
+  isNpcGenerationEnabled,
+} from "@/lib/engine/shared/generation-gate";
 import { validateNpcAmbientPostContent } from "@/lib/engine/content/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType } from "@/lib/supabase/types";
@@ -150,6 +154,10 @@ async function generateSingleNpcPost(
 }
 
 export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
+  if (!isNpcGenerationEnabled()) {
+    return { ok: false, error: NPC_GENERATION_DISABLED_ERROR };
+  }
+
   const ollama = await checkOllamaStatus();
   if (!ollama.online) {
     return {
@@ -164,6 +172,10 @@ export async function generateNpcPost(): Promise<GenerateNpcPostResult> {
 export async function generateNpcPostsBatch(
   count = 1
 ): Promise<GenerateNpcPostResult[]> {
+  if (!isNpcGenerationEnabled()) {
+    return [{ ok: false, error: NPC_GENERATION_DISABLED_ERROR }];
+  }
+
   const ollama = await checkOllamaStatus();
   if (!ollama.online) {
     return [

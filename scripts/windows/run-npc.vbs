@@ -1,14 +1,20 @@
 ' Lance la génération NPC sans fenêtre (pour le Planificateur de tâches Windows).
-' Usage: wscript.exe run-npc.vbs [posts|comments|both|tick]
+' Usage: wscript.exe run-npc.vbs [posts|comments|both|tick] [count]
 
 Option Explicit
 
-Dim mode, fso, shell, scriptDir, projectRoot, nodeExe, logDir, logFile, args, cmd
+Dim mode, countArg, fso, shell, scriptDir, projectRoot, nodeExe, logDir, logFile, args, cmd
 
 If WScript.Arguments.Count > 0 Then
   mode = LCase(WScript.Arguments(0))
 Else
   mode = "both"
+End If
+
+If WScript.Arguments.Count > 1 Then
+  countArg = WScript.Arguments(1)
+Else
+  countArg = ""
 End If
 
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -25,28 +31,25 @@ If Not fso.FolderExists(logDir) Then
 End If
 
 nodeExe = "node"
-On Error Resume Next
-If fso.FileExists(projectRoot & "\.env.local") Then
-  ' rien — le script Node charge .env.local
-End If
-On Error GoTo 0
 
 Select Case mode
   Case "posts"
     logFile = logDir & "\npc-posts.log"
-    args = "scripts\npc-generate-local.mjs --posts"
+    args = "scripts\npc-schedule-run.mjs posts"
+    If countArg <> "" Then args = args & " " & countArg
   Case "comments"
     logFile = logDir & "\npc-comments.log"
-    args = "scripts\npc-generate-local.mjs --comments"
+    args = "scripts\npc-schedule-run.mjs comments"
+    If countArg <> "" Then args = args & " " & countArg
   Case "tick"
     logFile = logDir & "\narrative-tick.log"
     cmd = "cmd /c echo [" & Now & "] START tick>> """ & logFile & """ && " & _
-          "npm run npc:tick >> """ & logFile & """ 2>&1"
+          nodeExe & " scripts\npc-schedule-run.mjs tick >> """ & logFile & """ 2>&1"
     shell.Run cmd, 0, False
     WScript.Quit 0
   Case Else
     logFile = logDir & "\npc-generate.log"
-    args = "scripts\npc-generate-local.mjs"
+    args = "scripts\npc-schedule-run.mjs both"
 End Select
 
 cmd = "cmd /c echo [" & Now & "] START " & mode & ">> """ & logFile & """ && " & _

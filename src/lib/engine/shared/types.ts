@@ -76,8 +76,19 @@ export type NpcCommentBeatPayload = {
   directive?: string;
 };
 
+export type NarrativeTickMetrics = {
+  duration_ms: number;
+  ollama_calls: number;
+  signals_attempted?: number;
+  signals_handled?: number;
+  ambient_reactions?: number;
+  comment_likes?: number;
+  errors: string[];
+};
+
 export type NarrativeTickResult = {
   handled: boolean;
   mode: "emergent" | "ambient" | "none";
   detail?: Record<string, unknown>;
+  metrics?: NarrativeTickMetrics;
 };

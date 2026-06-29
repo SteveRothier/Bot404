@@ -21,6 +21,16 @@ export function ollamaProfileForPostType(postType?: PostType): OllamaChatProfile
   return "default";
 }
 
+let ollamaCallsThisTick = 0;
+
+export function resetOllamaCallCount(): void {
+  ollamaCallsThisTick = 0;
+}
+
+export function getOllamaCallCount(): number {
+  return ollamaCallsThisTick;
+}
+
 export async function ollamaChat(
   system: string,
   user: string,
@@ -29,6 +39,7 @@ export async function ollamaChat(
 ): Promise<string | null> {
   const { baseUrl, model } = getOllamaConfig();
   const opts = PROFILE_OPTIONS[profile];
+  ollamaCallsThisTick += 1;
 
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: "POST",

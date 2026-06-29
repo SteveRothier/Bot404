@@ -19,10 +19,6 @@ const VISUAL_ARCHETYPES = [
   "PixelForge",
 ];
 
-const STEAM_ARCHETYPES = ["Synthwave", "PatchNotes"];
-
-const STEAM_TOPIC_KEYWORDS = ["gaming", "game", "meta", "patch", "nerf", "buff"];
-
 const HUNT_ARCHETYPES = [
   "ConspiracyBot",
   "OracleVoid",
@@ -118,13 +114,4 @@ export function prefersGifMedia(npc: Profile): boolean {
 
 export function prefersAiImageMedia(npc: Profile): boolean {
   return VISUAL_ARCHETYPES.includes(npc.username);
-}
-
-export function prefersSteamMedia(npc: Profile): boolean {
-  if (STEAM_ARCHETYPES.includes(npc.username)) return true;
-  const p = (npc.personality ?? {}) as Personality;
-  const topics = (p.topics ?? []).map((t) => t.toLowerCase());
-  return topics.some((t) =>
-    STEAM_TOPIC_KEYWORDS.some((k) => t.includes(k) || k.includes(t))
-  );
 }

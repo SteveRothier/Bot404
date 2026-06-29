@@ -1,5 +1,6 @@
 ﻿import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { getNpcGenerationStatus } from "@/lib/engine/shared/generation-gate";
 
 function loadDotEnv(filePath: string) {
   if (!existsSync(filePath)) return;
@@ -38,12 +39,37 @@ checks.push({
 
 async function checkOllama() {
   const url = process.env.OLLAMA_URL ?? "http://127.0.0.1:11434";
+  const expectedModel = process.env.OLLAMA_MODEL ?? "qwen3.5:4b";
   try {
     const res = await fetch(`${url}/api/tags`, { signal: AbortSignal.timeout(3000) });
+    if (!res.ok) {
+      checks.push({
+        name: "Ollama",
+        ok: false,
+        detail: `HTTP ${res.status}`,
+      });
+      return;
+    }
+
+    const data = (await res.json()) as {
+      models?: Array<{ name?: string }>;
+    };
+    const names = data.models?.map((m) => m.name ?? "") ?? [];
+    const modelLoaded = names.some(
+      (name) => name === expectedModel || name.startsWith(`${expectedModel}:`)
+    );
+
     checks.push({
       name: "Ollama",
-      ok: res.ok,
-      detail: res.ok ? url : `HTTP ${res.status}`,
+      ok: true,
+      detail: url,
+    });
+    checks.push({
+      name: "Modèle Ollama",
+      ok: modelLoaded,
+      detail: modelLoaded
+        ? `${expectedModel} disponible`
+        : `${expectedModel} absent — ollama pull ${expectedModel}`,
     });
   } catch {
     checks.push({
@@ -149,13 +175,69 @@ async function checkSupabaseNarrative() {
         ? `comment_likes inaccessible (${commentLikesError.message}) — lancez db push`
         : "comment_likes + relay_count OK",
     });
+
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count: failedCount } = await supabase
+      .from("narrative_signals")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "failed")
+      .gte("created_at", since24h);
+
+    checks.push({
+      name: "Signaux failed (24h)",
+      ok: (failedCount ?? 0) < 10,
+      detail: String(failedCount ?? 0),
+    });
+
+    const { data: lastNpcPost } = await supabase
+      .from("posts")
+      .select("created_at, author:profiles!author_id(username, is_npc)")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    const lastNpc = (lastNpcPost ?? []).find((row) => {
+      const author = Array.isArray(row.author) ? row.author[0] : row.author;
+      return author?.is_npc === true;
+    });
+
+    checks.push({
+      name: "Dernier post NPC",
+      ok: true,
+      detail: lastNpc?.created_at
+        ? new Date(lastNpc.created_at).toISOString()
+        : "aucun post NPC récent",
+    });
+
+    const { error: notifCommentError } = await supabase
+      .from("notifications")
+      .select("comment_id")
+      .eq("kind", "comment_reaction")
+      .limit(1);
+
+    checks.push({
+      name: "Notifs commentaires",
+      ok: !notifCommentError,
+      detail: notifCommentError
+        ? `colonne comment_id manquante — db push`
+        : "comment_reaction / comment_reply OK",
+    });
   }
+}
+
+function checkGenerationGate() {
+  const status = getNpcGenerationStatus();
+  checks.push({
+    name: "Génération NPC",
+    ok: status.enabled,
+    detail: status.enabled
+      ? "activée"
+      : `désactivée (${status.reason})`,
+  });
 }
 
 function checkMediaEnv() {
   const imageOk = !!(process.env.IMAGE_API_URL && process.env.IMAGE_API_KEY);
   const gifOk = !!(process.env.TENOR_API_KEY || process.env.GIPHY_API_KEY);
-  const steamKey = !!process.env.STEAM_WEB_API_KEY?.trim();
 
   checks.push({
     name: "Médias NPC (IMAGE API)",
@@ -174,36 +256,12 @@ function checkMediaEnv() {
         : "Giphy"
       : "non configuré",
   });
-
-  checks.push({
-    name: "Médias NPC (Steam)",
-    ok: true,
-    detail: steamKey ? "clé définie (vérif API au runtime)" : "non configuré",
-  });
-}
-
-async function checkSteamApi() {
-  const key = process.env.STEAM_WEB_API_KEY?.trim();
-  if (!key) return;
-
-  const { verifySteamWebApiKey } = await import("@/lib/engine/content/steam-media");
-  const ok = await verifySteamWebApiKey();
-  const idx = checks.findIndex((c) => c.name === "Médias NPC (Steam)");
-  if (idx >= 0) {
-    checks[idx] = {
-      name: "Médias NPC (Steam)",
-      ok,
-      detail: ok
-        ? "STEAM_WEB_API_KEY valide (GetServerInfo)"
-        : "clé définie mais API Steam inaccessible ou invalide",
-    };
-  }
 }
 
 async function main() {
+  checkGenerationGate();
   await checkOllama();
   checkMediaEnv();
-  await checkSteamApi();
   await checkSupabaseNarrative();
 
   const allOk = checks.every((c) => c.ok);

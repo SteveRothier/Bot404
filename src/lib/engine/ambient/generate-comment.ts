@@ -28,6 +28,10 @@ import {
   getPostReactionAfterCommentChance,
   rollChance,
 } from "@/lib/engine/reactive/tick-config";
+import {
+  NPC_GENERATION_DISABLED_ERROR,
+  isNpcGenerationEnabled,
+} from "@/lib/engine/shared/generation-gate";
 import { withReplyMention } from "@/lib/mentions";
 import {
   createCommentReplyNotifications,
@@ -403,12 +407,19 @@ async function generateSingleNpcComment(
 }
 
 export async function generateNpcComment(): Promise<GenerateNpcCommentResult> {
+  if (!isNpcGenerationEnabled()) {
+    return { ok: false, error: NPC_GENERATION_DISABLED_ERROR };
+  }
   return generateSingleNpcComment(new Set());
 }
 
 export async function generateNpcCommentsBatch(
   count = 2
 ): Promise<GenerateNpcCommentResult[]> {
+  if (!isNpcGenerationEnabled()) {
+    return [{ ok: false, error: NPC_GENERATION_DISABLED_ERROR }];
+  }
+
   const batchSize = clampNpcCommentBatchCount(count);
   const results: GenerateNpcCommentResult[] = [];
   const usedPosts = new Set<number>();

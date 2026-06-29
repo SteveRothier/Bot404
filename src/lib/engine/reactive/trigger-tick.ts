@@ -1,4 +1,5 @@
 ﻿import { runNarrativeTick } from "@/lib/engine/reactive/tick";
+import { isNpcGenerationEnabled } from "@/lib/engine/shared/generation-gate";
 
 const COOLDOWN_MS = 45_000;
 
@@ -12,6 +13,8 @@ function fireTick() {
 
 /** Déclenche un tick narratif après action joueur (cooldown 45 s). */
 export function triggerNarrativeTickAfterAction(): void {
+  if (!isNpcGenerationEnabled()) return;
+
   const now = Date.now();
 
   if (now - lastRunAt >= COOLDOWN_MS) {
