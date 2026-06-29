@@ -6,6 +6,7 @@ import { enqueueReactionSignal } from "@/lib/engine/reactive/signals";
 import { triggerNarrativeTickAfterAction } from "@/lib/engine/reactive/trigger-tick";
 import { createReactionNotification } from "@/lib/notifications";
 import { maybeNpcReactionsOnPost } from "@/lib/engine/casting/npc-reaction";
+import { maybeNpcLikesOnPostComments } from "@/lib/engine/casting/npc-comment-engagement";
 import { isReactionKind } from "@/lib/reactions";
 import { requireAuthUser } from "@/lib/queries/shell";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -31,6 +32,13 @@ async function mirrorNpcReactionsOnRelay(postId: number) {
     minCount: 1,
     maxCount: 2,
   });
+
+  if (Math.random() < 0.5) {
+    await maybeNpcLikesOnPostComments(postId, {
+      minLikes: 1,
+      maxLikes: 2,
+    });
+  }
 }
 
 async function applyNarrativeReactionEffects(postId: number, userId: string) {

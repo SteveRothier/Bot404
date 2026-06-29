@@ -19,6 +19,7 @@ import { getRecentNpcAuthorIdsOnPost } from "@/lib/engine/casting/recent-replier
 import { loadAllNpcs } from "@/lib/engine/casting/select-npc";
 import { buildRichThreadSnippet } from "@/lib/engine/casting/thread-context";
 import { maybeNpcReactionsOnPost } from "@/lib/engine/casting/npc-reaction";
+import { maybeNpcLikesOnPostComments } from "@/lib/engine/casting/npc-comment-engagement";
 import { validateNpcCommentContent, validateNpcPostContent } from "@/lib/engine/content/validate-content";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PostType, Profile, ReactionKind } from "@/lib/supabase/types";
@@ -189,6 +190,13 @@ async function applyNpcReactionsAfterEmergent(targetPostId: number) {
     minCount: 1,
     maxCount: 4,
   });
+
+  if (Math.random() < 0.7) {
+    await maybeNpcLikesOnPostComments(targetPostId, {
+      minLikes: 1,
+      maxLikes: 3,
+    });
+  }
 }
 
 export async function processEmergentSignal(

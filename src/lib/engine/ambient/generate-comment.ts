@@ -11,6 +11,7 @@ import {
 import { checkOllamaStatus } from "@/lib/ollama";
 import { pickNpcForSignal } from "@/lib/engine/casting/cast";
 import { maybeNpcReactionsOnPost } from "@/lib/engine/casting/npc-reaction";
+import { maybeNpcLikesOnPostComments } from "@/lib/engine/casting/npc-comment-engagement";
 import { maybeNpcVoteOnPoll } from "@/lib/engine/content/poll-vote";
 import { buildRichThreadSnippet } from "@/lib/engine/casting/thread-context";
 import {
@@ -39,6 +40,66 @@ type CommentTarget = {
   post_type: PostType;
   comment_count: number;
 };
+
+type ReplyTarget = {
+  id: number;
+  author_id: string;
+  username: string;
+  content: string;
+};
+
+async function pickCommentToReply(
+  postId: number
+): Promise<ReplyTarget | null> {
+  const supabase = createAdminClient();
+
+  const { data: comments } = await supabase
+    .from("comments")
+    .select(
+      "id, author_id, content, relay_count, author:profiles!author_id(username)"
+    )
+    .eq("post_id", postId)
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  if (!comments?.length) return null;
+
+  const weights = comments.map((c) => 1 / (1 + (c.relay_count ?? 0)));
+  const total = weights.reduce((sum, w) => sum + w, 0);
+  let r = Math.random() * total;
+
+  for (let i = 0; i < comments.length; i++) {
+    r -= weights[i];
+    if (r <= 0) {
+      const author = comments[i].author as { username?: string } | null;
+      const username = author?.username;
+      if (!username) return null;
+      return {
+        id: comments[i].id,
+        author_id: comments[i].author_id,
+        username,
+        content: comments[i].content,
+      };
+    }
+  }
+
+  const fallback = comments[comments.length - 1];
+  const author = fallback.author as { username?: string } | null;
+  if (!author?.username) return null;
+
+  return {
+    id: fallback.id,
+    author_id: fallback.author_id,
+    username: author.username,
+    content: fallback.content,
+  };
+}
+
+function withReplyMention(content: string, username: string): string {
+  const mention = `@${username.toLowerCase()}`;
+  if (content.toLowerCase().includes(mention)) return content.slice(0, 300);
+  return `${mention} ${content}`.trim().slice(0, 300);
+}
 
 async function fetchCommentCounts(
   postIds: number[]
@@ -82,7 +143,10 @@ async function pickPostToComment(
     const commentCount = counts.get(p.id) ?? 0;
     const author = p.author as { is_npc?: boolean } | null;
     const isHuman = author?.is_npc === false;
-    const weight = 1 / (1 + commentCount) + (isHuman ? 0.35 : 0.15);
+    const weight =
+      1 / (1 + commentCount) +
+      (isHuman ? 0.35 : 0.15) +
+      (commentCount > 0 && commentCount <= 10 ? 0.3 : 0);
     return {
       id: p.id,
       content: p.content,
@@ -139,7 +203,17 @@ async function tryGenerateCommentForPost(
     return { ok: false, error: "Aucun NPC trouvé." };
   }
 
-  const commenters = (npcs as Profile[]).filter((n) => n.id !== post.author_id);
+  const replyTarget =
+    post.comment_count > 0 && Math.random() < 0.55
+      ? await pickCommentToReply(post.id)
+      : null;
+
+  const excludeAuthorIds = new Set([post.author_id]);
+  if (replyTarget) excludeAuthorIds.add(replyTarget.author_id);
+
+  const commenters = (npcs as Profile[]).filter(
+    (n) => !excludeAuthorIds.has(n.id)
+  );
   if (!commenters.length) {
     return { ok: false, error: "Aucun NPC disponible pour commenter." };
   }
@@ -149,12 +223,14 @@ async function tryGenerateCommentForPost(
     kind: "human_post",
     author_id: post.author_id,
     post_id: post.id,
-    comment_id: null,
+    comment_id: replyTarget?.id ?? null,
     reaction_kind: null,
-    mentioned_username: null,
+    mentioned_username: replyTarget?.username ?? null,
     priority: 30,
     status: "pending",
-    payload: { content: post.content },
+    payload: {
+      content: replyTarget?.content ?? post.content,
+    },
     result: {},
     created_at: new Date().toISOString(),
     handled_at: null,
@@ -163,8 +239,8 @@ async function tryGenerateCommentForPost(
   const npc =
     pickNpcForSignal(commenters, {
       signal: castSignal,
-      humanContent: post.content,
-      excludeNpcIds: new Set([post.author_id]),
+      humanContent: replyTarget?.content ?? post.content,
+      excludeNpcIds: excludeAuthorIds,
       huntContent: contentHasHuntKeywords(post.content),
     }) ?? commenters[Math.floor(Math.random() * commenters.length)];
 
@@ -191,14 +267,26 @@ Fil de discussion :
 ${threadBlock}
 
 Réponds en commentaire (max 200 caractères). Ton conversationnel — une phrase dans le fil. Français.`;
-  const user = `Post original: "${post.content}"\nÉcris une réponse courte et originale.`;
+  const user = replyTarget
+    ? `Commentaire de @${replyTarget.username}: « ${replyTarget.content} »\nRéponds-lui directement (commence par @${replyTarget.username.toLowerCase()}).`
+    : `Post original: "${post.content}"\nÉcris une réponse courte et originale.`;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const raw = await ollamaChat(system, user, 300, "comment");
-    const content = raw
-      ? validateNpcCommentContent(raw, post.content, recentPosts)
+    const validated = raw
+      ? validateNpcCommentContent(
+          raw,
+          replyTarget?.content ?? post.content,
+          recentPosts
+        )
       : null;
-    if (content) return { ok: true, npc, content };
+    if (!validated) continue;
+
+    const content = replyTarget
+      ? withReplyMention(validated, replyTarget.username)
+      : validated;
+
+    return { ok: true, npc, content };
   }
 
   excludePostIds.add(post.id);
@@ -265,6 +353,14 @@ async function generateSingleNpcComment(
         postContent: post.content,
         minCount: 1,
         maxCount: 3,
+      });
+    }
+
+    if (Math.random() < 0.75) {
+      await maybeNpcLikesOnPostComments(post.id, {
+        minLikes: 1,
+        maxLikes: 4,
+        excludeNpcIds: new Set([npc.id]),
       });
     }
 

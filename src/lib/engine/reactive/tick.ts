@@ -10,6 +10,7 @@ import type { NarrativeTickResult } from "@/lib/engine/shared/types";
 import { generateNpcCommentsBatch } from "@/lib/engine/ambient/generate-comment";
 import { generateNpcPost } from "@/lib/engine/ambient/generate-post";
 import { maybeAmbientNpcReactions } from "@/lib/engine/casting/npc-reaction";
+import { maybeAmbientNpcCommentLikes } from "@/lib/engine/casting/npc-comment-engagement";
 
 export type RunNarrativeTickOptions = {
   /** Surcharge le nombre de signaux émergents traités (défaut: NARRATIVE_SIGNALS_PER_TICK). */
@@ -55,6 +56,7 @@ export async function runNarrativeTick(
 
   if (Math.random() < getAmbientFallbackChance()) {
     await maybeAmbientNpcReactions(2);
+    await maybeAmbientNpcCommentLikes(2);
 
     const ambient =
       Math.random() < 0.88

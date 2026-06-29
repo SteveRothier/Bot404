@@ -17,6 +17,7 @@ import { isAllowedGiphyUrl } from "@/lib/engine/content/gif-search";
 import { requireAuthUser } from "@/lib/queries/shell";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { maybeNpcLikesOnPostComments } from "@/lib/engine/casting/npc-comment-engagement";
 import type { PostMediaType, PostPoll, PostType } from "@/lib/supabase/types";
 
 const MAX_MEDIA_BYTES = 2 * 1024 * 1024;
@@ -257,6 +258,14 @@ export async function createComment(postId: number, formData: FormData) {
   if (comment?.id) {
     await enqueueHumanCommentSignal(user.id, postId, comment.id, content);
     triggerNarrativeTickAfterAction();
+
+    if (Math.random() < 0.65) {
+      await maybeNpcLikesOnPostComments(postId, {
+        minLikes: 1,
+        maxLikes: 3,
+        prioritizeCommentId: comment.id,
+      });
+    }
   }
 
   const narrativeQueued = comment?.id
