@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import type { OllamaStatus } from "@/lib/ollama";
+import { checkOllamaStatusClient, type OllamaStatus } from "@/lib/ollama";
 
 type OllamaState = {
   online: boolean;
   model: string;
+  localOnly: boolean;
   hydrate: (status: OllamaStatus) => void;
   refresh: () => Promise<boolean>;
   startPolling: () => void;
@@ -12,26 +13,23 @@ type OllamaState = {
 
 let pollingId: number | null = null;
 
-async function fetchOllamaStatus(): Promise<OllamaStatus> {
-  try {
-    const res = await fetch("/api/ollama-status");
-    const data = (await res.json()) as { online: boolean; model?: string };
-    return {
-      online: data.online,
-      model: data.model ?? useOllamaStore.getState().model,
-    };
-  } catch {
-    return { online: false, model: useOllamaStore.getState().model };
-  }
-}
-
 export const useOllamaStore = create<OllamaState>((set, get) => ({
   online: false,
   model: "",
-  hydrate: (status) => set({ online: status.online, model: status.model }),
+  localOnly: false,
+  hydrate: (status) =>
+    set({
+      online: status.online,
+      model: status.model,
+      localOnly: status.localOnly ?? false,
+    }),
   refresh: async () => {
-    const status = await fetchOllamaStatus();
-    set({ online: status.online, model: status.model });
+    const status = await checkOllamaStatusClient(get().model);
+    set({
+      online: status.online,
+      model: status.model,
+      localOnly: status.localOnly ?? false,
+    });
     return status.online;
   },
   startPolling: () => {

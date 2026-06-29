@@ -50,6 +50,7 @@ function OpsRow({ label, value }: { label: string; value: React.ReactNode }) {
 export function NpcOpsPanel({ snapshot, compact = false }: Props) {
   const router = useRouter();
   const ollamaOnline = useOllamaStore((s) => s.online);
+  const ollamaLocalOnly = useOllamaStore((s) => s.localOnly);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -60,7 +61,7 @@ export function NpcOpsPanel({ snapshot, compact = false }: Props) {
     (lastDetail?.batch as Array<{ author?: string }> | undefined)?.[0]?.author;
 
   const showBacklogWarning =
-    !ollamaOnline && snapshot.narrative.pendingSignals > 5;
+    !ollamaOnline && !ollamaLocalOnly && snapshot.narrative.pendingSignals > 5;
 
   function handleTick() {
     setError(null);
