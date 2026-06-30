@@ -17,7 +17,6 @@ import {
   generateNpcPostsBatch,
   prepareNpcPostGeneration,
 } from "@/lib/engine/ambient/generate-post";
-import { getNpcMediaStatus } from "@/lib/engine/content/media";
 import {
   NPC_GENERATION_DISABLED_ERROR,
   isNpcGenerationEnabled,
@@ -25,10 +24,6 @@ import {
 import { runNarrativeTick } from "@/lib/engine/reactive/tick";
 import type { OllamaOverride } from "@/lib/ollama-config";
 import { resolveOllamaActionContext } from "@/lib/ollama-server";
-
-export async function getNpcMediaStatusAction() {
-  return getNpcMediaStatus();
-}
 
 function tickProducedPost(detail: Record<string, unknown> | undefined): boolean {
   if (!detail) return false;

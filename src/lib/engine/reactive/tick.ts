@@ -8,7 +8,6 @@ import {
   getSignalsPerTick,
 } from "@/lib/engine/reactive/tick-config";
 import { expireOldSignals } from "@/lib/engine/reactive/signals";
-import { checkNarrativeEndgame } from "@/lib/engine/reactive/endgame-stub";
 import { isNpcGenerationEnabled } from "@/lib/engine/shared/generation-gate";
 import type {
   NarrativeTickMetrics,
@@ -122,7 +121,6 @@ export async function runNarrativeTick(
       getPollVotesPerTick(),
       provider
     );
-    const endgame = await checkNarrativeEndgame();
     return finishTick(
       startedAt,
       {
@@ -142,7 +140,6 @@ export async function runNarrativeTick(
           post_id: first.postId,
           comment_id: first.commentId,
           signal_id: first.signalId,
-          endgame: endgame.triggered ? endgame : undefined,
         },
       },
       {
@@ -158,7 +155,6 @@ export async function runNarrativeTick(
     errors.push(...ambient.errors);
 
     if (ambient.handled) {
-      const endgame = await checkNarrativeEndgame();
       const firstComment = ambient.comments[0];
       const isComment = ambient.kind === "comment_batch";
 
@@ -184,7 +180,6 @@ export async function runNarrativeTick(
               comment_id: c.commentId,
               poll_vote: c.pollVote,
             })),
-            endgame: endgame.triggered ? endgame : undefined,
           },
         },
         {
@@ -217,7 +212,6 @@ export async function runNarrativeTick(
     );
   }
 
-  const endgame = await checkNarrativeEndgame();
   return finishTick(
     startedAt,
     {
@@ -225,7 +219,6 @@ export async function runNarrativeTick(
       mode: "none",
       detail: {
         emergent_error: batch.lastError,
-        endgame: endgame.triggered ? endgame : undefined,
       },
     },
     {

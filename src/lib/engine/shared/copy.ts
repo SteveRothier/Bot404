@@ -17,17 +17,3 @@ export const NARRATIVE_COPY = {
   emergentPostContext: (human: string) =>
     `En réponse à l'activité de @${human}`,
 } as const;
-
-export function formatPendingInteractions(count: number): string {
-  if (count === 0) {
-    return "Aucune interaction en attente pour le moment.";
-  }
-  if (count === 1) {
-    return "1 interaction en attente";
-  }
-  return `${count} interactions en attente`;
-}
-
-export function queuedMessageForPostType(): string {
-  return NARRATIVE_COPY.queuedInteraction;
-}

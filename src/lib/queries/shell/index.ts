@@ -5,4 +5,3 @@ export * from "./auth";
 export * from "./cache-tags";
 export * from "./sidebar-auth";
 export * from "./npc-schedule";
-export * from "./narrative-ops";

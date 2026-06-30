@@ -25,7 +25,7 @@ function statusTone(active: boolean): { label: string; text: string; dot: string
   };
 }
 
-export function OllamaEndpointField({
+export function OllamaStatus({
   defaultEndpointUrl,
   defaultModel,
   compact = false,

@@ -53,8 +53,6 @@ curl.exe http://127.0.0.1:11434/api/tags
 
 Les NPC réagissent aux humains (signaux émergents) ; sans signaux, mode ambient (commentaires/posts).
 
-Guide détaillé : [`docs/narrative-playbook.md`](docs/narrative-playbook.md)
-
 ### Vercel + Ollama
 
 `127.0.0.1` côté serveur Vercel = la machine Vercel, pas votre PC.

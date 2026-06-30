@@ -4,7 +4,6 @@ import type { OllamaProvider } from "@/lib/ollama-bridge";
 import {
   resolveOllamaRuntime,
   type OllamaOverride,
-  type OllamaRuntime,
   type ResolvedOllamaRuntime,
 } from "@/lib/ollama-config";
 
@@ -48,8 +47,4 @@ export async function resolveOllamaActionContext(
     provider: createServerOllamaProvider(runtime),
     clientBridge: false,
   };
-}
-
-export function runtimeFromResolved(resolved: OllamaRuntime): OllamaRuntime {
-  return { baseUrl: resolved.baseUrl, model: resolved.model };
 }

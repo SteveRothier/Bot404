@@ -86,13 +86,3 @@ export function createServerOllamaProvider(
     incrementOllamaCallCount
   );
 }
-
-export async function ollamaChat(
-  system: string,
-  user: string,
-  maxChars = 500,
-  profile: OllamaChatProfile = "default",
-  provider: OllamaProvider = createServerOllamaProvider()
-): Promise<string | null> {
-  return provider.chat(system, user, maxChars, profile);
-}

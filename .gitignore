@@ -43,9 +43,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# archived experiments (not part of build)
-/archive/
-
 # supabase
 supabase/.branches
 supabase/.temp

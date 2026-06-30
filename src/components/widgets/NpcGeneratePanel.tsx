@@ -19,7 +19,7 @@ import {
   prepareNpcCommentAction,
   prepareNpcPostAction,
 } from "@/app/actions/npc";
-import { ollamaInputFromStore } from "@/lib/ollama-action-input";
+import type { OllamaOverride } from "@/lib/ollama-config";
 import {
   needsClientOllamaBridge,
   effectiveOllamaEndpoint,
@@ -33,6 +33,14 @@ import { useOllamaStore } from "@/stores/ollama-store";
 type Props = {
   compact?: boolean;
 };
+
+function ollamaInputFromStore(
+  endpointUrl: string,
+  model: string
+): OllamaOverride | undefined {
+  if (!endpointUrl.trim()) return undefined;
+  return { endpointUrl, model: model || undefined };
+}
 
 type CountPickerProps = {
   value: number;

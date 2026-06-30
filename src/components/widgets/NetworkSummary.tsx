@@ -11,11 +11,9 @@ import type { NpcGenerationStatus } from "@/lib/engine/shared/generation-gate";
 import type { OllamaDisplayDefaults } from "@/lib/ollama-config";
 import type { NetworkStats } from "@/lib/supabase/types";
 
-const OllamaEndpointField = dynamic(
+const OllamaStatus = dynamic(
   () =>
-    import("@/components/widgets/OllamaEndpointField").then(
-      (m) => m.OllamaEndpointField
-    ),
+    import("@/components/widgets/OllamaStatus").then((m) => m.OllamaStatus),
   { ssr: false, loading: () => null }
 );
 
@@ -78,7 +76,7 @@ export function NetworkSummary({
         <NpcScheduleDisplay npcSchedule={npcSchedule} />
       </div>
       <SidebarPanelSection className="mt-2">
-        <OllamaEndpointField
+        <OllamaStatus
           compact
           defaultEndpointUrl={ollamaDisplay.endpointUrl}
           defaultModel={ollamaDisplay.model}
