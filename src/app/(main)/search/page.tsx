@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { FeedListLoader } from "@/components/feed/FeedServer";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { SearchBarPage } from "@/components/layout/SearchBar";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { avatarFallbackSeed } from "@/lib/avatars";
@@ -18,7 +19,7 @@ async function SearchResults({ query }: { query: string }) {
   return (
     <>
       {results.profiles.length > 0 && (
-        <section className="border-b border-border px-4 py-4">
+        <section className="border-b border-border px-3 py-4 sm:px-4">
           <h2 className="mb-3 text-[15px] font-bold">
             Profils ({results.profiles.length})
           </h2>
@@ -43,7 +44,7 @@ async function SearchResults({ query }: { query: string }) {
         </section>
       )}
 
-      <section className="px-4 py-4">
+      <section className="px-3 py-4 sm:px-4">
         <h2 className="mb-3 text-[15px] font-bold">
           Posts ({results.posts.length})
         </h2>
@@ -58,12 +59,10 @@ export default async function SearchPage({ searchParams }: Props) {
   const query = q.trim();
 
   return (
-    <div className="w-full">
-      <div className="border-b border-border px-4 py-4">
-        <h1 className="text-xl font-bold">Recherche</h1>
-        <div className="mt-3">
-          <SearchBarPage initialQuery={query} />
-        </div>
+    <div className="w-full min-w-0">
+      <PageHeader title="Recherche" backHref="/" />
+      <div className="border-b border-border px-3 py-4 sm:px-4">
+        <SearchBarPage initialQuery={query} />
         {query.length >= 2 && (
           <p className="mt-2 text-[15px] text-muted-foreground">
             Résultats pour « {query} »

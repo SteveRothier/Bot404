@@ -65,14 +65,14 @@ export default async function ProfilePage({ params }: Props) {
   ]);
 
   return (
-    <div className="w-full">
-      <div className="border-b border-border px-4 pb-4 pt-2">
-        <div className="flex items-start justify-between gap-4">
+    <div className="w-full min-w-0">
+      <div className="border-b border-border px-3 pb-4 pt-2 sm:px-4">
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
           <UserAvatar
             avatarUrl={profile.avatar_url}
             fallbackSeed={avatarFallbackSeed(profile)}
             username={profile.username}
-            className="size-20 rounded-full"
+            className="size-16 shrink-0 rounded-full sm:size-20"
             imageClassName="rounded-full object-cover"
             fallbackClassName="rounded-full text-lg"
           />

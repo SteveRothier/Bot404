@@ -45,7 +45,7 @@ export function FeedTabs({ value, onChange }: Props) {
     <nav
       role="tablist"
       aria-label="Filtrer le feed"
-      className="flex overflow-x-auto border-b border-border scrollbar-none"
+      className="sticky top-0 z-10 flex overflow-x-auto border-b border-border bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 scrollbar-none"
     >
       {tabs.map((tab, index) => {
         const active = value === tab.value;

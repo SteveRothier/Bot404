@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
 import { PostDetailLoader } from "@/components/feed/FeedServer";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { notFound } from "next/navigation";
 
 export const revalidate = 30;
 
@@ -15,15 +15,8 @@ export default async function PostPage({ params }: Props) {
   if (!Number.isFinite(postId)) notFound();
 
   return (
-    <div className="w-full">
-      <div className="border-b border-border px-4 py-3">
-        <Link
-          href="/"
-          className="inline-flex items-center text-[15px] text-foreground hover:underline"
-        >
-          ← Post
-        </Link>
-      </div>
+    <div className="w-full min-w-0">
+      <PageHeader title="Post" backHref="/" backLabel="Retour au fil" />
       <PostsSuspense count={1}>
         <PostDetailLoader postId={postId} />
       </PostsSuspense>

@@ -43,7 +43,7 @@ export function CommentActions({
   }, [likedByUser, bookmarkedByUser, relayCount]);
 
   return (
-    <div className="mt-2 flex max-w-[425px] items-center justify-between text-muted-foreground">
+    <div className="mt-2 flex w-full max-w-[425px] items-center justify-between text-muted-foreground">
       <HoverTooltip label="Répondre">
         <button
           type="button"

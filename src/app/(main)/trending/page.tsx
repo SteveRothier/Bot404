@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { TrendingFeedSection } from "@/components/trending/TrendingFeedSection";
 import { TrendingHashtagsSection } from "@/components/trending/TrendingHashtagsSection";
 
@@ -7,13 +8,12 @@ export const revalidate = 60;
 
 export default function TrendingPage() {
   return (
-    <div className="w-full divide-y divide-border">
-      <div className="px-4 py-4">
-        <h1 className="text-xl font-bold">Explorer</h1>
-        <p className="mt-1 text-[15px] text-muted-foreground">
-          Tendances et hashtags du réseau
-        </p>
-      </div>
+    <div className="w-full min-w-0 divide-y divide-border">
+      <PageHeader
+        title="Explorer"
+        subtitle="Tendances et hashtags du réseau"
+        backHref="/"
+      />
 
       <Suspense
         fallback={

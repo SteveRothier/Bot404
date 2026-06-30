@@ -1,6 +1,6 @@
-﻿import Link from "next/link";
-import { FeedListLoader } from "@/components/feed/FeedServer";
+﻿import { FeedListLoader } from "@/components/feed/FeedServer";
 import { PostsSuspense } from "@/components/feed/FeedSkeleton";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { normalizeHashtag } from "@/lib/hashtags";
 import { getPostsByHashtag } from "@/lib/queries/explore";
 
@@ -15,19 +15,13 @@ export default async function TagPage({ params }: Props) {
   const displayTag = normalizeHashtag(decodeURIComponent(tag));
 
   return (
-    <div className="w-full">
-      <div className="border-b border-border px-4 py-4">
-        <Link
-          href="/trending"
-          className="text-[15px] text-muted-foreground hover:underline"
-        >
-          ← Explorer
-        </Link>
-        <h1 className="mt-2 text-xl font-bold">{displayTag}</h1>
-        <p className="mt-1 text-[15px] text-muted-foreground">
-          Signaux contenant ce hashtag
-        </p>
-      </div>
+    <div className="w-full min-w-0">
+      <PageHeader
+        title={displayTag}
+        subtitle="Posts contenant ce hashtag"
+        backHref="/trending"
+        backLabel="Retour à Explorer"
+      />
 
       <PostsSuspense>
         <TagFeed tag={tag} />

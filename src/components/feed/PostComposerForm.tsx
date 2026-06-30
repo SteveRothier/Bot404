@@ -186,7 +186,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
 
   if (!user) {
     return (
-      <section className="border-b border-border px-4 py-4">
+      <section className="border-b border-border px-3 py-4 sm:px-4">
         <div className="flex items-start gap-3 opacity-60">
           <UserAvatar
             avatarUrl={null}
@@ -213,7 +213,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
 
   if (feedTab === "following" && !followingHasPosts) {
     return (
-      <section className="border-b border-border px-4 py-4">
+      <section className="border-b border-border px-3 py-4 sm:px-4">
         <div className="rounded-xl border border-dashed border-border bg-secondary/30 px-4 py-3 text-center">
           <p className="text-[15px] text-muted-foreground">
             Suivez des profils depuis le fil pour publier ici.
@@ -224,7 +224,7 @@ export function PostComposerForm({ user, profile, feedTab }: Props) {
   }
 
   return (
-    <section className="border-b border-border px-4 py-4">
+    <section className="border-b border-border px-3 py-4 sm:px-4">
       <form onSubmit={handleSubmit} className="flex items-start gap-3">
         <UserAvatar
           avatarUrl={profile?.avatar_url}

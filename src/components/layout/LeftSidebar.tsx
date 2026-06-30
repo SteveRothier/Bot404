@@ -15,11 +15,12 @@ export function LeftSidebar({ sidebarAuth }: Props) {
   const { user, profile, profileUsername } = sidebarAuth;
 
   return (
-    <aside className="sidebar-sticky z-30 flex h-[calc(100vh-1rem)] w-[68px] shrink-0 flex-col overflow-visible transition-[width] duration-200 lg:w-[275px]">
+    <aside className="flex h-[100dvh] w-full flex-col overflow-x-visible overflow-y-auto border-r border-border bg-background">
       <AppSidebarContent
         user={user}
         profile={profile}
         profileUsername={profileUsername}
+        className="pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       />
     </aside>
   );

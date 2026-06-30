@@ -76,7 +76,7 @@ export function PostCard({
   return (
     <article
       className={cn(
-        "surface-hover relative cursor-default px-4 py-3",
+        "surface-hover relative cursor-default px-3 py-3 sm:px-4",
         !author.is_npc && "border-l-2 border-accent/30 pl-3",
         post.isRecentNarrativeResponse &&
           "ring-2 ring-violet-500/30 ring-offset-0"
@@ -174,7 +174,7 @@ export function PostCard({
             />
           )}
 
-          <div className="mt-3 flex max-w-[425px] items-center justify-between text-muted-foreground">
+          <div className="mt-3 flex w-full max-w-[425px] items-center justify-between text-muted-foreground">
             <HoverTooltip label="Commentaires">
               <button
                 type="button"

@@ -20,7 +20,7 @@ export function RightSidebar({
   ollamaDisplay,
 }: Props) {
   return (
-    <aside className="sidebar-sticky hidden w-80 shrink-0 flex-col gap-4 xl:flex">
+    <aside className="sidebar-sticky hidden w-[350px] shrink-0 flex-col gap-4 pl-6 xl:flex">
       <TrendingList hashtags={hashtags} compact />
       <NetworkSummary
         stats={stats}

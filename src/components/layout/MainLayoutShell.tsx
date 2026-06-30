@@ -13,7 +13,7 @@ type Props = {
 function RightSidebarSkeleton() {
   return (
     <aside
-      className="sidebar-sticky hidden w-80 shrink-0 flex-col gap-4 xl:flex"
+      className="sidebar-sticky hidden w-[350px] shrink-0 flex-col gap-4 pl-6 xl:flex"
       aria-hidden
     >
       {Array.from({ length: 3 }).map((_, i) => (
@@ -39,19 +39,21 @@ export async function MainLayoutShell({ children }: Props) {
       userId={userId}
       initialUnreadCount={initialUnreadCount}
     >
-      <div className="min-h-screen bg-background">
-        <div className="mx-auto flex max-w-[1280px] items-start gap-2 px-2 sm:gap-4 sm:px-3 lg:gap-6 lg:px-4">
+      <div className="relative min-h-[100dvh] bg-background">
+        <div className="fixed inset-y-0 left-0 z-30 w-[72px] lg:w-[275px]">
           <LeftSidebar sidebarAuth={sidebarAuth} />
+        </div>
 
-          <div className="flex min-w-0 flex-1 flex-col">
-            <main className="min-w-0 flex-1 border-l border-border py-0">
+        <div className="min-h-[100dvh] pl-[72px] lg:pl-[275px]">
+          <div className="mx-auto flex min-h-[100dvh] w-full max-w-[987px]">
+            <main className="layout-feed-column min-w-0 shrink-0">
               {children}
             </main>
-          </div>
 
-          <Suspense fallback={<RightSidebarSkeleton />}>
-            <RightSidebarLoader />
-          </Suspense>
+            <Suspense fallback={<RightSidebarSkeleton />}>
+              <RightSidebarLoader />
+            </Suspense>
+          </div>
         </div>
       </div>
     </ClientStoresHydrator>
