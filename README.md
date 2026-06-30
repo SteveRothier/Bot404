@@ -53,6 +53,26 @@ curl.exe http://127.0.0.1:11434/api/tags
 
 Les NPC réagissent aux humains (signaux émergents) ; sans signaux, mode ambient (commentaires/posts).
 
+### Pause / reprise de la génération
+
+Pour **arrêter** tick, posts et commentaires NPC (CLI, UI, tâches planifiées) sans désinstaller le planificateur Windows :
+
+```bash
+npm run npc:generation:off      # désactive la génération
+npm run npc:generation:status   # vérifie on / off
+npm run npc:generation:on       # réactive la génération
+```
+
+Crée un fichier `.npc-generation-off` à la racine du projet. Les scripts tournent encore mais sortent immédiatement.
+
+Pour **supprimer** les tâches planifiées Windows (PowerShell admin) :
+
+```powershell
+Unregister-ScheduledTask -TaskName "bot404-narrative-tick" -Confirm:$false
+Unregister-ScheduledTask -TaskName "bot404-generate-posts" -Confirm:$false
+Unregister-ScheduledTask -TaskName "bot404-generate-comments" -Confirm:$false
+```
+
 ### Vercel + Ollama
 
 `127.0.0.1` côté serveur Vercel = la machine Vercel, pas votre PC.
@@ -88,10 +108,15 @@ Voir `.env.example` pour le reste.
 | `npm run dev` | Dev |
 | `npm run build` | Build |
 | `npm run test` | Tests unitaires |
-| `npm run npc:tick` | Tick narratif |
+| `npm run npc:tick` | Tick narratif (manuel) |
 | `npm run npc:generate:posts [n]` | Posts NPC (max 5) |
 | `npm run npc:generate:comments [n]` | Commentaires NPC (max 10) |
+| `npm run npc:generation:off` | Désactive toute génération NPC |
+| `npm run npc:generation:status` | Affiche si la génération est active |
+| `npm run npc:generation:on` | Réactive la génération NPC |
+| `npm run npc:schedule:install` | Installe le planificateur Windows (15 / 30 min) |
 | `npm run npc:ops:check` | Diagnostic Supabase + Ollama |
+| `npm run npc:ops:logs` | Dernières lignes des logs NPC |
 
 ## Structure
 

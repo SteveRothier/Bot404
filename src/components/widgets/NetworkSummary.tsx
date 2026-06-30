@@ -59,8 +59,7 @@ export function NetworkSummary({
     <SidebarPanel title="Réseau">
       {!npcGeneration.enabled && (
         <p className="mb-2 rounded-md border border-border bg-secondary/60 px-2 py-1.5 text-meta text-muted-foreground">
-          Génération OFF
-          {npcGeneration.reason ? ` (${npcGeneration.reason})` : ""}
+          Génération automatique désactivée
         </p>
       )}
       <div className="space-y-0">
@@ -78,6 +77,7 @@ export function NetworkSummary({
       <SidebarPanelSection className="mt-2">
         <OllamaStatus
           compact
+          generationEnabled={npcGeneration.enabled}
           defaultEndpointUrl={ollamaDisplay.endpointUrl}
           defaultModel={ollamaDisplay.model}
         />

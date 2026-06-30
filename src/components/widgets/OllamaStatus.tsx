@@ -8,6 +8,7 @@ type Props = {
   defaultEndpointUrl: string;
   defaultModel: string;
   compact?: boolean;
+  generationEnabled?: boolean;
 };
 
 function statusTone(active: boolean): { label: string; text: string; dot: string } {
@@ -29,6 +30,7 @@ export function OllamaStatus({
   defaultEndpointUrl,
   defaultModel,
   compact = false,
+  generationEnabled = true,
 }: Props) {
   const online = useOllamaStore((s) => s.online);
   const model = useOllamaStore((s) => s.model);
@@ -39,7 +41,8 @@ export function OllamaStatus({
     return () => useOllamaStore.getState().stopPolling();
   }, [defaultEndpointUrl, defaultModel]);
 
-  const { label, text: tone, dot } = statusTone(online);
+  const active = generationEnabled && online;
+  const { label, text: tone, dot } = statusTone(active);
 
   return (
     <div className={cn("space-y-1", compact ? "text-meta" : "text-sm")}>
