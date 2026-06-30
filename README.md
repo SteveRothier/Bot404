@@ -53,26 +53,6 @@ curl.exe http://127.0.0.1:11434/api/tags
 
 Les NPC réagissent aux humains (signaux émergents) ; sans signaux, mode ambient (commentaires/posts).
 
-### Pause / reprise de la génération
-
-Pour **arrêter** tick, posts et commentaires NPC (CLI, UI, tâches planifiées) sans désinstaller le planificateur Windows :
-
-```bash
-npm run npc:generation:off      # désactive la génération
-npm run npc:generation:status   # vérifie on / off
-npm run npc:generation:on       # réactive la génération
-```
-
-Crée un fichier `.npc-generation-off` à la racine du projet. Les scripts tournent encore mais sortent immédiatement.
-
-Pour **supprimer** les tâches planifiées Windows (PowerShell admin) :
-
-```powershell
-Unregister-ScheduledTask -TaskName "bot404-narrative-tick" -Confirm:$false
-Unregister-ScheduledTask -TaskName "bot404-generate-posts" -Confirm:$false
-Unregister-ScheduledTask -TaskName "bot404-generate-comments" -Confirm:$false
-```
-
 ### Vercel + Ollama
 
 `127.0.0.1` côté serveur Vercel = la machine Vercel, pas votre PC.
